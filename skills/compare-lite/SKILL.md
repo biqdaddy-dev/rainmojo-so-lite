@@ -5,11 +5,7 @@ description: >
   พร้อมแยกให้ชัดว่าส่วนต่างไหนสรุปสาเหตุได้จริง ส่วนไหนแค่เกิดขึ้นในช่วงเวลาเดียวกัน
   ใช้เมื่อผู้ใช้สแกนรอบสองเสร็จแล้วถามว่าที่แก้ไปได้ผลไหม หรือขอรายงานความคืบหน้า
   ต้องมีผลสแกนอย่างน้อย 2 รอบก่อนถึงจะใช้ได้
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - Write
+allowed-tools: Read Grep Glob Write
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

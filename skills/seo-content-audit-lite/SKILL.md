@@ -7,13 +7,7 @@ description: >
   หรือทบทวนคุณภาพเนื้อหาเดิมที่ลงไปแล้ว
   รอบที่ตรวจทั้งเว็บยังใช้จำแนกเนื้อหาบางตามหมวด ตรวจเนื้อหาซ้ำจากคำบรรยายของผู้ผลิต
   และตรวจห่วงโซ่ตัวตนผู้เขียนได้ด้วย
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Bash
+allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

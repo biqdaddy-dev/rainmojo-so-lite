@@ -1,16 +1,7 @@
 ---
 name: aiso-llmstxt-lite
-description: >
-  Analyzes and generates llms.txt files, the emerging standard for helping AI systems
-  understand website structure and content. Can validate existing llms.txt files or generate
-  new ones from scratch by crawling the site. (Lite edition.)
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Bash
+description: "Analyzes and generates llms.txt files, the emerging standard for helping AI systems understand website structure and content. Can validate existing llms.txt files or generate new ones from scratch by crawling the site. Use when asked to check, write or fix a site's llms.txt. (Lite edition.)"
+allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

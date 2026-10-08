@@ -1,16 +1,7 @@
 ---
 name: seo-website-overview-lite
-description: >
-  ตรวจว่าเว็บติดตั้งเครื่องมือพื้นฐานครบไหม เช่น GA4 Google Search Console
-  Google Business Profile Bing Webmaster และมีไฟล์พื้นฐานอย่าง robots.txt sitemap.xml หรือยัง
-  ใช้เป็นสกิลแรก ๆ เพื่อรู้ว่าเว็บนี้มีของอะไรอยู่แล้วบ้าง ก่อนจะไปวัดอะไรที่ลึกกว่านี้
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Bash
+description: "ตรวจว่าเว็บติดตั้งเครื่องมือพื้นฐานครบไหม เช่น GA4 Google Search Console Google Business Profile Bing Webmaster และมีไฟล์พื้นฐานอย่าง robots.txt sitemap.xml หรือยัง ใช้เมื่อเริ่มดูแลเว็บใหม่เป็นสกิลแรก ๆ เพื่อรู้ว่าเว็บนี้มีของอะไรอยู่แล้วบ้าง ก่อนจะไปวัดอะไรที่ลึกกว่านี้"
+allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

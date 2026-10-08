@@ -4,11 +4,7 @@ description: >
   สร้างโครงโฟลเดอร์ตั้งต้นสำหรับเว็บหนึ่งเว็บ ให้ผลลัพธ์จากทุกสกิลมีที่อยู่ที่แน่นอน
   ใช้เมื่อผู้ใช้เริ่มงานเว็บใหม่ หรือถามว่าควรเก็บไฟล์ไว้ที่ไหน
   ควรรันเป็นสกิลแรกเสมอก่อนใช้สกิลอื่น
-allowed-tools:
-  - Read
-  - Write
-  - Glob
-  - Bash
+allowed-tools: Read Write Glob Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

@@ -1,19 +1,7 @@
 ---
 name: aiso-platform-lite
-description: >
-  Platform-specific AI search optimization for all ten documented AI answer platforms:
-  ChatGPT, Perplexity, Claude, Google AI Overviews and Gemini, DeepSeek, Grok, Qwen, Meta AI,
-  Microsoft Copilot and Apple Intelligence (11 cards), bound to the shared AI platform
-  registry. Reports a readiness checklist per platform (ผ่าน, บางส่วน, ยังไม่มี, ตรวจไม่ได้),
-  never a numeric score; platforms without a documented crawler are reported as could not
-  verify. (Lite edition.)
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Bash
+description: "Platform-specific AI search optimization for all ten documented AI answer platforms: ChatGPT, Perplexity, Claude, Google AI Overviews and Gemini, DeepSeek, Grok, Qwen, Meta AI, Microsoft Copilot and Apple Intelligence (11 cards), bound to the shared AI platform registry. Reports a readiness checklist per platform (ผ่าน, บางส่วน, ยังไม่มี, ตรวจไม่ได้), never a numeric score. Use when asked how ready a site is for a specific AI platform. (Lite edition.)"
+allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

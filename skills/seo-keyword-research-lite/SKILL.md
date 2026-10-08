@@ -1,13 +1,7 @@
 ---
 name: seo-keyword-research-lite
-description: >
-   Comprehensive keyword research combining search behaviour analysis and competitive intelligence using proven Google Suggest methodology. Includes Thai Unicode support and Quick Start Guide. Copy-paste results to other agents for complete workflow. (Lite edition.)
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
+description: "Comprehensive keyword research combining search behaviour analysis and competitive intelligence using proven Google Suggest methodology. Includes Thai Unicode support and Quick Start Guide. Use when the user asks which keywords to target or what people search for. Copy-paste results to other agents for complete workflow. (Lite edition.)"
+allowed-tools: Read Grep Glob WebFetch Write
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

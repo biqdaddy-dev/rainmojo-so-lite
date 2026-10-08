@@ -3,10 +3,7 @@ name: rainmojo-so-lite
 description: >
   จุดเริ่มต้นของปลั๊กอิน บอกว่ามีสกิลอะไรบ้าง ควรใช้ตัวไหนกับงานแบบไหน และเก็บไฟล์อ้างอิงกลางที่สกิลอื่นเรียกใช้
   ใช้เมื่อผู้ใช้ถามว่าปลั๊กอินนี้ทำอะไรได้บ้าง เริ่มยังไง ควรใช้สกิลไหน หรือพิมพ์ว่า help
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
+allowed-tools: Read Grep Glob
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)
@@ -112,6 +109,13 @@ any surface; the glyph allowlist applies to chat and Markdown only.
 
 ---
 
+## Requirements
+
+- Python 3.10+ กับ `pip install requests beautifulsoup4 pillow` (pillow ใช้ย่อและบีบอัดรูปบทความ)
+- ไม่บังคับ: ถ้าจะตรวจหน้าเว็บแบบเรนเดอร์จริงใน `scripts/agent_readiness_lite.py`
+  ให้ `pip install playwright` แล้ว `playwright install chromium`
+
+---
 ## กฎ
 
 - สกิลนี้ **ไม่ตรวจเว็บเองและไม่เขียนไฟล์รายงาน** หน้าที่เดียวคือชี้ทางและเก็บไฟล์อ้างอิง

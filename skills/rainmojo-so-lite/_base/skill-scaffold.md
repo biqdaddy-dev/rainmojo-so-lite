@@ -5,6 +5,14 @@ kind: base-layer
 
 # Shared Skill Scaffold
 
+## Contents
+
+- Brand Context (auto-load)
+- Client Workspace Routing (mandatory before every write)
+- User Uploads (auto-detect)
+- Output
+- Reference files
+
 Shared scaffold. Every skill inherits these conventions. A skill's SKILL.md only
 needs its unique workflow; these Brand Context, User Uploads, Output-naming, and
 Reference rules apply to all.

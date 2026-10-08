@@ -4,13 +4,7 @@ description: >
   ยกระดับเนื้อหาหนึ่งหน้าให้ผ่านมาตรฐาน Google Search Quality Evaluator Guidelines
   ด้วยหลัก QEG ย่อ 6 ข้อ โครงแบบตอบก่อนขยายทีหลัง และ checklist ก่อนส่ง
   ใช้เมื่อต้องเขียนบทความใหม่ ปรับปรุงเนื้อหาเดิม หรือตรวจคุณภาพเนื้อหา
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Bash
+allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

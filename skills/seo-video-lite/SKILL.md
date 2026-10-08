@@ -8,14 +8,7 @@ description: >
   ใช้เมื่อหน้าเว็บมีวิดีโอหรือกำลังจะมี ต้องทำซับหรือ transcript วางแผนวัดผลวิดีโอ
   หรือวิดีโอที่เผยแพร่แล้วไม่โผล่ในผลค้นวิดีโอ
   (Lite edition.)
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Edit
-  - Bash
+allowed-tools: Read Grep Glob WebFetch Write Edit Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

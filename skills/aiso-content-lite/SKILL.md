@@ -1,16 +1,7 @@
 ---
 name: aiso-content-lite
-description: >
-  Content quality and E-E-A-T assessment for AI citability -- evaluate experience, expertise,
-  authoritativeness, trustworthiness, and content structure. Reports a qualitative level per
-  dimension (ดี / พอใช้ / ต้องแก้), not a numeric score. (Lite edition.)
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Bash
+description: "Content quality and E-E-A-T assessment for AI citability: experience, expertise, authoritativeness, trustworthiness and content structure. Reports a qualitative level per dimension (ดี / พอใช้ / ต้องแก้), not a numeric score. Use when asked whether content is trustworthy enough for AI answers or how to raise E-E-A-T. (Lite edition.)"
+allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

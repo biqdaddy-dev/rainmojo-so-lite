@@ -5,12 +5,7 @@ description: >
   อัปภาพพร้อม alt text ผูกภาพหลัก แล้วดึงกลับมาตรวจว่าขึ้นครบจริง
   ใช้เมื่อผู้ใช้เขียนบทความเสร็จแล้วและต้องการเอาขึ้นเว็บ
   ทำทีละบทความ ค่าเริ่มต้นเป็น dry-run และไม่เผยแพร่หน้าให้เด็ดขาด
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - Write
-  - Bash
+allowed-tools: Read Grep Glob Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

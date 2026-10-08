@@ -5,12 +5,7 @@ description: >
   (ดี / เสี่ยง / หลีกเลี่ยง) และวางแผน outreach เป็นขั้นตอนพร้อมโครงข้อความ
   ใช้เมื่อผู้ใช้ต้องการหา backlink วางแผนสร้างลิงก์ เขียนข้อความ outreach
   หรือถามว่าลิงก์จากเว็บไหนควรเอาหรือควรเลี่ยง
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
+allowed-tools: Read Grep Glob WebFetch Write
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

@@ -4,12 +4,7 @@ description: >
   วางแผนเนื้อหาทั้งชุดเป็นตาราง Topical Map แบบ 1 Pillar บวก 10 Clusters
   พร้อมแผนวางลิงก์ภายใน คำค้นหลัก และ title กับ meta description ที่นับตัวอักษรตามกติกาสกิล meta-basics-lite
   ใช้เมื่อผู้ใช้ถามว่าหัวข้อหนึ่งควรเขียนหน้าอะไรบ้าง หรือขอแผนให้เว็บเป็นเจ้าของหัวข้อนั้นในสายตา Google และ AI
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
+allowed-tools: Read Grep Glob WebFetch Write
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

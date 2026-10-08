@@ -4,13 +4,7 @@ description: >
   ตรวจเทคนิคพื้นฐานของเว็บ 4 ด้าน คือ ความเร็ว มือถือ HTTPS และการเข้าดัชนี
   สรุปเป็น ผ่าน ควรดู มีปัญหา ไม่มีคะแนนรวม
   ใช้เมื่อผู้ใช้ถามว่าเว็บช้าไหม เปิดบนมือถือใช้ได้ไหม ทำไมหน้าเว็บไม่ขึ้นใน Google
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Bash
+allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

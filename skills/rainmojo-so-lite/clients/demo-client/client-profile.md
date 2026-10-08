@@ -1,5 +1,16 @@
 # Client Profile - [ชื่อแบรนด์]
 
+## Contents
+
+- 1. Business Information (ข้อมูลธุรกิจ)
+- 2. Products & Services (ผลิตภัณฑ์และบริการ)
+- 3. Target Audience (กลุ่มเป้าหมาย)
+- 4. Brand Positioning (ตำแหน่งของแบรนด์)
+- 5. SEO & Keywords Context (บริบท SEO และคีย์เวิร์ด)
+- 6. Contact & Online Presence (ข้อมูลติดต่อและช่องทางออนไลน์)
+- 7. Content Requirements (ข้อกำหนดด้านเนื้อหา)
+- 8. Integration Notes (หมายเหตุเพิ่มเติม)
+
 ## 1. Business Information (ข้อมูลธุรกิจ)
 **Core Identity (ข้อมูลระบุตัวตนหลัก)**
 - **Business Name (ชื่อธุรกิจ)**: [ชื่อธุรกิจ เช่น: คลินิกทันตกรรมสมายล์]

@@ -1,5 +1,18 @@
 # Brand Guidelines - [ชื่อแบรนด์]
 
+## Contents
+
+- 1. Brand Voice & Tone (บุคลิกและโทนการสื่อสารของแบรนด์)
+- 2. Language Style Guide (แนวทางการใช้ภาษา)
+- 3. Tone Variations by Context (การปรับโทนให้เหมาะกับเนื้อหาแต่ละประเภท)
+- 4. Content Writing Guidelines (หลักการเขียนเนื้อหา)
+- 5. Tone Examples (ตัวอย่างการใช้โทน)
+- 6. Content Templates (เทมเพลตเนื้อหา)
+- 7. Industry-Specific Considerations (ข้อควรพิจารณาเฉพาะอุตสาหกรรม)
+- 8. SEO Writing Integration (การบูรณาการการเขียนเพื่อ SEO)
+- 9. Quality Checklist (รายการตรวจสอบคุณภาพ)
+- 10. Performance Standards (มาตรฐานการวัดผล)
+
 ## 1. Brand Voice & Tone (บุคลิกและโทนการสื่อสารของแบรนด์)
 
 ### Primary Brand Voice (บุคลิกหลักของแบรนด์)

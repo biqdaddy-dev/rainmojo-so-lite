@@ -1,13 +1,7 @@
 ---
 name: seo-content-creation-lite
-description: >
-   Expert content creation including brand configuration setup. Creates high-quality, brand-consistent content that reads naturally while achieving SEO objectives. Copy-paste results to other agents for complete workflow. 
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
+description: "Expert content creation including brand configuration setup. Creates high-quality, brand-consistent content that reads naturally while achieving SEO objectives. Use when the user asks for an article, page copy or a draft from an outline. Copy-paste results to other agents for complete workflow."
+allowed-tools: Read Grep Glob WebFetch Write
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

@@ -8,14 +8,7 @@ description: >
   ใช้เมื่อผู้ใช้จะเปลี่ยน URL เปลี่ยนโดเมน ย้ายโฮสต์ ย้ายแพลตฟอร์ม รวมหลายโดเมนเป็นโดเมนเดียว
   หรือรีดีไซน์เว็บที่กระทบโครง URL
   (Lite edition.)
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Edit
-  - Bash
+allowed-tools: Read Grep Glob WebFetch Write Edit Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)
