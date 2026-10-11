@@ -8,14 +8,7 @@ description: >
   ใช้เมื่อผู้ใช้อยากรู้ว่าที่แก้ไปได้ผลจริงไหม อยากพิสูจน์ว่างานที่ทำทำให้อันดับดีขึ้น
   อยากออกแบบ A/B test ฝั่ง SEO หรืออยากรู้ว่าอันดับที่เปลี่ยนมาจากอะไร
   (Lite edition.)
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Edit
-  - Bash
+allowed-tools: Read Grep Glob WebFetch Write Edit Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

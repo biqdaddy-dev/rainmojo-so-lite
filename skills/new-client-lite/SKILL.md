@@ -1,14 +1,8 @@
 ---
 name: new-client-lite
-description: >
-  Create a new client workspace from the authoritative packaged scaffold with
-  precise machine-enforced file routing.
+description: "Create a new client workspace from the authoritative packaged scaffold with precise machine-enforced file routing. Use when starting work for a new client or when a client folder is missing."
 argument-hint: "[domain-or-brand-name]"
-allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Glob
+allowed-tools: Read Write Bash Glob
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

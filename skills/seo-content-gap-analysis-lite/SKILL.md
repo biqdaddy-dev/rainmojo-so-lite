@@ -1,16 +1,7 @@
 ---
 name: seo-content-gap-analysis-lite
-description: >
-  หาช่องว่างเนื้อหาด้วย Google Suggest และการเทียบกับคู่แข่ง ออกเป็นตาราง ช่องว่าง หลักฐาน
-  ความสำคัญ สูง กลาง ต่ำ ใช้เมื่อผู้ใช้ถามว่าควรเขียนเรื่องอะไรต่อ มีหัวข้อไหนที่คนค้น
-  แต่เว็บเรายังไม่มี หรือคู่แข่งตอบอะไรไปแล้วที่เรายังไม่ได้ตอบ
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Bash
+description: "หาช่องว่างเนื้อหาด้วย Google Suggest และการเทียบกับคู่แข่ง ออกเป็นตาราง ช่องว่าง หลักฐาน ความสำคัญ สูง กลาง ต่ำ ใช้เมื่อผู้ใช้ถามว่าควรเขียนเรื่องอะไรต่อ มีหัวข้อไหนที่คนค้นแต่เว็บของผู้ใช้ยังไม่มี หรือคู่แข่งตอบอะไรไปแล้วที่เว็บของผู้ใช้ยังไม่ได้ตอบ"
+allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

@@ -8,14 +8,7 @@ description: >
   จะแตก sitemap.xml ไฟล์เดียวออกเป็นหลายไฟล์ จะเพิ่มภาษา หรือเปิดไฟล์แล้วอ่านไม่รู้เรื่อง
   ใช้ตอนกำลังเขียนหรือรีวิวโค้ดที่สร้าง sitemap ด้วย เพราะกับดักความถูกต้องในนี้พลาดง่ายและตามหาทีหลังแพง
   (Lite edition.)
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Edit
-  - Bash
+allowed-tools: Read Grep Glob WebFetch Write Edit Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

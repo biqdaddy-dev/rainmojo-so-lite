@@ -1,16 +1,7 @@
 ---
 name: aiso-crawlers-lite
-description: >
-  AI crawler access analysis. ตรวจว่าบอทของค่าย AI เข้าเว็บได้จริงไหม โดยอ่าน robots.txt แล้ว**ยิงทดสอบด้วยชื่อบอทจริง**
-  เพราะสิ่งที่ประกาศกับสิ่งที่เกิดขึ้นจริงมักไม่ตรงกัน Provides a complete access map per crawler with
-  allow or block status. (Lite edition.)
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Bash
+description: "AI crawler access analysis. ตรวจว่าบอทของค่าย AI เข้าเว็บได้จริงไหม โดยอ่าน robots.txt แล้วยิงทดสอบด้วยชื่อบอทจริง เพราะสิ่งที่ประกาศกับสิ่งที่เกิดขึ้นจริงมักไม่ตรงกัน Provides a complete access map per crawler with allow or block status. Use when asked whether GPTBot, ClaudeBot or other AI crawlers can reach a site. (Lite edition.)"
+allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

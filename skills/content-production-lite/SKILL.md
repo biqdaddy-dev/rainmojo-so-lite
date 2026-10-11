@@ -1,17 +1,7 @@
 ---
 name: content-production-lite
-description: >
-  Run the client-configured SEO content factory from validated article planning
-  through content QA, image production, internal and external linking, and a
-  verified WordPress draft. Supports the shared generic engine and declared
-  client-native adapters.
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - Write
-  - Bash
-  - Skill
+description: "Run the client-configured SEO content factory from validated article planning through content QA, image production, internal and external linking, and a verified WordPress draft. Supports the shared generic engine and declared client-native adapters. Use when an approved article plan must become a verified WordPress draft."
+allowed-tools: Read Grep Glob Write Bash Skill
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

@@ -4,10 +4,7 @@ description: >
   WordPress REST API operations reference auth patterns, Cloudflare WAF
   workaround, rate limiting, Yoast canonical meta field, Redirection plugin API,
   batch vs single fetch bug. Use when executing any WP REST API bulk operation.
-allowed-tools:
-  - Read
-  - Bash
-  - Write
+allowed-tools: Read Bash Write
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

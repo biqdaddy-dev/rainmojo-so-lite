@@ -1,5 +1,14 @@
 # Content Production Contract
 
+## Contents
+
+- Configuration and precedence
+- Engine modes and native adapters
+- States and invalidation
+- Links and evidence
+- Images and publishing
+- Batch control plane and tracking reports
+
 This contract is client-neutral. Every production client must provide a
 root-level `content-pipeline.json` that validates against
 `content-pipeline.schema.json`. Missing production configuration fails closed.

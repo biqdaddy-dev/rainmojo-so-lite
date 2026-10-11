@@ -1,23 +1,7 @@
 ---
 name: so-present-lite
-description: >
-  Presentation layer for every RAINMOJO SO Lite answer: the Tier 1 quick-glance card in chat
-  (dimension bars as checks passed out of checks run, 11-platform strip, query and competitor
-  tables, one key risk, priority actions, transparency footer, hand-off to the Tier 2 file) and
-  the seven response modes (quick fact, how-to, comparison, troubleshoot, audit, deployable,
-  next steps). Builds or validates summary.json, renders it for the current host (Claude
-  Desktop or Cowork widget, artifact HTML, Mermaid, ASCII tree, Markdown) with present.py,
-  and lints emoji, glyph, em dash and pipe policy. Use when a run has finished and its result
-  must be shown, when a card must be re-rendered for another host, or when a plain answer
-  needs the mode structure. Not for producing the Tier 2 deliverable itself and never a
-  substitute for it: every card value is copied from the deliverable, unmeasured values show
-  as could not verify, and the Lite card carries counts, never a weighted score. (Lite edition.)
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - Write
-  - Bash
+description: "Presentation layer for every RAINMOJO SO Lite answer: the Tier 1 quick-glance card in chat and the seven response modes (quick fact, how-to, comparison, troubleshoot, audit, deployable, next steps). Builds or validates summary.json, renders it for the current host with present.py, and lints emoji, glyph, dash and pipe policy. Use when a run has finished and its result must be shown or re-rendered for another host. Never a substitute for the Tier 2 deliverable; the Lite card carries counts, never a weighted score. (Lite edition.)"
+allowed-tools: Read Grep Glob Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

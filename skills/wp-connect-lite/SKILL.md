@@ -5,11 +5,7 @@ description: >
   ใช้เมื่อผู้ใช้จะเริ่มส่งเนื้อหาขึ้นเว็บ หรือถามว่าเชื่อม WordPress ยังไง
   หรือเจอ error ตอนส่งขึ้นเว็บแล้วไม่รู้ว่าพังตรงไหน
   ต้องรันตัวนี้ให้ผ่านก่อนใช้ wp-publish-draft-lite เสมอ
-allowed-tools:
-  - Read
-  - Write
-  - Glob
-  - Bash
+allowed-tools: Read Write Glob Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

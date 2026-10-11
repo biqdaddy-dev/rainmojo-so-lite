@@ -1,15 +1,7 @@
 ---
 name: aiso-schema-lite
-description: >
-  Schema.org structured data audit and generation optimized for AI discoverability,
-  detect, validate, and generate JSON-LD markup. (Lite edition.)
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Bash
+description: "Schema.org structured data audit and generation optimized for AI discoverability: detect, validate and generate JSON-LD markup. Use when asked to check or add structured data, schema or JSON-LD. (Lite edition.)"
+allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

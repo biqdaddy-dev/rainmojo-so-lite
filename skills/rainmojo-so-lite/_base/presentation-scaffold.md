@@ -6,6 +6,15 @@ version: 1.0
 
 # Shared Presentation Scaffold (Two-Tier delivery, 7 response modes)
 
+## Contents
+
+- 1. Two-Tier delivery (mandatory for every run that produces a deliverable)
+- 2. Host capability ladder (Universal AI compatibility)
+- 3. The seven response modes
+- 4. Advanced content extensions (optional blocks, any mode)
+- 5. Hard rules (both tiers unless stated)
+- 6. Installation marker
+
 Every skill and agent inherits this layer the same way it inherits
 `skill-scaffold.md`. A unit's own SKILL.md or agent file only names its mode and
 the fields it fills; the rules below always apply. The machine-readable twin is

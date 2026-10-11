@@ -1,20 +1,7 @@
 ---
 name: seo-content-strategy-lite
-description: >
-  Advanced content strategy using competitor analysis, semantic SEO, and brand-aligned planning:
-  audience and brand voice, competitive positioning, content types, word and character budgets,
-  publishing priorities. Supplies content topics and angles, monthly production capacity, and
-  business priority order as qualitative levels. Not for the pillar and cluster table
-  (seo-topical-authority-lite), the per-link internal link plan (seo-internal-linking-lite),
-  competitor identification (seo-competitor-lite), guest post targets and partnership links
-  (seo-backlink-strategy-lite), or brand setup (new-client-lite, brand-guidelines.md).
-  (Lite edition.)
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
+description: "Content strategy from competitor analysis, semantic SEO and brand-aligned planning: audience and voice, positioning, content types, word budgets, topics, monthly capacity and priority order as qualitative levels. Use when the user asks what content to make and in what order. Not for the pillar and cluster table (seo-topical-authority-lite), internal link plans, competitor identification, backlinks or brand setup (new-client-lite). (Lite edition.)"
+allowed-tools: Read Grep Glob WebFetch Write
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

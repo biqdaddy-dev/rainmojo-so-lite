@@ -1,5 +1,15 @@
 # Client Workspace Routing Contract
 
+## Contents
+
+- Required routing workflow
+- Precise folder routing
+- Upload protection
+- Novel work
+- Identity and maintained configuration
+- Wiki and timeline
+- Closeout
+
 This file tells every AI agent where client files belong. workspace-routing.json
 is the machine-readable source of truth. Read both files before creating,
 modifying, moving, or deleting any client artifact.

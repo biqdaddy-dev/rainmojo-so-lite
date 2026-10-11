@@ -1,16 +1,7 @@
 ---
 name: seo-heading-matrix-lite
-description: >
-  ตรวจโครงหัวข้อ H1 ถึง H6 ของหน้าเว็บว่าเรียงถูกไหม มี H1 เดียวไหม และข้ามระดับหรือเปล่า
-  ใช้เมื่อผู้ใช้ถามว่าโครงหน้าเว็บถูกต้องไหม ทำไม AI อ่านหน้าเราไม่เข้าใจ
-  หรือใช้ต่อจาก aiso-citability-lite เมื่อพบว่าย่อหน้าเขียนดีแล้วแต่ยังไม่ถูกหยิบไปอ้างอิง
-allowed-tools:
-  - Read
-  - Grep
-  - Glob
-  - WebFetch
-  - Write
-  - Bash
+description: "ตรวจโครงหัวข้อ H1 ถึง H6 ของหน้าเว็บว่าเรียงถูกไหม มี H1 เดียวไหม และข้ามระดับหรือเปล่า ใช้เมื่อผู้ใช้ถามว่าโครงหน้าเว็บถูกต้องไหม ทำไม AI อ่านหน้าเว็บไม่เข้าใจ หรือใช้ต่อจาก aiso-citability-lite เมื่อพบว่าย่อหน้าเขียนดีแล้วแต่ยังไม่ถูกหยิบไปอ้างอิง"
+allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)
