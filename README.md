@@ -13,7 +13,7 @@ Pick the host you use. The same repository serves every host; nothing else to do
 ### Claude Code
 
 ```bash
-claude plugin marketplace add biqdaddy/rainmojo-so-lite
+claude plugin marketplace add biqdaddy-dev/rainmojo-so-lite
 claude plugin install rainmojo-so-lite@biqdaddy
 ```
 
@@ -21,12 +21,12 @@ Update later with `claude plugin update rainmojo-so-lite@biqdaddy`.
 
 ### Claude Desktop and Cowork
 
-Download `rainmojo-so-lite.plugin` from the [latest release](https://github.com/biqdaddy/rainmojo-so-lite/releases) and drag it into the chat window. Cowork users can also install from the Claude plugin directory once it is listed there.
+Download `rainmojo-so-lite.plugin` from the [latest release](https://github.com/biqdaddy-dev/rainmojo-so-lite/releases) and drag it into the chat window. Cowork users can also install from the Claude plugin directory once it is listed there.
 
 ### Codex CLI
 
 ```bash
-codex plugin marketplace add biqdaddy/rainmojo-so-lite
+codex plugin marketplace add biqdaddy-dev/rainmojo-so-lite
 codex plugin add rainmojo-so-lite@biqdaddy
 ```
 
@@ -37,13 +37,13 @@ Install from the ChatGPT plugin directory when listed, or drag `rainmojo-so-lite
 ### Gemini CLI
 
 ```bash
-gemini extensions install https://github.com/biqdaddy/rainmojo-so-lite
+gemini extensions install https://github.com/biqdaddy-dev/rainmojo-so-lite
 ```
 
 ### Antigravity
 
 ```bash
-agy plugin install https://github.com/biqdaddy/rainmojo-so-lite
+agy plugin install https://github.com/biqdaddy-dev/rainmojo-so-lite
 ```
 
 Or copy this folder into `.agents/plugins/` of your workspace, or into `~/.gemini/config/plugins/` for every workspace.
@@ -51,7 +51,7 @@ Or copy this folder into `.agents/plugins/` of your workspace, or into `~/.gemin
 ### From source, any host
 
 ```bash
-git clone https://github.com/biqdaddy/rainmojo-so-lite.git
+git clone https://github.com/biqdaddy-dev/rainmojo-so-lite.git
 ```
 
 Then point your host at the folder: Claude Code `claude plugin marketplace add ./rainmojo-so-lite`, Codex `codex plugin marketplace add ./rainmojo-so-lite`, Gemini CLI `gemini extensions install ./rainmojo-so-lite`.
@@ -138,7 +138,7 @@ The plugin runs inside your own AI assistant and on your own machine. It has no 
 
 Licensed under the BIQDADDY Free Tools License 1.0 (see [LICENSE](LICENSE)): install and use it, modified or not, for your own sites and your clients; do not redistribute it or a derivative under another name.
 
-Support and questions: [biqdaddy.com/contact](https://biqdaddy.com/contact/) or info@biqdaddy.com. Bug reports: [GitHub issues](https://github.com/biqdaddy/rainmojo-so-lite/issues).
+Support and questions: [biqdaddy.com/contact](https://biqdaddy.com/contact/) or info@biqdaddy.com. Bug reports: [GitHub issues](https://github.com/biqdaddy-dev/rainmojo-so-lite/issues).
 
 ---
 
@@ -157,18 +157,18 @@ Support and questions: [biqdaddy.com/contact](https://biqdaddy.com/contact/) or 
 **Claude Code**
 
 ```bash
-claude plugin marketplace add biqdaddy/rainmojo-so-lite
+claude plugin marketplace add biqdaddy-dev/rainmojo-so-lite
 claude plugin install rainmojo-so-lite@biqdaddy
 ```
 
 อัปเดตภายหลังด้วย `claude plugin update rainmojo-so-lite@biqdaddy`
 
-**Claude Desktop และ Cowork**: โหลดไฟล์ `rainmojo-so-lite.plugin` จาก [release ล่าสุด](https://github.com/biqdaddy/rainmojo-so-lite/releases) แล้วลากมาวางในหน้าต่างแชต หรือติดตั้งจาก plugin directory ของ Claude เมื่อขึ้นรายการแล้ว
+**Claude Desktop และ Cowork**: โหลดไฟล์ `rainmojo-so-lite.plugin` จาก [release ล่าสุด](https://github.com/biqdaddy-dev/rainmojo-so-lite/releases) แล้วลากมาวางในหน้าต่างแชต หรือติดตั้งจาก plugin directory ของ Claude เมื่อขึ้นรายการแล้ว
 
 **Codex CLI**
 
 ```bash
-codex plugin marketplace add biqdaddy/rainmojo-so-lite
+codex plugin marketplace add biqdaddy-dev/rainmojo-so-lite
 codex plugin add rainmojo-so-lite@biqdaddy
 ```
 
@@ -177,18 +177,18 @@ codex plugin add rainmojo-so-lite@biqdaddy
 **Gemini CLI**
 
 ```bash
-gemini extensions install https://github.com/biqdaddy/rainmojo-so-lite
+gemini extensions install https://github.com/biqdaddy-dev/rainmojo-so-lite
 ```
 
 **Antigravity**
 
 ```bash
-agy plugin install https://github.com/biqdaddy/rainmojo-so-lite
+agy plugin install https://github.com/biqdaddy-dev/rainmojo-so-lite
 ```
 
 หรือคัดลอกโฟลเดอร์นี้ไปไว้ใน `.agents/plugins/` ของ workspace หรือ `~/.gemini/config/plugins/` ถ้าต้องการใช้ทุก workspace
 
-**จากซอร์ส ใช้ได้ทุก host**: `git clone https://github.com/biqdaddy/rainmojo-so-lite.git` แล้วชี้ host ไปที่โฟลเดอร์ เช่น `claude plugin marketplace add ./rainmojo-so-lite`
+**จากซอร์ส ใช้ได้ทุก host**: `git clone https://github.com/biqdaddy-dev/rainmojo-so-lite.git` แล้วชี้ host ไปที่โฟลเดอร์ เช่น `claude plugin marketplace add ./rainmojo-so-lite`
 
 ### เริ่มใช้ครั้งแรก
 
@@ -250,4 +250,4 @@ agy plugin install https://github.com/biqdaddy/rainmojo-so-lite
 
 สิทธิ์การใช้ตาม BIQDADDY Free Tools License 1.0 (ดู [LICENSE](LICENSE)): ติดตั้งและใช้ได้ ทั้งแบบแก้และไม่แก้ กับเว็บของคุณและงานลูกค้าของคุณ ห้ามแจกซ้ำตัวมันหรือของที่ดัดแปลงจากมันในชื่ออื่น
 
-ติดต่อและสอบถาม: [biqdaddy.com/contact](https://biqdaddy.com/contact/) หรือ info@biqdaddy.com แจ้งบั๊กที่ [GitHub issues](https://github.com/biqdaddy/rainmojo-so-lite/issues)
+ติดต่อและสอบถาม: [biqdaddy.com/contact](https://biqdaddy.com/contact/) หรือ info@biqdaddy.com แจ้งบั๊กที่ [GitHub issues](https://github.com/biqdaddy-dev/rainmojo-so-lite/issues)
