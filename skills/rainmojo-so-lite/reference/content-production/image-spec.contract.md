@@ -141,9 +141,23 @@ refuse the brief:
 - **Framing follows `camera.focus_on`.** A person in focus is asked about a body fraction
   ("framed from the waist up"); an object in focus is asked about the shot ("a medium shot
   of the counter"), never about a waist it does not have.
-- **Depth of field asks how soft, not whether softer.** Anything outside the focus range is
-  asked whether its edges are blurred and any lettering on it unreadable, because "softer
-  than the pharmacist" is yes for any blur at all.
+- **Depth of field asks how soft, not whether softer, and only where it shows.** Anything
+  whose blur circle is at least three times the 0.03 mm circle of confusion is asked
+  whether its edges are blurred and any lettering on it unreadable, because "softer than
+  the pharmacist" is yes for any blur at all. A thing just past the depth-of-field limit
+  is acceptably sharp by the definition of that limit, so it is not asked: in rangsarn's
+  run 01 a box at 2.0 m against a 2.05 m near limit (1.4 circles of confusion) was
+  answered no on a correct photograph. The prompt still names it as outside the focus.
+- **Fingers are counted where they can be.** A hand holding a spoon, a paddle or a box
+  covers some of its fingers; asking for "no finger hidden behind another" failed 10 of
+  10 such hands in run 01. The question asks for five wherever they can be counted, none
+  extra, fused or bending the wrong way, and `cannot_tell` where none can.
+- **Position asks where someone is placed**, never whether they stand, which a seated
+  person fails.
+- **One floor per floor.** The shared-floor question groups the people and things that
+  stand on the same surface: the same `ground_height_m`, or the same declared entity for
+  a thing resting on another. A man on a raised landing and baskets inside a boat are not
+  asked to share the quay's floor.
 - **Ratios a person can read.** A height ratio is asked only between 1:8 and 8:1; beyond
   that it cannot be read off an image and only adds `cannot_tell`.
 - **The declared fill is named** in the light question, so a reviewer does not count it as
@@ -153,13 +167,18 @@ refuse the brief:
   people says nothing about twenty extras in the lane, and illegible pseudo-lettering is
   still lettering.
 - **Every routed question carries a `measure`**, a structured statement of what a tool
-  should find: `count` (entity, label, `is_person`, expected), `finger_count`, `framing`
+  should find: `count` (entity, label, `is_person`, `detect_as`, expected), `finger_count`, `framing`
   (entity, `is_person`, shot), `camera_angle`, `horizon_band`, `eye_line` (the standing
   ids), `height_ratio` (a, b, expected), `viewpoint`, `horizon_fraction` (entity, relation,
   expected fraction from the feet), `undeclared` (expected people, declared ids), `glyphs`
   and `text`. A measuring tool maps its reading onto the question through this, never by
   parsing the id. A pose estimate counts only inside a box a detector called a person:
-  a pose model fits a full skeleton to a frog.
+  a pose model fits a full skeleton to a frog. `detect_as` is a plain class noun, the
+  `detect_as` field when the spec gives one, otherwise "person" for a person and the head
+  noun of `short_name` for a thing, with a collective resolved to its members ("tent
+  row" is "tent"). Role names as detector queries ("near vendor", "grandmother", "shared
+  dishes") were counted 0 by both open-vocabulary detectors in run 01 on pictures that
+  plainly showed them; the role is the reviewer's to check, the count the detector's.
 - **The eye line is asked only where it exists**: a horizon in frame and at least one
   standing person. A horizon that is not visible or falls outside the frame gets
   no question about where it crosses anyone.
@@ -435,6 +454,15 @@ text checks, `"count"` the how-many checks, and `"geometry"` the camera, horizon
 apparent-size checks, which are measured on the image rather than judged. A human reviewer
 should treat those three the same way: count the fingers, read the signage at full
 resolution, and put a straight edge on the horizon instead of forming an impression.
+
+`ocr` names the method, reading the lettering on the crops at full resolution, not an OCR
+engine. Two were tried on rangsarn's run 01 and both were worse than a reviewer on 2x crops
+at finding pseudo-lettering, which the reviewer got right on 5 of 5 pictures: PP-OCRv4
+marked 22 regions of food, figs, a face and moss as text on four text-free pictures and
+missed the pseudo-lettering on the pharmacy carton, and Florence-2-large invented digit
+strings on every picture. An engine may answer `q_no_text` only when it reads real text
+with confidence, which is useful for checking an overlay headline the pipeline rendered
+itself; it never answers `q_malformed_glyphs`.
 
 A pass requires every rubric check `passed` or legitimately `not_applicable`, every spec
 question answered `yes`, evidence on each one naming what was seen and where, and

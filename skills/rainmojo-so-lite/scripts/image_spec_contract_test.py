@@ -1664,7 +1664,8 @@ by_id = {q["id"]: q for q in image_spec.build_questions(EXAMPLE, image_spec.deri
 check(
     "a count names the entity, its label and the number",
     by_id["q_pharmacist"]["measure"] == {
-        "kind": "count", "entity": "pharmacist", "label": "pharmacist", "is_person": True, "expected": 1,
+        "kind": "count", "entity": "pharmacist", "label": "pharmacist", "is_person": True,
+        "detect_as": "person", "expected": 1,
     },
     str(by_id["q_pharmacist"].get("measure")),
 )
@@ -1745,6 +1746,73 @@ for fact, hedged in (
     ("a green-ish roof", True),
 ):
     check(f"{fact!r} {'hedges' if hedged else 'does not hedge'}", bool(image_spec.HEDGE_RE.search(fact)) == hedged)
+
+print("C40 four questions rangsarn's run 01 answered no on correct pictures")
+run01 = {q["id"]: q for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))}
+hands = run01["q_pharmacist_hands_count"]["question"]
+check(
+    "fingers are counted where they can be, and a grip is not a fault",
+    "hidden behind another" not in hands and "covered by what the hand holds are fine" in hands
+    and "cannot_tell" in hands,
+    hands,
+)
+check(
+    "position asks where a person is placed, not whether they stand",
+    "placed here in the frame" in run01["q_pharmacist_position"]["question"]
+    and "stand here" not in run01["q_pharmacist_position"]["question"],
+)
+landing = copy.deepcopy(EXAMPLE)
+landing["subjects"][0]["ground_height_m"] = 1.0
+on_landing = {q["id"]: q for q in image_spec.build_questions(landing, image_spec.derive(landing, WIDTH, HEIGHT))}
+check(
+    "someone on a raised landing is not asked to share a floor with the rest",
+    "the pharmacist" not in on_landing.get("q_pair_ground_plane", {}).get("question", "")
+    and "the older customer" in on_landing.get("q_pair_ground_plane", {}).get("question", ""),
+    str({k: v["question"] for k, v in on_landing.items() if k.startswith("q_pair_ground")}),
+)
+in_boat = copy.deepcopy(EXAMPLE)
+in_boat["objects"][0]["support"] = {"kind": "rests_on", "by": "shelving"}
+in_boat_q = {q["id"]: q for q in image_spec.build_questions(in_boat, image_spec.derive(in_boat, WIDTH, HEIGHT))}
+check(
+    "a thing resting on another declared thing is not on the floor",
+    "the counter" not in in_boat_q.get("q_pair_ground_plane", {}).get("question", ""),
+    in_boat_q.get("q_pair_ground_plane", {}).get("question", ""),
+)
+check(
+    "everyone on the same floor is still asked about it",
+    all(n in run01["q_pair_ground_plane"]["question"] for n in ("the pharmacist", "the older customer", "the counter")),
+    run01["q_pair_ground_plane"]["question"],
+)
+blur = image_spec.derive(EXAMPLE, WIDTH, HEIGHT)["blur_circle_mm"]
+check(
+    "the blur circle is the thin-lens figure",
+    abs(image_spec.blur_circle_mm(50, 2.8, 2.2, 1.5) - 2500 / (2.8 * 2150) * 700 / 1500) < 1e-9,
+)
+check(
+    "a thing just past the depth-of-field limit is not asked to be clearly soft",
+    blur["medicine_box"] < 3 * image_spec.CIRCLE_OF_CONFUSION_MM
+    and "q_soft_medicine_box" not in run01 and "q_soft_counter" not in run01,
+    str(blur),
+)
+check(
+    "a thing well past it still is",
+    blur["customer"] >= 3 * image_spec.CIRCLE_OF_CONFUSION_MM and "q_soft_customer" in run01,
+    str(blur),
+)
+for entity, expected in (
+    ({"name": "medicine box of paracetamol tablets"}, "box"),
+    ({"name": "wooden longtail boat with an outboard"}, "boat"),
+    ({"name": "woven baskets"}, "basket"),
+    ({"name": "shared dishes"}, "dish"),
+    ({"name": "berries"}, "berry"),
+    ({"name": "ring ropes", "detect_as": "Rope"}, "rope"),
+    ({"short_name": "tent row", "name": "row of identical white peaked tents"}, "tent"),
+    ({"short_name": "the array", "name": "row of framed photovoltaic panels tilted south"}, "panel"),
+    ({"short_name": "scooters", "name": "row of parked scooters nose-in to the kerb"}, "scooter"),
+    ({"short_name": "whiteboard", "name": "wall-mounted whiteboard wiped clean"}, "whiteboard"),
+):
+    check(f"{entity} is detected as {expected!r}", image_spec.detect_as(entity) == expected, image_spec.detect_as(entity))
+check("a person is detected as a person, whatever their role", image_spec.detect_as({"short_name": "grandmother"}, person=True) == "person")
 
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}

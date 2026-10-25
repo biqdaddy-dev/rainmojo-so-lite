@@ -182,7 +182,7 @@
     "q_pharmacist_position": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does the pharmacist stand here in the frame: left of centre, behind the counter, facing across it?"
+      "_question": "Is the pharmacist placed here in the frame: left of centre, behind the counter, facing across it?"
     },
     "q_pharmacist_action": {
       "answer": "yes",
@@ -202,7 +202,7 @@
     "q_pharmacist_hands_count": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does every hand of the pharmacist that is visible have five fingers, counting the thumb, with no finger hidden behind another?"
+      "_question": "Where the fingers of the pharmacist can be counted, does each visible hand have five, counting the thumb, with none extra, fused or bending the wrong way? Fingers covered by what the hand holds are fine; answer cannot_tell if no finger can be counted."
     },
     "q_pharmacist_hands_joints": {
       "answer": "yes",
@@ -247,7 +247,7 @@
     "q_customer_position": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does the older customer stand here in the frame: right of centre, nearer the camera, back three-quarters to the lens?"
+      "_question": "Is the older customer placed here in the frame: right of centre, nearer the camera, back three-quarters to the lens?"
     },
     "q_customer_action": {
       "answer": "yes",
@@ -267,7 +267,7 @@
     "q_customer_hands_count": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does every hand of the older customer that is visible have five fingers, counting the thumb, with no finger hidden behind another?"
+      "_question": "Where the fingers of the older customer can be counted, does each visible hand have five, counting the thumb, with none extra, fused or bending the wrong way? Fingers covered by what the hand holds are fine; answer cannot_tell if no finger can be counted."
     },
     "q_customer_hands_joints": {
       "answer": "yes",
@@ -413,16 +413,6 @@
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
       "_question": "Is the older customer clearly out of focus, with its edges blurred and any fine detail or lettering on it unreadable, as its distance from the focus plane requires?"
-    },
-    "q_soft_counter": {
-      "answer": "yes",
-      "evidence": "<what you saw and in which crop>",
-      "_question": "Is the counter clearly out of focus, with its edges blurred and any fine detail or lettering on it unreadable, as its distance from the focus plane requires?"
-    },
-    "q_soft_medicine_box": {
-      "answer": "yes",
-      "evidence": "<what you saw and in which crop>",
-      "_question": "Is the medicine box clearly out of focus, with its edges blurred and any fine detail or lettering on it unreadable, as its distance from the focus plane requires?"
     },
     "q_soft_shelving": {
       "answer": "yes",

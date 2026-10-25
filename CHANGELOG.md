@@ -135,6 +135,15 @@ too. "A hand's width" and "a palm tree" are no longer read as something held in 
 Words like about and roughly in a recorded fact are no longer treated as doubt. Contract
 test **297 assertions**, passing here unchanged.
 
+Then `f88e7ef`, which fixes four review questions that a real run answered "no" on correct
+pictures. A hand gripping something is no longer counted as a fault in the finger count.
+The position question asks whether a person is placed there, not whether they stand there.
+The question about sharing one floor is asked per surface, so a held object no longer joins
+it. A soft-focus question is asked only where the blur is at least three times the circle of
+confusion, which is roughly where a reader can see it. Counted measures say what to detect.
+Contract test **316 assertions**, passing here unchanged; the shipped review example drops
+from 82 to 80 questions.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

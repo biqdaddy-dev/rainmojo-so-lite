@@ -293,6 +293,23 @@ pass can be luck, so each has a twin that differs only in the exempting feature 
 refused; all four twins are refused, so each exemption is the reason its scene passes. T4 is
 at 51 checks, up from 32, and its docstring now says what it covers rather than implying more.
 
+TWELFTH PORT, `f88e7ef`, same version: four question templates that a real run answered "no"
+on correct pictures, a grip no longer a finger-count fault, "placed here" for "stand here",
+the one-floor question per surface, soft-focus questions only at three times the circle of
+confusion, and `detect_as` on counted measures. `image_spec.py`, the contract test and the
+contract doc byte-identical, and the review example regenerated from this edition's own
+defaults, 80 questions, coming out byte-identical to the full edition's rather than copied.
+316 assertions passing unchanged, regression 4 of 4, T4 green.
+
+T4 pins numbers and rules, not question wording, so a green T4 said nothing about whether the
+lite docs quoted the old templates. They were searched directly instead: no lite-owned file,
+`SKILL.md`, `agent.json`, the pipeline `contract.md` or the orchestrator agent, quotes any
+question template old or new; they describe the review only generically. On the real briefs
+validation moved on none of the sixteen and the question count on seven of the clean ones,
+which is the change doing what it says. probe2's one-floor check still passes and was read
+rather than trusted: the regrouped question still says "one floor" because that scene has a
+single grounded surface, and the held box now correctly drops out of it.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

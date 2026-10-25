@@ -35,6 +35,13 @@ SPEC_VERSION = 1
 SENSOR_W_MM = 36.0
 SENSOR_H_MM = 24.0
 CIRCLE_OF_CONFUSION_MM = 0.03
+# A thing just past the depth-of-field limit is acceptably sharp to the eye by
+# definition of the limit, so asking whether it is "clearly out of focus" asks a
+# correct photograph to be wrong. The soft question is asked only where the blur
+# circle is at least this many circles of confusion. Measured on rangsarn's run
+# 01: a box at 2.0 m against a 2.05 m near limit was answered no on a correct
+# picture.
+SOFT_QUESTION_BLUR_COC = 3.0
 
 MEDIA = {"photograph", "3d_render", "illustration", "flat_vector", "infographic_base"}
 PHOTOGRAPHIC_MEDIA = {"photograph", "3d_render"}
@@ -614,6 +621,20 @@ def depth_of_field(focal_mm: float, aperture: float, distance_m: float) -> tuple
     return max(near, 0.0), far
 
 
+def blur_circle_mm(focal_mm: float, aperture: float, focus_m: float, distance_m: float) -> float:
+    """Blur-circle diameter on the sensor, in mm, for a point at distance_m.
+
+    Thin lens: b = f^2 / (N (s - f)) * |x - s| / x, with s the focus distance
+    and x the point's distance, all in mm.
+    """
+    f = focal_mm
+    s_mm = focus_m * 1000.0
+    x_mm = distance_m * 1000.0
+    if s_mm <= f or x_mm <= 0:
+        return 0.0
+    return f * f / (aperture * (s_mm - f)) * abs(x_mm - s_mm) / x_mm
+
+
 def expected_horizon(camera: dict[str, Any]) -> set[str]:
     """Where the horizon can sit in frame for the camera tilt (pinhole, no shift lens)."""
     tilt = _text(camera.get("tilt") or "level")
@@ -932,6 +953,17 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
             if d < near or d > far:
                 outside.append(_text(entity.get("id")))
     derived["outside_focus"] = outside
+    focal_mm = _num(camera.get("focal_length_mm"))
+    aperture_f = _num(camera.get("aperture_f"))
+    focus_m = _num(camera.get("subject_distance_m"))
+    blur: dict[str, float] = {}
+    if focal_mm and aperture_f and focus_m:
+        for entity, _h, d in sized:
+            if _text(entity.get("id")) in outside:
+                blur[_text(entity.get("id"))] = round(
+                    blur_circle_mm(focal_mm, aperture_f, focus_m, d), 4
+                )
+    derived["blur_circle_mm"] = blur
 
     # The camera at standing eye height puts the horizon through the eyes: the
     # single most reliable cue that a generated scene has one consistent viewpoint.
@@ -2499,6 +2531,64 @@ def compile_spec(
     }
 
 
+# Where a name's head noun ends: "box of tablets", "boat with an outboard".
+_HEAD_NOUN_END = re.compile(
+    r"\s+(?:with|of|in|on|at|for|from|by|under|beside|behind|near|holding|carrying|"
+    r"that|which|and)\b.*$",
+    re.I,
+)
+
+
+_COLLECTIVES = ("row", "rows", "pair", "stack", "set", "line", "group", "bank", "pile",
+                "cluster", "array", "rack", "roll", "bunch")
+
+
+def detect_as(entity: dict[str, Any], person: bool = False) -> str:
+    """A plain class noun a detector can be queried with.
+
+    Role names ("near vendor", "grandmother", "shared dishes") were counted 0 by
+    both open-vocabulary detectors in rangsarn's run 01 on pictures that plainly
+    showed them, so a count is queried by class and the role is left to the
+    reviewer. A spec may say it outright with detect_as.
+    """
+    stated = _text(entity.get("detect_as"))
+    if stated:
+        return stated.lower()
+    kind = _text(entity.get("kind") or ("person" if person else "")).lower()
+    if person and kind in {"", "person"}:
+        return "person"
+    if person:
+        return kind
+    # short_name first: it is the noun the prompt calls the thing by. A full
+    # name runs to collectives and trailing modifiers ("a row of scooters", "a
+    # whiteboard wiped clean") whose last word is not the thing.
+    name = _text(entity.get("short_name") or entity.get("name") or entity.get("id")).lower()
+    name = re.sub(r"^(?:the|a|an)\s+", "", name)
+    name = _HEAD_NOUN_END.sub("", name).strip(" ,.")
+    words = name.split()
+    head = words[-1] if words else ""
+    if head in _COLLECTIVES:
+        # "tent row" is tents; "the array", whose full name is "row of framed
+        # photovoltaic panels", is panels. A detector finds the members.
+        full = _text(entity.get("name")).lower()
+        members = re.search(r"\b(?:" + "|".join(_COLLECTIVES) + r")\s+of\s+(.+)", full)
+        if len(words) > 1:
+            head = words[-2]
+        elif members:
+            # A collective collects a plural: the first plural is the member,
+            # whatever trails it ("panels tilted south").
+            inner = _HEAD_NOUN_END.sub("", members.group(1)).strip(" ,.").split()
+            plural = [w for w in inner if w.endswith("s") and not w.endswith("ss")]
+            head = plural[0] if plural else (inner[-1] if inner else head)
+    if head.endswith("ies") and len(head) > 4:
+        return head[:-3] + "y"
+    if head.endswith("es") and head[:-2].endswith(("sh", "ch", "x", "s")):
+        return head[:-2]
+    if head.endswith("s") and not head.endswith("ss"):
+        return head[:-1]
+    return head
+
+
 def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[str, Any]]:
     """Atomic yes/no questions from the spec, each answerable by looking at the image.
 
@@ -2556,6 +2646,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 "entity": sid,
                 "label": _text(subject.get("short_name")) or _text(subject.get("kind") or "person"),
                 "is_person": _text(subject.get("kind") or "person") == "person",
+                "detect_as": detect_as(subject, person=True),
                 "expected": count,
             },
         )
@@ -2570,15 +2661,16 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         for field, lead in (
             ("appearance", "look like this"),
             ("wardrobe", "wear this"),
-            ("position", "stand here in the frame"),
+            ("position", ""),
         ):
             if _text(subject.get(field)):
-                add(
-                    f"{base}_{field}",
-                    "attribute",
-                    f"Does {noun} {lead}: {_text(subject[field])}?",
-                    base,
+                # "Does she stand here" was answered no for a woman who sits.
+                text = (
+                    f"Is {noun} placed here in the frame: {_text(subject[field])}?"
+                    if field == "position"
+                    else f"Does {noun} {lead}: {_text(subject[field])}?"
                 )
+                add(f"{base}_{field}", "attribute", text, base)
         add(
             f"{base}_action",
             "action",
@@ -2608,8 +2700,13 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             add(
                 f"{base}_hands_count",
                 "anatomy",
-                f"Does every hand of {noun} that is visible have five fingers, counting "
-                "the thumb, with no finger hidden behind another?",
+                # "with no finger hidden behind another" failed every natural grip:
+                # 10 of 10 hands holding a spoon, a paddle or a box, in rangsarn's
+                # run 01. Fingers the held thing covers are not a fault.
+                f"Where the fingers of {noun} can be counted, does each visible hand have "
+                "five, counting the thumb, with none extra, fused or bending the wrong "
+                "way? Fingers covered by what the hand holds are fine; answer cannot_tell "
+                "if no finger can be counted.",
                 base,
                 verify_with="count",
                 measure={"kind": "finger_count", "entity": sid, "expected": 5, "per": "visible_hand"},
@@ -2666,6 +2763,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 "entity": oid,
                 "label": _text(obj.get("short_name")) or _text(obj.get("name")),
                 "is_person": False,
+                "detect_as": detect_as(obj),
                 "expected": count,
             },
         )
@@ -2776,7 +2874,10 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             "optics",
             f"Is {_entity_name(spec, focus)} the sharpest thing in the frame?",
         )
+    blur = derived.get("blur_circle_mm", {})
     for eid in derived.get("outside_focus", []):
+        if blur.get(eid, math.inf) < SOFT_QUESTION_BLUR_COC * CIRCLE_OF_CONFUSION_MM:
+            continue
         add(
             f"q_soft_{eid}",
             "optics",
@@ -2861,12 +2962,26 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             f"Do the shadows of {_noun(a)} and {_noun(b)} run in the same direction, as "
             "one light position requires?",
         )
-    if len(ground) > 1:
+    # Only things on the same surface share a floor. A man on a raised landing
+    # and baskets in a boat were asked whether they stand on one floor, in
+    # rangsarn's run 01. The surface is the height above the camera's floor, and
+    # for an object resting on another declared entity, that entity.
+    entity_ids = {_text(entity.get("id")) for _, entity in _entities(spec)}
+    floors: dict[Any, list[dict[str, Any]]] = {}
+    for entity in ground:
+        support = entity.get("support", {}) if isinstance(entity.get("support"), dict) else {}
+        on = _text(support.get("by"))
+        key = ("on", on) if on in entity_ids else ("floor", round(ground_height(entity), 2))
+        floors.setdefault(key, []).append(entity)
+    shared = sorted(
+        (group for group in floors.values() if len(group) > 1), key=len, reverse=True
+    )
+    for index, group in enumerate(shared):
         add(
-            "q_pair_ground_plane",
+            "q_pair_ground_plane" if index == 0 else f"q_pair_ground_plane_{index + 1}",
             "geometry",
             "Do "
-            + _and_list([_noun(entity) for entity in ground[:4]])
+            + _and_list([_noun(entity) for entity in group[:4]])
             + " all sit on one floor that recedes consistently, rather than on separate "
             "invisible shelves?",
         )
