@@ -1113,12 +1113,23 @@ def validate_spec(
     if medium not in MEDIA:
         errors.append("spec.medium must be one of " + ", ".join(sorted(MEDIA)) + ".")
 
-    if not subjects and PERSON_IMPLIED_RE.search(_text(spec.get("purpose"))):
+    implied = sorted(
+        {m.group(0).lower() for m in PERSON_IMPLIED_RE.finditer(_text(spec.get("purpose")))}
+    )
+    if not subjects and implied:
+        # The words are quoted because five of them are spelled the same as noun
+        # and verb: "a serving tray", "the meeting room", "teaching materials", "a
+        # greeting card", "the staff room". No suffix list separates those from
+        # "a waiter serving drinks"; the author can, in a second, once they see
+        # which word fired. Raised by the lite session.
         warnings.append(
-            "spec.purpose describes a human action but the spec declares no people. "
+            "spec.purpose describes a human action ("
+            + ", ".join(f'"{word}"' for word in implied)
+            + ") but the spec declares no people. "
             "The purpose opens the prompt, which every model weights most, so it "
             "outweighs an empty subject list and people tend to appear. Either declare "
-            "the people, or write the purpose as the thing or the place."
+            "the people, or write the purpose as the thing or the place. If the quoted "
+            "word names a thing here, such as a serving tray or a meeting room, ignore this."
         )
 
     for path, value in _prose_fields(spec):

@@ -1569,6 +1569,11 @@ check(
     any("declares no people" in w for w in empty_warnings),
     str(empty_warnings)[:200],
 )
+check(
+    "and quotes the word that fired, so a serving tray is dismissed at a glance",
+    any('("handed")' in w for w in empty_warnings),
+    str(empty_warnings)[:200],
+)
 _, base_warnings = image_spec.validate_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)
 check("and says nothing when people are declared", not any("declares no people" in w for w in base_warnings))
 check(

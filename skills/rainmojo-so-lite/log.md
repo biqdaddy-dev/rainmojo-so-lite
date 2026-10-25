@@ -262,6 +262,15 @@ pinned on both sides at 20, 28, 50 and 135 mm. T4 was hardened before the docs w
 and failed against them on the claim it had missed, which is the proof it now covers it; it
 passes at 32 checks, up from 21, and every claim in it is pinned to a constant or a behaviour.
 
+TENTH PORT, `f5a3989`, same version: the people-implied warning quotes what fired and tells
+the author to ignore it when the quoted word names a thing. That was this edition's
+suggestion for the five homographs, meeting, serving, teaching, greeting and staff, which no
+word list can separate from the verbs. `image_spec.py` and the contract test byte-identical;
+the contract doc did not change. 278 assertions passing unchanged, regression 4 of 4 with T4
+green, review example unchanged. On the real briefs the warning quotes "handed" for drivehub
+and "customers" and "meet" for rotkubkhao; on each of the five homograph purposes it quotes
+the word and carries the note to ignore it.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

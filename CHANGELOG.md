@@ -121,6 +121,12 @@ already carries contact; it is still accepted. The contract doc gains a table of
 `validate_spec` refuses, its trigger and its reason. Every question a tool can measure now
 carries a structured `measure`. Contract test **277 assertions**, passing here unchanged.
 
+Then `f5a3989`. The warning about a purpose that describes people now quotes the word that
+set it off, and says to ignore it when that word names a thing, such as a serving tray or a
+meeting room. Those words are spelled the same as the verbs, so no word list can tell them
+apart; quoting the word lets the author see in a second which it is. Contract test **278
+assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
