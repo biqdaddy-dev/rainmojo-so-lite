@@ -53,6 +53,17 @@ object in any fixture is a mechanism. And `support.by` is scanned for supports t
 nothing, for bearing kinds only, so a boat may still float in water. Contract test **175
 assertions**, passing here unchanged.
 
+Then `f808a4b`. Nine defects from a client sweep, every one a rule that refused a correct
+brief; among them `extends_beyond_frame`, because the width check was making authors write
+the visible run of an object instead of its real size, 18 m for a 120 m raft, and every
+apparent-size ratio is computed from that number. The compound hands question is replaced by
+five atomic ones. The crash class is closed structurally: the names every section of
+`validate_spec` reads are bound once at the top, and the contract test asserts the function
+returns rather than raises on twelve shapes of malformed input. And the shipped real-place
+example no longer asks for a view its own numbers forbid, which exposed a compiler bug where
+a horizon value meaning "outside the frame" was treated as a position in it. Contract test
+**204 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

@@ -83,6 +83,26 @@ sitemap branch was told to take 2.7.0, by which time this branch had bumped to 2
 The release is one release, not one per commit, so further work here goes in without a bump
 and the sitemap branch takes 2.8.0.
 
+FOURTH PORT, `f808a4b`, same version: nine client-sweep defects that each refused a correct
+brief, including `extends_beyond_frame`; five atomic hands questions in place of one
+compound one; the crash class closed structurally, with shared names bound once at the top
+of `validate_spec` and twelve malformed-input shapes asserted to return; and a compiler bug
+where a horizon value meaning "outside the frame" was read as a position in it. Contract test
+204 assertions passing here unchanged, regression 3/3, and the regenerated review example,
+now 80 spec questions, byte-identical to the full edition's. **The battery gives identical
+verdicts against both editions with CRASH 0 in every file**, which extends parity from the
+module to the tests that probe it.
+
+Two battery fixtures were wrong and the harness found both. The width probe had a guard for
+an object merely running out of frame but none for the new field, so a second guard now
+asserts that the same 9 m counter becomes legal once it declares `extends_beyond_frame`,
+with `width_m` kept as the real size. And of the fourteen malformed-input shapes lifted into
+the fixtures, one built a reference block on a spec that had none, where a malformed block
+is correctly ignored: it answered with no errors and tested nothing. The new ANSWERED EMPTY
+verdict flagged it, and the reference shapes now build on the real-place example as the full
+edition's C33 does. That is the read-not-count failure pointing the other way: not a probe
+refused by the wrong rule, but a probe that never reached the rule at all.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

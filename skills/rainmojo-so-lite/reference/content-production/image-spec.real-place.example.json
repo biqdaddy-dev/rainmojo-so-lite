@@ -66,7 +66,7 @@
     "angle": "low",
     "tilt": "up",
     "horizon": "below_frame",
-    "height_m": 1.15,
+    "height_m": 0.95,
     "focal_length_mm": 35,
     "aperture_f": 2.8,
     "subject_distance_m": 3.4,
@@ -199,7 +199,7 @@
   },
   "physical_invariants": [
     "the camera is a ringside seat below the canvas, so the whole ring is seen from underneath and the near rope cuts across the fighters' legs",
-    "the fighters stand 1.1 m above the camera's floor, so the eye-level line passes below their feet",
+    "the fighters stand 1.1 m above the camera's floor and the lens is 0.95 m up, so the eye-level line passes below their feet and the canvas edge is seen from underneath",
     "the floodlights hang directly above the ring, so each fighter's shadow pools on the canvas beneath him rather than stretching sideways",
     "the knee and the forearm meet at one point, and both bodies lean consistently with that contact",
     "the seating tier behind rises away from the ring, so its rows recede to the same vanishing point as the ring ropes"

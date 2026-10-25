@@ -52,6 +52,9 @@ SHOT_TYPES = {
 ANGLES = {"eye_level", "high", "low", "overhead", "worms_eye", "dutch"}
 TILTS = {"level", "down", "up", "straight_down", "straight_up"}
 HORIZON = {"upper_third", "middle", "lower_third", "above_frame", "below_frame", "not_visible"}
+# Only these three put the horizon somewhere in the picture. The other three say
+# it is outside it, so nothing in the frame can be measured against it.
+HORIZON_IN_FRAME = {"upper_third", "middle", "lower_third"}
 DIRECTIONS = {
     "left",
     "right",
@@ -103,7 +106,9 @@ VIEWPOINTS = {
     "product_detail",
     "staff_or_uniform",
 }
-# Which viewpoints answer for a camera that stands inside the place.
+# Which viewpoints show the SPACE a camera stands in. The useful question is
+# not interior against exterior: a page of staff portraits is taken indoors and
+# shows nothing of the room, and a product shot shows a thing, not a place.
 INTERIOR_VIEWPOINTS = {
     "interior_wide",
     "interior_detail",
@@ -111,14 +116,18 @@ INTERIOR_VIEWPOINTS = {
     "seating",
     "treatment_room",
     "reception",
-    "product_detail",
-    "staff_or_uniform",
 }
+# Viewpoints that answer for a person or an object and never for a space.
+NON_SPATIAL_VIEWPOINTS = {"product_detail", "staff_or_uniform"}
 EXTERIOR_VIEWPOINTS = {"exterior", "entrance", "street", "aerial"}
 # Only a source the client owns or has licensed may be fed to the generator as a
 # conditioning image. A source found on the web informs what the author writes;
 # it is not an input to the model.
 CONDITIONING_RIGHTS = {"client_owned", "licensed"}
+# A real site with an unbuilt scheme on it is neither a photograph of something
+# that exists nor an invented place. Saying which it is keeps the facts and
+# labels the picture honestly.
+REFERENCE_STATES = {"existing", "planned", "under_construction", "former"}
 REFERENCE_RIGHTS = CONDITIONING_RIGHTS | {"reference_only"}
 
 # Eye height as a fraction of stature, by posture. Standing 0.93 is stable across
@@ -347,8 +356,11 @@ BOOSTER_WORDS = (
     "hyper-realistic", "photorealistic", "photo-realistic", "masterpiece",
     "best quality", "high quality", "award winning", "award-winning", "stunning",
     "flawless", "perfect", "intricate detail", "highly detailed", "sharp focus",
-    "crisp", "breathtaking", "epic", "insane detail", "trending on artstation",
+    "breathtaking", "epic", "insane detail", "trending on artstation",
 )
+# "crisp" is deliberately absent: HARD_WORDS looks for it in
+# lighting.key.quality, where "edges are crisp" is the correct way to say a hard
+# light. A word cannot be required by one check and refused by another.
 BOOSTER_RE = re.compile(
     r"\b(" + "|".join(word.replace(" ", r"[\s-]") for word in BOOSTER_WORDS) + r")\b",
     re.I,
@@ -371,6 +383,10 @@ SIMILE_RE = re.compile(
 )
 # Words that are about a material or a finish rather than a comparison.
 SIMILE_EXEMPT = ("lifelike", "life-like", "true-to-life", "businesslike", "likeness")
+# "what a first appointment looks like" is not a comparison, so the simile rule
+# has no business refusing it. It is still a weaker opening than the scene
+# itself, which is said in its own message rather than smuggled into this one.
+LOOKS_LIKE_RE = re.compile(r"\b(looks?|looked|looking|sounds?|feels?) like\b", re.I)
 
 # A pose named by the impression it gives is not a pose. The model needs to know
 # where the limbs are. Adopted from rangsarn's prompt_lint P02.
@@ -391,10 +407,15 @@ PHOTO_WORDS_RE = re.compile(
 )
 
 # A fact recorded with a hedge was not established. Adopted from rangsarn's B01.
+# Epistemic hedging only. "About 21:00" and "roughly 2.08 hectares" are not
+# hedges, they are how a careful source states a figure and how an honest record
+# of it reads, so a quantity after about, around or roughly is left alone.
 HEDGE_RE = re.compile(
-    r"\b(maybe|perhaps|possibly|probably|apparently|seemingly|roughly|approximately|"
-    r"about \d+|around \d+|some kind of|sort of|kind of|or so|unclear|unknown|"
-    r"appears to be|is said to be|reportedly)\b|-ish\b",
+    r"\b(maybe|perhaps|possibly|probably|apparently|seemingly|"
+    r"some kind of|sort of|kind of|or so|unclear|unknown|"
+    r"appears to be|is said to be|reportedly)\b"
+    r"|\b(?:about|around|roughly|approximately)\s+(?![\d.]|a few|an? \w+ of)"
+    r"|-ish\b",
     re.I,
 )
 
@@ -614,6 +635,66 @@ def eye_line_people(spec: dict[str, Any]) -> list[dict[str, Any]]:
     return [entity for entity in people(spec) if eye_height(entity) is not None]
 
 
+# Prepositions that make the name that follows a place rather than the subject
+# of the prohibition.
+# Words that make the avoid entry about an extra instance rather than the one
+# the spec declares: forbidding a second desk is not forbidding the desk.
+ADDITIONAL_RE = re.compile(
+    r"\b(second|third|another|other|extra|additional|further|more|duplicate|"
+    r"spare|multiple|several|two|three|many|any other|a different)$",
+    re.I,
+)
+PLACING_RE = re.compile(
+    r"\b(on|in|at|behind|near|beside|under|over|above|below|against|by|from|"
+    r"across|onto|into|around|beyond|outside|inside|through|between|among|"
+    r"next to|close to|in front of|on top of)$",
+    re.I,
+)
+
+
+def entity_names(spec: dict[str, Any]) -> list[tuple[str, str]]:
+    """Every name the spec declares for something that is in the picture."""
+    names: list[tuple[str, str]] = []
+    for _, entity in _entities(spec):
+        eid = _text(entity.get("id"))
+        for key in ("short_name", "name", "description"):
+            value = _text(entity.get(key))
+            if value:
+                names.append((eid, value))
+    return names
+
+
+def collisions(spec: dict[str, Any]) -> list[tuple[str, str, str]]:
+    """Avoid entries that forbid something the spec also puts in the picture.
+
+    Returns (avoid text, entity id, the name that matched).
+    """
+    found: list[tuple[str, str, str]] = []
+    declared = entity_names(spec)
+    for value in _list(spec.get("must_not_show")):
+        text = _text(value).lower()
+        if not text:
+            continue
+        for eid, name in declared:
+            lowered = name.lower()
+            # A whole-phrase match only. A shared word is ordinary English; a
+            # shared name is the spec contradicting itself.
+            if len(lowered) < 4:
+                continue
+            match = re.search(r"\b" + re.escape(lowered) + r"\b", text)
+            if not match:
+                continue
+            # A name after a preposition is saying where, not what: "pills on
+            # the counter" forbids pills and uses the counter to place them.
+            before = text[:match.start()].rstrip()
+            before = re.sub(r"\b(the|a|an|his|her|their|its|any)\s*$", "", before).rstrip()
+            if PLACING_RE.search(before) or ADDITIONAL_RE.search(before):
+                continue
+            found.append((_text(value), eid, name))
+            break
+    return found
+
+
 def anchor_person(anchor: str, subjects: list[dict[str, Any]]) -> dict[str, Any] | None:
     """The person a scale anchor is about, or None when it does not say.
 
@@ -653,7 +734,12 @@ def reference_height(name: str) -> tuple[float, float, str] | None:
     lowered = name.lower()
     best: tuple[int, tuple[float, float, str]] | None = None
     for key, band in REFERENCE_HEIGHTS_M.items():
-        if key in lowered and (best is None or len(key) > best[0]):
+        # The name has to END with the reference word, so a desk lamp is not a
+        # desk and a ceiling bracket is not a ceiling. A qualifier in front is
+        # fine, "pale wood dispensing counter" is still a counter.
+        if not re.search(r"\b" + re.escape(key) + r"s?\b\s*$", lowered):
+            continue
+        if best is None or len(key) > best[0]:
             best = (len(key), band)
     return best[1] if best else None
 
@@ -876,7 +962,24 @@ def unfilled_placeholders(value: Any, path: str = "") -> list[str]:
 
 # These two reach the avoid list, never the positive prompt, so a negation in
 # them is correct. text_in_image is a policy value whose own default is "none".
+# Fields whose text never reaches the prompt. The lint rules exist to protect
+# the prompt, so running them over an audit trail refuses the most useful
+# sentence an author can write: "none of the three sources shows the inside of
+# this clinic at all" belongs in conflicting_claims and is a negation by nature.
 NEGATION_EXEMPT_KEYS = {"must_not_show", "text_in_image"}
+AUDIT_ONLY_KEYS = {
+    "sources",
+    "conflicting_claims",
+    "address",
+    "publisher",
+    "url",
+    "shows",
+    "accessed",
+    "rights",
+    "viewpoint",
+    "conditioning_images",
+    "place_name",
+}
 
 
 def negated_fields(value: Any, path: str = "") -> list[tuple[str, str]]:
@@ -884,7 +987,7 @@ def negated_fields(value: Any, path: str = "") -> list[tuple[str, str]]:
     found: list[tuple[str, str]] = []
     if isinstance(value, dict):
         for key, child in value.items():
-            if key in NEGATION_EXEMPT_KEYS:
+            if key in NEGATION_EXEMPT_KEYS or key in AUDIT_ONLY_KEYS:
                 continue
             found.extend(negated_fields(child, f"{path}.{key}" if path else str(key)))
     elif isinstance(value, list):
@@ -901,7 +1004,7 @@ def _prose_fields(value: Any, path: str = "") -> list[tuple[str, str]]:
     found: list[tuple[str, str]] = []
     if isinstance(value, dict):
         for key, child in value.items():
-            if key in NEGATION_EXEMPT_KEYS:
+            if key in NEGATION_EXEMPT_KEYS or key in AUDIT_ONLY_KEYS:
                 continue
             found.extend(_prose_fields(child, f"{path}.{key}" if path else str(key)))
     elif isinstance(value, list):
@@ -931,6 +1034,15 @@ def validate_spec(
     policy = policy_from_config(config or {})
     spec_policy = policy["spec"]
 
+    # Everything any section below may read, bound once, before any of them run.
+    # These are pure reads of the spec; nothing needs them computed late, and
+    # binding them here is what stops a new check in one section raising an
+    # UnboundLocalError by reaching for a name another section binds later.
+    medium = _text(spec.get("medium") or "photograph")
+    photographic = medium in PHOTOGRAPHIC_MEDIA
+    subjects = [s for s in _list(spec.get("subjects")) if isinstance(s, dict)]
+    objects = [o for o in _list(spec.get("objects")) if isinstance(o, dict)]
+
     for path in sorted(unfilled_placeholders(spec)):
         errors.append(f"spec.{path} still holds the template question; answer it.")
 
@@ -952,12 +1064,17 @@ def validate_spec(
     if version != SPEC_VERSION:
         errors.append(f"spec.version must be {SPEC_VERSION}.")
     _require(errors, bool(_text(spec.get("purpose"))), "spec.purpose is required: what the reader must understand from the image.")
-    medium = _text(spec.get("medium") or "photograph")
     if medium not in MEDIA:
         errors.append("spec.medium must be one of " + ", ".join(sorted(MEDIA)) + ".")
-    photographic = medium in PHOTOGRAPHIC_MEDIA
 
     for path, value in _prose_fields(spec):
+        if path == "purpose" and LOOKS_LIKE_RE.search(value):
+            warnings.append(
+                "spec.purpose says what the picture looks like rather than what it is. "
+                "Write the scene: a pharmacist pointing at a label, not what a pharmacy "
+                "visit looks like. The opening of the prompt is the part every model "
+                "weights most."
+            )
         for word in similes(value):
             errors.append(
                 f"spec.{path} compares with {word!r}. A generator draws the thing you "
@@ -1028,6 +1145,20 @@ def validate_spec(
                 errors.append(
                     f"{where}.rights must be one of " + ", ".join(sorted(REFERENCE_RIGHTS)) + "."
                 )
+        state = _text(reference.get("state") or "existing")
+        if state not in REFERENCE_STATES:
+            errors.append(
+                "spec.location.reference.state must be one of "
+                + ", ".join(sorted(REFERENCE_STATES))
+                + "."
+            )
+        elif state != "existing":
+            warnings.append(
+                f"spec.location.reference.state is {state!r}: the place is real but what "
+                "the picture shows is not there yet, so the image is a visualisation. Say "
+                "so wherever it is published, and keep the caption and alt text honest."
+            )
+
         facts = [_text(v) for v in _list(reference.get("verified_facts")) if _text(v)]
         for index, fact in enumerate(facts):
             hedge = HEDGE_RE.search(fact)
@@ -1050,22 +1181,28 @@ def validate_spec(
             inside = camera_is_inside(spec)
             needed = INTERIOR_VIEWPOINTS if inside else EXTERIOR_VIEWPOINTS
             if not (seen_viewpoints & needed):
+                only_people_and_things = seen_viewpoints <= NON_SPATIAL_VIEWPOINTS
                 errors.append(
                     "spec.location.reference.sources cover "
                     + ", ".join(sorted(seen_viewpoints))
                     + ", but the camera is "
                     + ("inside" if inside else "outside")
-                    + " this place. Add a source that shows it from there, or set "
-                    "place_is_real false and describe a place of that kind instead of "
-                    "naming this one."
+                    + " this place and "
+                    + (
+                        "none of those shows the space itself: a staff portrait and a "
+                        "product shot answer for a person and a thing, never for a room. "
+                        if only_people_and_things
+                        else "no source shows it from there. "
+                    )
+                    + "Add a source that shows the space, or set place_is_real false and "
+                    "describe a place of that kind instead of naming this one."
                 )
 
         conditioning = [_text(v) for v in _list(reference.get("conditioning_images")) if _text(v)]
-        # The subject list is built further down, so read it from the spec here.
         conditioning += [
             _text(subject.get("reference_image"))
-            for subject in _list(spec.get("subjects"))
-            if isinstance(subject, dict) and has_reference_image(subject)
+            for subject in subjects
+            if has_reference_image(subject)
         ]
         # Each image has to carry its own rights. Checking that the set holds one
         # owned source let a single client photograph authorise feeding anything
@@ -1167,8 +1304,6 @@ def validate_spec(
         errors.append("spec.camera.angle low with tilt down is contradictory.")
 
     # Entities.
-    subjects = [s for s in _list(spec.get("subjects")) if isinstance(s, dict)]
-    objects = [o for o in _list(spec.get("objects")) if isinstance(o, dict)]
     if not subjects and not objects:
         errors.append("spec needs at least one subject or object.")
     ids: dict[str, str] = {}
@@ -1317,14 +1452,22 @@ def validate_spec(
         for obj in objects:
             obj_width = _num(obj.get("width_m"))
             obj_distance = _num(obj.get("distance_m"))
+            # A ground plane, a wall, a row of seats, a roof deck or a body of
+            # water is wider than the frame by design. Saying so keeps width_m
+            # the real size instead of the visible run, which is what every
+            # apparent-size ratio is computed from.
+            if obj.get("extends_beyond_frame"):
+                continue
             if obj_width and obj_distance:
                 frame_width, _ = frame_at(obj_distance, focal, width / height)
                 if obj_width > frame_width * 3.0:
                     errors.append(
                         f"object {_text(obj.get('id'))}: {obj_width:g} m wide at "
                         f"{obj_distance:g} m, where the lens frames {frame_width:.2f} m "
-                        "across. Only a fraction of it can be in shot, so either it is "
-                        "nearer, narrower, or the shot is wider than the spec says."
+                        "across. Only a fraction of it can be in shot. Either it is "
+                        "nearer, or narrower, or the shot is wider than the spec says, or "
+                        "it genuinely runs past the edge of the frame and wants "
+                        "extends_beyond_frame true, which keeps width_m the real size."
                     )
         if shot in {"full", "wide", "extreme_wide"}:
             for subject in subjects:
@@ -1548,6 +1691,13 @@ def validate_spec(
                     "say where it is as well as what it is."
                 )
 
+    for value, eid, name in collisions(spec):
+        errors.append(
+            f"spec.must_not_show {value!r} forbids {name!r}, which the spec also puts in "
+            f"the picture as {eid}. The model would be given it twice, once as content "
+            "and once as a prohibition. Decide whether it is in the frame or not."
+        )
+
     text_in_image = _text(spec.get("text_in_image") or policy["text_default"] or "none")
     if text_in_image not in {"none", ""} and not policy["infographic_allowed"]:
         errors.append("spec.text_in_image must be none: the client has not enabled an infographic text workflow.")
@@ -1609,10 +1759,13 @@ def similes(text: str) -> list[str]:
     """Comparisons a generator will draw as the thing compared."""
     lowered = text.lower()
     found = set()
+    skip = {m.span() for m in LOOKS_LIKE_RE.finditer(text)}
     for match in SIMILE_RE.finditer(text):
         word = match.group(0).lower()
         start = max(0, match.start() - 12)
         if any(ok in lowered[start:match.end() + 4] for ok in SIMILE_EXEMPT):
+            continue
+        if any(a <= match.start() and match.end() <= b for a, b in skip):
             continue
         found.add(word)
     return sorted(found)
@@ -1628,7 +1781,7 @@ def boosted_fields(value: Any, path: str = "") -> list[tuple[str, str]]:
     found: list[tuple[str, str]] = []
     if isinstance(value, dict):
         for key, child in value.items():
-            if key in NEGATION_EXEMPT_KEYS:
+            if key in NEGATION_EXEMPT_KEYS or key in AUDIT_ONLY_KEYS:
                 continue
             found.extend(boosted_fields(child, f"{path}.{key}" if path else str(key)))
     elif isinstance(value, list):
@@ -1886,6 +2039,13 @@ def build_clauses(
         kind = _text(support.get("kind"))
         line += f", {SUPPORT_PARTICIPLE.get(kind, kind.replace('_', ' '))} {by_name}"
         add("object", 1, line)
+        if obj.get("extends_beyond_frame"):
+            add(
+                "object",
+                2,
+                f"{_cap(_noun(obj))} runs past both edges of the frame and is cut by them, "
+                "so the frame holds a section of its length and both ends lie outside it",
+            )
         if _text(obj.get("scale_anchor")):
             add("object", 2, f"For scale, {_text(obj['scale_anchor'])}")
 
@@ -1918,12 +2078,16 @@ def build_clauses(
             f"{_entity_name(spec, _text(camera['focus_on']))}",
         )
         horizon = _text(camera.get("horizon"))
-        if horizon == "not_visible":
+        if horizon not in HORIZON_IN_FRAME:
+            where = {
+                "above_frame": "above the top edge",
+                "below_frame": "below the bottom edge",
+            }.get(horizon, "outside the picture")
             add(
                 "camera",
                 1,
-                "The horizon is out of frame, and every receding line still converges "
-                "consistently for this one viewpoint",
+                f"The eye-level line falls {where}, and every receding line still "
+                "converges consistently for this one viewpoint",
             )
         else:
             add(
@@ -2253,13 +2417,45 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 base,
             )
         if _text(subject.get("hands")):
+            # One question asking four things at once gets resolved on whichever
+            # one the reader noticed. Measured on a real scene, the compound form
+            # returned cannot_tell on a framing technicality without ever
+            # reaching the defect; atomic questions on the same crops returned
+            # none and named four real faults.
             add(
-                f"{base}_hands",
+                f"{base}_hands_action",
                 "anatomy",
-                f"Do the hands of {noun} do this, each with five fingers and a grip that "
-                f"would hold: {_text(subject['hands'])}?",
+                f"Do the hands of {noun} do this: {_text(subject['hands'])}?",
+                base,
+            )
+            add(
+                f"{base}_hands_count",
+                "anatomy",
+                f"Does every hand of {noun} that is visible have five fingers, counting "
+                "the thumb, with no finger hidden behind another?",
                 base,
                 verify_with="count",
+            )
+            add(
+                f"{base}_hands_joints",
+                "anatomy",
+                f"Do the fingers of {noun} bend only at the knuckles, in the direction a "
+                "finger bends?",
+                base,
+            )
+            add(
+                f"{base}_hands_thumb",
+                "anatomy",
+                f"Is the thumb of each visible hand of {noun} on the inner side, where a "
+                "thumb is?",
+                base,
+            )
+            add(
+                f"{base}_hands_proportion",
+                "anatomy",
+                f"Is each hand of {noun} the right size for the wrist and forearm it is "
+                "attached to?",
+                base,
             )
         if _text(subject.get("gaze")):
             add(
@@ -2343,7 +2539,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         verify_with="geometry",
     )
     horizon = _text(camera.get("horizon"))
-    if horizon and horizon != "not_visible":
+    if horizon in HORIZON_IN_FRAME:
         add(
             "q_horizon",
             "camera",
@@ -2437,7 +2633,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             + " all sit on one floor that recedes consistently, rather than on separate "
             "invisible shelves?",
         )
-    horizon_in_frame = horizon in {"middle", "upper_third", "lower_third"}
+    horizon_in_frame = horizon in HORIZON_IN_FRAME
     for crossing in derived.get("horizon_crossings", []):
         name = _entity_name(spec, crossing["id"])
         if not horizon_in_frame:

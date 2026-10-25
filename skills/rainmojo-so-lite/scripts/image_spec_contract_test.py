@@ -405,7 +405,7 @@ questions = compiled["questions"]
 ids = {question["id"] for question in questions}
 for required in (
     "q_pharmacist",
-    "q_pharmacist_hands",
+    "q_pharmacist_hands_count",
     "q_pharmacist_gaze",
     "q_medicine_box_support",
     "q_medicine_box_scale",
@@ -664,7 +664,24 @@ check(
     routes.get("q_pharmacist") == "count" and routes.get("q_medicine_box") == "count",
     str(routes),
 )
-check("finger counts are routed to a counter", routes.get("q_pharmacist_hands") == "count", str(routes))
+check(
+    "finger counts are routed to a counter",
+    routes.get("q_pharmacist_hands_count") == "count",
+    str(routes),
+)
+check(
+    "the hands question is decomposed, not one question asking four things",
+    {
+        "q_pharmacist_hands_action",
+        "q_pharmacist_hands_count",
+        "q_pharmacist_hands_joints",
+        "q_pharmacist_hands_thumb",
+        "q_pharmacist_hands_proportion",
+    }
+    <= ids
+    and "q_pharmacist_hands" not in ids,
+    str(sorted(i for i in ids if "hands" in i)),
+)
 check("the text ban is routed to OCR", routes.get("q_no_text") == "ocr", str(routes))
 check(
     "framing, angle and the horizon are measured, not judged",
@@ -1248,6 +1265,164 @@ check(
         )
         if "does not hold anything up" in error
     ],
+)
+
+print("C32 a brief may not forbid what it also puts in the picture")
+# Proposed by the rangsarn session as V-collision. The avoid list and the scene
+# description go to different fields and nothing compared them, so a spec could
+# forbid a thing and describe it in the same breath, which hands the model the
+# thing twice: once as content and once as a prohibition.
+#
+# The guards matter more than the rule here. A first cut matched any declared
+# name anywhere in an avoid entry and immediately refused the shipped example,
+# whose "pills loose on the counter" names the counter to say where the pills
+# would be. Forbidding a thing and placing a thing read the same to a word
+# match and are opposites in English.
+
+refuses(
+    "forbidding a declared object outright",
+    "which the spec also puts in the picture",
+    lambda spec: spec["must_not_show"].append("a cluttered counter"),
+)
+refuses(
+    "forbidding a declared subject outright",
+    "which the spec also puts in the picture",
+    lambda spec: spec["must_not_show"].append("the pharmacist looking away"),
+)
+for phrase, label in (
+    ("pills loose on the counter", "on"),
+    ("a queue in front of the counter", "in front of"),
+    ("a second person behind the pharmacist", "behind"),
+    ("glare from the window above the counter", "above"),
+):
+    check(
+        f"a declared name after {label!r} is a place, not the thing forbidden",
+        not [
+            error
+            for error in errors_for(lambda spec, p=phrase: spec["must_not_show"].append(p))
+            if "also puts in the picture" in error
+        ],
+        phrase,
+    )
+for phrase, label in (
+    ("a second counter", "second"),
+    ("another counter in the background", "another"),
+    ("two counters in the frame", "two"),
+):
+    check(
+        f"forbidding {label!r} one is not forbidding the one that is declared",
+        not [
+            error
+            for error in errors_for(lambda spec, p=phrase: spec["must_not_show"].append(p))
+            if "also puts in the picture" in error
+        ],
+        phrase,
+    )
+check(
+    "an avoid entry naming nothing declared is left alone",
+    not [
+        error
+        for error in errors_for(
+            lambda spec: spec["must_not_show"].append("a stethoscope round anyone's neck")
+        )
+        if "also puts in the picture" in error
+    ],
+)
+check(
+    "both shipped examples stay clean under the rule",
+    not image_spec.collisions(EXAMPLE) and not image_spec.collisions(REAL_PLACE),
+    str(image_spec.collisions(EXAMPLE) + image_spec.collisions(REAL_PLACE)),
+)
+
+print("C33 validate_spec answers; it does not raise")
+# Two UnboundLocalErrors in three days, both the same mistake: a check added to
+# the reference block read a name bound ninety lines further down. A crash is
+# the one failure an adversarial battery structurally cannot see, because a
+# probe that raises is not a probe that fails, and an exception aborts the run
+# so every probe behind it never runs and the sheet comes back clean.
+#
+# Two guards. The names every section reads are bound once at the top of
+# validate_spec, and these cases assert the function RETURNS on malformed input
+# of each shape rather than raising.
+
+MALFORMED = {
+    "an empty object": {},
+    "a version and nothing else": {"version": 1},
+    "a reference block with no subjects or objects": dict(
+        copy.deepcopy(REAL_PLACE), subjects=[], objects=[]
+    ),
+    "a reference block and no camera": {
+        k: v for k, v in copy.deepcopy(REAL_PLACE).items() if k != "camera"
+    },
+    "reference as a string": dict(
+        copy.deepcopy(REAL_PLACE),
+        location=dict(copy.deepcopy(REAL_PLACE)["location"], reference="yes"),
+    ),
+    "sources as a mapping": dict(
+        copy.deepcopy(REAL_PLACE),
+        location=dict(
+            copy.deepcopy(REAL_PLACE)["location"],
+            reference=dict(
+                copy.deepcopy(REAL_PLACE)["location"]["reference"], sources={"a": 1}
+            ),
+        ),
+    ),
+    "subjects as a string": dict(copy.deepcopy(EXAMPLE), subjects="two people"),
+    "objects as numbers": dict(copy.deepcopy(EXAMPLE), objects=[1, 2, 3]),
+    "a likeness on a spec with no reference block": dict(
+        copy.deepcopy(EXAMPLE),
+        subjects=[dict(copy.deepcopy(EXAMPLE)["subjects"][0], reference_image="x.jpg")],
+    ),
+    "no lighting at all": {
+        k: v for k, v in copy.deepcopy(EXAMPLE).items() if k != "lighting"
+    },
+    "every section a string": {
+        "version": 1, "purpose": "x", "medium": "photograph", "location": "a",
+        "camera": "b", "subjects": "c", "objects": "d", "lighting": "e",
+        "composition": "f",
+    },
+}
+for label, malformed in MALFORMED.items():
+    try:
+        returned_errors, _ = image_spec.validate_spec(malformed, WIDTH, HEIGHT, DEFAULTS)
+        check(f"returns rather than raising: {label}", bool(returned_errors), "no errors either")
+    except Exception as exc:  # noqa: BLE001 - the point of the test
+        check(f"returns rather than raising: {label}", False, f"{type(exc).__name__}: {exc}")
+
+check(
+    "the shared reads are bound before any section runs",
+    "Everything any section below may read, bound once, before any of them run"
+    in (ROOT / "scripts" / "image_spec.py").read_text(encoding="utf-8"),
+    "the hoist comment is gone; a later binding may have crept back in",
+)
+
+print("C34 a horizon outside the frame is not a position in it")
+check(
+    "only three of the six values put it in the picture",
+    image_spec.HORIZON_IN_FRAME == {"upper_third", "middle", "lower_third"},
+    str(sorted(image_spec.HORIZON_IN_FRAME)),
+)
+below = image_spec.compile_spec(REAL_PLACE, WIDTH, HEIGHT, DEFAULTS)
+check(
+    "below_frame reads as an edge, not as a band across the frame",
+    "falls below the bottom edge" in below["prompt"]
+    and "across the below frame" not in below["prompt"],
+    [x for x in below["prompt"].split(". ") if "eye-level" in x][:1],
+)
+check(
+    "and the reviewer is not asked to measure a line that is not there",
+    not any(q["id"] == "q_horizon" for q in below["questions"])
+    and any(q["id"].startswith("q_viewpoint_") for q in below["questions"]),
+    str([q["id"] for q in below["questions"] if "horizon" in q["id"] or "viewpoint" in q["id"]]),
+)
+check(
+    "a horizon that is in the frame still gets measured",
+    any(q["id"] == "q_horizon" for q in compiled["questions"]),
+)
+check(
+    "the real-place example's camera is below the canvas its invariant claims",
+    all(c["below_feet"] for c in below["derived"]["horizon_crossings"]),
+    str(below["derived"]["horizon_crossings"]),
 )
 
 print("C15 a thin client config still has a gate")

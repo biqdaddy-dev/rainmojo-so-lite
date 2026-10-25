@@ -194,10 +194,30 @@
       "evidence": "<what you saw and in which crop>",
       "_question": "Does the body of the pharmacist hold this pose, with joints that bend the way a body bends: standing behind the counter, weight on both feet, torso turned a quarter toward the customer, shoulders level?"
     },
-    "q_pharmacist_hands": {
+    "q_pharmacist_hands_action": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Do the hands of the pharmacist do this, each with five fingers and a grip that would hold: her left hand holds the medicine box at its base; her right index finger points at the label on its front, the fingertip beside the printed panel so the panel stays visible?"
+      "_question": "Do the hands of the pharmacist do this: her left hand holds the medicine box at its base; her right index finger points at the label on its front, the fingertip beside the printed panel so the panel stays visible?"
+    },
+    "q_pharmacist_hands_count": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does every hand of the pharmacist that is visible have five fingers, counting the thumb, with no finger hidden behind another?"
+    },
+    "q_pharmacist_hands_joints": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Do the fingers of the pharmacist bend only at the knuckles, in the direction a finger bends?"
+    },
+    "q_pharmacist_hands_thumb": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the thumb of each visible hand of the pharmacist on the inner side, where a thumb is?"
+    },
+    "q_pharmacist_hands_proportion": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is each hand of the pharmacist the right size for the wrist and forearm it is attached to?"
     },
     "q_pharmacist_gaze": {
       "answer": "yes",
@@ -239,10 +259,30 @@
       "evidence": "<what you saw and in which crop>",
       "_question": "Does the body of the older customer hold this pose, with joints that bend the way a body bends: standing on the near side of the counter, leaning in slightly from the waist, both arms resting on the counter edge?"
     },
-    "q_customer_hands": {
+    "q_customer_hands_action": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Do the hands of the older customer do this, each with five fingers and a grip that would hold: both hands rest flat on the counter, fingers relaxed and apart?"
+      "_question": "Do the hands of the older customer do this: both hands rest flat on the counter, fingers relaxed and apart?"
+    },
+    "q_customer_hands_count": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does every hand of the older customer that is visible have five fingers, counting the thumb, with no finger hidden behind another?"
+    },
+    "q_customer_hands_joints": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Do the fingers of the older customer bend only at the knuckles, in the direction a finger bends?"
+    },
+    "q_customer_hands_thumb": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the thumb of each visible hand of the older customer on the inner side, where a thumb is?"
+    },
+    "q_customer_hands_proportion": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is each hand of the older customer the right size for the wrist and forearm it is attached to?"
     },
     "q_customer_gaze": {
       "answer": "yes",
