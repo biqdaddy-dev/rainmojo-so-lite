@@ -133,14 +133,18 @@ python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compi
 
    A third thing the compiler checks, which is worth writing to from the start:
 
-   - **`scale_anchor` is a claim, not a flourish.** Anchor an object's size to a
-     body landmark of a person in the scene and the compiler reads that landmark
-     off their `height_m` and checks it: the hip of a 1.62 m person is 0.86 m, so
-     a 0.42 m counter "just above the hip" is refused. Bracket it where you can,
-     as in "just above the hip, a little below her waist"; both bands are read and
-     intersected. Name the person when more than one is in frame, or no check runs.
-     The same stature governs what a hand can hold, so an object above about a
-     third of the holder's height cannot be described as filling a palm.
+   - **`scale_anchor` is a claim, not a flourish.** For an object that stands or
+     rests on the floor, anchor its size to a body landmark of a person in the
+     scene and the compiler reads that landmark off their `height_m` and checks the
+     object's height against it, within 12 cm either way: the hip of a 1.62 m
+     person is 0.86 m, so a 0.42 m counter "at the hip" is refused. Only the first
+     landmark the anchor names is checked, and "above" or "below" is not part of
+     the check, so lead with the landmark you mean. Name the person when more than
+     one is in frame, or no check runs. An anchor about width or length, such as
+     "as wide as her shoulders", is left alone, and so is anything that hangs or is
+     mounted, whose `height_m` is its own length. When the anchor puts the object
+     in a hand, its height is compared with the tallest person in the frame: above
+     three tenths of that height it is a warning, above six tenths it is refused.
 
    Set `images.spec.target_model` to the generator in use. `image-model-registry.json`
    then decides where exclusions go and what prompt length is worth sending. Most

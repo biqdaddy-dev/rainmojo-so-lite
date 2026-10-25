@@ -173,6 +173,51 @@ All three are the same failure, a result that looks like a pass while measuring 
 claims, and the last two were found only by asking why two numbers that should match did
 not. Every battery file now gives identical results in both editions.
 
+SEVENTH PORT, `6be1a7f`, same version: booster words refused only as a bare list item,
+negation skipping quoted lettering, all-caps signage, "No. 9", hyphenated compounds and "not
+only", and no more "no a ..." in an inline Constraints block. `image_spec.py`, the contract
+test and `image-spec.contract.md` byte-identical; 234 assertions passing here unchanged. On
+the eighteen real briefs nothing moved, no refusal, warning or compiled prompt, and that is
+because nothing reaches the changed paths: no brief uses a booster word anywhere, and the only
+negation word outside `must_not_show` in any of them is `text_in_image`'s required value
+"none", which is not prose. So both changes are vouched for by C35 alone, and the corpus
+cannot speak for them either way.
+
+THE DOCS THAT DESCRIBED A DESIGN THIS EDITION HAD REPLACED. Porting the contract doc led to a
+question that should have been asked five ports earlier: what has this edition's own prose
+said since `b7e1d4b`, when its `image_spec.py` was replaced by the full edition's? It had kept
+describing the 2.5.0 design it replaced.
+
+- `image-spec.contract.md` said a two-landmark anchor is read by intersecting both bands, with
+  the hull as fallback, and named a derived field `eye_line_offsets`. The code takes the first
+  landmark the anchor names, and the field does not exist; it is `eye_line_people`. The doc
+  was 2.5.0's edit, never re-ported because the full edition's doc had not changed, so the
+  parity check, which covered the files ported, never looked at the file edited. It is now
+  the full edition's, byte for byte.
+- `content-production-lite/SKILL.md` told authors to bracket an anchor between two landmarks
+  because both bands are read, so an author following it believed the second landmark
+  constrained the check; it is ignored. It also said an object above a third of the holder's
+  height cannot be described as filling a palm. The code measures against the tallest person
+  in the frame, not the holder, and above three tenths only warns; it refuses above six.
+- `agent.json` repeated the bracketing advice, gave a seated eye-level band of one head height
+  where the code uses 0.15 m, and said face distance is set by the distance alone, whatever
+  the lens, where the code refuses a face closer than a per-lens floor from 1.2 m at 20 mm to
+  0.6 m at 85 mm.
+
+All three were in pushed PR #6. Neither lite-only file is ever overwritten by a port, so
+nothing would have corrected them. They now describe the code, and `doc_claims_test.py`, T4
+in `regression.py`, pairs every number they quote with the constant or behaviour it
+describes, and fails if either side moves. Run against the docs as they stood before this
+commit it fails fifteen times, including all four stale claims; against the corrected docs
+it passes. One claim of the six held and is unchanged: the lighting rule.
+
+Reading the code to write the docs correctly surfaced two upstream questions, reported to
+the full edition rather than changed here: the hand-held rule measures against the tallest
+person rather than the holder named in `support.by`, so an object that is half a child's
+height only warns because an adult is also in frame; and the face-distance table permits the
+most nose-to-ear distortion on the longest lens, 1.167 at 85 mm against 1.083 at 20 mm,
+although its own comment names a perspective effect that depends on distance alone.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

@@ -351,12 +351,21 @@ SHOT_FRAMING = {
 # the result; everywhere else they merely crowd out the facts that would have
 # worked.
 BOOSTER_WORDS = (
-    "4k", "8k", "16k", "uhd", "ultra detailed", "ultra-detailed", "hyper detailed",
-    "hyper-detailed", "ultra realistic", "ultra-realistic", "hyperrealistic",
-    "hyper-realistic", "photorealistic", "photo-realistic", "masterpiece",
-    "best quality", "high quality", "award winning", "award-winning", "stunning",
-    "flawless", "perfect", "intricate detail", "highly detailed", "sharp focus",
-    "breathtaking", "epic", "insane detail", "trending on artstation",
+    "ultra detailed", "ultra-detailed", "hyper detailed", "hyper-detailed",
+    "ultra realistic", "ultra-realistic", "hyperrealistic", "hyper-realistic",
+    "photorealistic", "photo-realistic", "masterpiece", "stunning", "flawless",
+    "breathtaking", "insane detail", "trending on artstation",
+)
+# Boosters that are also facts: "a perfect circle", "an award-winning chef", "a
+# Sony 4K camcorder", "best quality coffee beans", "The Epic Theatre", "a highly
+# detailed brass engraving", "the label in sharp focus". Refusing them anywhere
+# refused correct briefs, so they are refused only as a bare list item, which
+# is how a booster is written: "photorealistic, 8k, best quality". Found by the
+# rangsarn session in its own lint, the same rule family.
+LIST_BOOSTER_WORDS = (
+    "4k", "8k", "16k", "uhd", "best quality", "high quality", "award winning",
+    "award-winning", "perfect", "epic", "intricate detail", "intricate details",
+    "highly detailed", "sharp focus",
 )
 # "crisp" is deliberately absent: HARD_WORDS looks for it in
 # lighting.key.quality, where "edges are crisp" is the correct way to say a hard
@@ -365,6 +374,15 @@ BOOSTER_RE = re.compile(
     r"\b(" + "|".join(word.replace(" ", r"[\s-]") for word in BOOSTER_WORDS) + r")\b",
     re.I,
 )
+LIST_BOOSTER_RE = re.compile(
+    r"(?:(?:and|or|in|with|at|(?:shot|rendered|captured) in)\s+)?("
+    + "|".join(word.replace(" ", r"[\s-]") for word in LIST_BOOSTER_WORDS)
+    + r")",
+    re.I,
+)
+# A list item is what sits between commas, semicolons, bars, line breaks or
+# sentence ends.
+LIST_ITEM_SPLIT_RE = re.compile(r"[,;|\n]|\.(?:\s|$)")
 
 # The identity of a person who comes with a reference image is carried by the
 # image, not by the text. Describing the face in words fights the reference.
@@ -435,6 +453,9 @@ HEDGE_RE = re.compile(
     re.I,
 )
 
+# Lettering the picture shows, in straight or curly double quotes. Single
+# quotes are left out because they are also apostrophes.
+QUOTED_RE = re.compile(r'"[^"\n]*"|\u201c[^\u201d\n]*\u201d')
 NEGATION_RE = re.compile(
     r"\b(no|not|none|never|without|free of|empty of|devoid of|avoid|exclude|"
     r"excluding|absent|lacking|remove|omit)\b",
@@ -1774,8 +1795,32 @@ def _phrase_for(value: float, table: tuple[tuple[float, str], ...]) -> str:
 
 
 def negations(text: str) -> list[str]:
-    """Every negation word in a prompt, which a positive prompt must not carry."""
-    return sorted({match.group(0).lower() for match in NEGATION_RE.finditer(text)})
+    """Every negation word in a prompt, which a positive prompt must not carry.
+
+    Not negations, and so left alone: quoted lettering ('a sign reading "No
+    Smoking"'), all-caps signage ("NO PARKING stencilled on the kerb"), a number
+    ("the No. 9 bus"), a hyphenated compound ("a no-frills canteen") and "not
+    only". Each is what the picture shows, not what it lacks. Raised by the
+    rangsarn session from a review of its own lint.
+    """
+    masked = QUOTED_RE.sub(lambda m: " " * len(m.group(0)), text)
+    found = set()
+    for match in NEGATION_RE.finditer(masked):
+        word = match.group(0)
+        after = masked[match.end():]
+        before = masked[:match.start()]
+        if word.lower() == "no" and re.match(r"\.\s*\d", after):
+            continue
+        if re.match(r"-[A-Za-z]", after):
+            continue
+        if word.lower() == "not" and re.match(r"\s+only\b", after, re.I):
+            continue
+        if word.isupper() and len(word) > 1 and (
+            re.match(r"\s+[A-Z]{2,}\b", after) or re.search(r"\b[A-Z]{2,}\s+$", before)
+        ):
+            continue
+        found.add(word.lower())
+    return sorted(found)
 
 
 def similes(text: str) -> list[str]:
@@ -1796,7 +1841,12 @@ def similes(text: str) -> list[str]:
 
 def boosters(text: str) -> list[str]:
     """Quality-booster words, which buy nothing and cost fidelity."""
-    return sorted({" ".join(m.group(0).lower().split()) for m in BOOSTER_RE.finditer(text)})
+    found = {" ".join(m.group(0).lower().split()) for m in BOOSTER_RE.finditer(text)}
+    for item in LIST_ITEM_SPLIT_RE.split(text):
+        match = LIST_BOOSTER_RE.fullmatch(item.strip(" .:!?()[]\"'"))
+        if match:
+            found.add(" ".join(match.group(1).lower().split()))
+    return sorted(found)
 
 
 def boosted_fields(value: Any, path: str = "") -> list[tuple[str, str]]:
@@ -1814,6 +1864,14 @@ def boosted_fields(value: Any, path: str = "") -> list[tuple[str, str]]:
         for word in boosters(value):
             found.append((path or "<root>", word))
     return found
+
+
+def _no(item: str) -> str:
+    """``no`` before an avoid entry, without "no a doctor's coat" or "no no"."""
+    text = item.strip()
+    if re.match(r"(?:no|none of)\b", text, re.I):
+        return text
+    return "no " + re.sub(r"^(?:a|an|the)\s+", "", text, flags=re.I)
 
 
 def _an(word: str) -> str:
@@ -2322,7 +2380,7 @@ def compile_spec(
         )
     constraints = ""
     if target == "inline_constraints":
-        constraints = "Constraints: no " + "; no ".join(avoid) + "."
+        constraints = "Constraints: " + "; ".join(_no(item) for item in avoid) + "."
     max_words = spec_policy.get("max_prompt_words")
     if max_words in (None, "") and model:
         max_words = model.get("max_prompt_words")

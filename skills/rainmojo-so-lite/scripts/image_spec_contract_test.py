@@ -1425,6 +1425,53 @@ check(
     str(below["derived"]["horizon_crossings"]),
 )
 
+print("C35 a booster or a negation word that is a fact is left alone")
+# Raised by the rangsarn session from an independent review of its own lint.
+# Each phrase is a correct brief that the first version of these rules refused.
+for phrase in (
+    "a perfect circle chalked on the board",
+    "an award-winning chef at the pass",
+    "a Sony 4K camcorder on a tripod",
+    "best quality coffee beans in a jute sack",
+    "the marquee of The Epic Theatre",
+    "a highly detailed brass engraving on the lid",
+    "the label in sharp focus",
+):
+    check(f"{phrase!r} is not a booster", not image_spec.boosters(phrase), str(image_spec.boosters(phrase)))
+for phrase, expected in (
+    ("photorealistic, 8k, best quality", ["8k", "best quality", "photorealistic"]),
+    ("a quiet pharmacy counter, perfect, epic", ["epic", "perfect"]),
+    ("shot in 4K; highly detailed", ["4k", "highly detailed"]),
+):
+    check(f"{phrase!r} is still refused", image_spec.boosters(phrase) == expected, str(image_spec.boosters(phrase)))
+for phrase in (
+    'a sign on the door reading "No Smoking"',
+    "a sign on the door reading \u201cNo Entry\u201d",
+    "the No. 9 bus at the stop",
+    "a no-frills canteen with steel tables",
+    "NO PARKING stencilled on the kerb",
+    "not only a pharmacy but a small clinic",
+):
+    check(f"{phrase!r} is not a negation", not image_spec.negations(phrase), str(image_spec.negations(phrase)))
+for phrase, expected in (
+    ("a counter with no boxes on it", ["no"]),
+    ("No people in the aisle", ["no"]),
+    ("a lane not yet lit", ["not"]),
+):
+    check(f"{phrase!r} is still a negation", image_spec.negations(phrase) == expected, str(image_spec.negations(phrase)))
+inline = image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS, target="inline_constraints")["prompt"]
+check(
+    "the Constraints block reads as English",
+    "Constraints: " in inline and "no a " not in inline and "no an " not in inline
+    and "no the " not in inline and "no no " not in inline,
+    inline[inline.find("Constraints"):][:160],
+)
+check(
+    "and still names the exclusion",
+    "no doctor's long white coat" in inline,
+    inline[inline.find("Constraints"):][:160],
+)
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

@@ -21,14 +21,7 @@ makes the contradictions visible before anything is generated:
 - an object with no `support` floats;
 - a 1.8 m standing person does not fit the 0.83 m frame height of a `full` shot at that lens;
 - a sharp background is impossible at f/2.8 with the focus 2.2 m away;
-- a `foreground` entity at 9 m is not in front of a `background` entity at 3.6 m;
-- a 0.42 m counter does not meet a 1.62 m person "just above the hip", which is 0.86 m;
-- a 1.4 m carton does not fit in the palm of a 1.62 m pharmacist;
-- a `full` shot promises the whole subject, so a 6 m counter does not fit a 3.6 m frame;
-- an `eye_level` lens at 1.52 m is a high angle over a seated figure whose eyes are at 1.23 m;
-- a clouded sky covers the sun, so it cannot cast the crisp shadow the brief asks for;
-- a `fill` with the key's power and hardness is a second key, and two of those are two suns;
-- nothing is held up by "a hovering glass shelf", and nothing is held by a counter.
+- a `foreground` entity at 9 m is not in front of a `background` entity at 3.6 m.
 
 Each of those is a picture a reader would see as wrong. Catching it costs one message;
 catching it after generation costs a generation, a review and a reprint.
@@ -99,24 +92,6 @@ most common physically impossible thing a generator produces. `scale_anchor` is 
 because a size in metres means nothing to an image model: "its top meets the pharmacist just
 above the hip" does.
 
-That anchor is also a claim about two numbers the spec already carries, so it is checked
-rather than taken on trust. Where it names a body landmark, the landmark's height is read
-off the person's stature with the standard anthropometric fractions of Drillis and Contini
-(1966), as tabulated in Winter, *Biomechanics and Motor Control of Human Movement*, figure
-4.1 - the same measured family `EYE_FRACTION`'s 0.93 comes from, and this table's eye
-fraction of 0.936 agrees with it. Eye 0.936, chin 0.870, shoulder 0.818, chest 0.720, elbow
-0.630, waist 0.600, hip 0.530, wrist 0.485, fingertip 0.377, knee 0.285, ankle 0.039.
-
-An anchor often brackets a height between two landmarks, as the worked example does with
-"just above the hip, a little below her waist", so every landmark occurrence is read with
-the hedge immediately before it and the bands are intersected. Where the bands do not
-overlap at all, which loose prose can produce, their hull is used instead: refusing a brief
-over phrasing would cost more than it catches. With several people in the frame and no name
-in the anchor, no check runs at all, because a guessed referent would refuse a correct
-brief. The same table gives the held-object rule: above about 0.30 of the holder's stature
-an object cannot be described as filling a hand, and above 0.60 it is a two-handed load,
-which is a warning rather than a refusal because a person really can carry a ladder.
-
 `short_name` is what the compiled prompt and the review questions call the entity after it
 has been introduced once, so a long description does not repeat ten times.
 
@@ -184,9 +159,6 @@ confusion.
 | Near and far focus limits | `d(H - f) / (H +/- d - 2f)` |
 | Apparent height, as a fraction of frame height | `(h * f / d) / sensor_h` |
 | Apparent height ratio of two entities | `(h1 / d1) / (h2 / d2)` |
-| Horizon crossing on a standing figure, from the feet | `h_camera / h` |
-| Eye-line offset for a seated figure, in head heights | `(h_camera - eye) / (0.133 * h)` |
-| A body landmark's height on a person | `landmark_fraction * h` |
 
 Two facts come out of this that a prompt rarely states and a correct picture must obey.
 The first is apparent size: a 1.68 m person at 1.5 m reads about 1.5 times the frame height
@@ -226,22 +198,6 @@ British 50th-percentile table agrees within a centimetre), 0.90 under about five
 the head is relatively larger, and an absolute height above the floor for a seated or
 kneeling figure, because the seat and not the stature sets it.
 
-A seated or kneeling figure has an eye line too, and it is the only one available in an
-interview, desk or restaurant scene, where nobody is standing. The fraction-of-stature
-crossing does not apply to such a figure, so the offset between the horizon and its eyes is
-derived instead, into `eye_line_offsets`, and stated in head heights rather than metres: a
-head is 0.133 of stature on the 7.5-head canon, and head heights are a unit the reviewer can
-count on the image with no external scale. Where nobody is standing, the `eye_level`
-tolerance also tightens from 0.35 m to one head height, because the 0.35 m band is the
-spread of standing eye heights across a population and that argument does not apply to a
-height the seat fixes. A lens above a seated eye line is a high angle, not eye level.
-
-Perspective distortion is set by the subject distance alone; the focal length only decides
-the framing, so a longer lens does not rescue a camera held at arm's length from a face.
-Inside about a metre the nose-to-ear depth ratio reads as a caricature, which is why
-portrait practice is 1.5 m or more with a longer lens to keep the same framing. Both are
-warnings rather than refusals, since a deliberate wide-angle portrait is a real choice.
-
 ## Prompt compilation
 
 Every clause carries a group and a priority tier. Groups come out in a fixed order, subject
@@ -280,6 +236,17 @@ spec field that describes the picture by what it is not and names the field, and
 area for the headline is described the same way, as something that is there: an even wall,
 an overcast sky above a low horizon, a plain backdrop, rather than a hole cut in a busy
 frame.
+
+Some words that look like negations are what the picture shows, so the rule leaves them
+alone: lettering in double quotes (a sign reading "No Smoking"), all-caps signage (NO
+PARKING stencilled on the kerb), a number (the No. 9 bus), a hyphenated compound (a
+no-frills canteen) and "not only". The booster ban works the same way. Words that are never
+a fact about a scene ("masterpiece", "hyperrealistic", "trending on artstation") are refused
+wherever they appear. Words that are a fact somewhere ("a perfect circle", "an award-winning
+chef", "a Sony 4K camcorder", "The Epic Theatre", "the label in sharp focus") are refused
+only as a bare list item, which is how a booster is written: "photorealistic, 8k, best
+quality". These exemptions came out of the rangsarn session's independent review of its own
+lint, which belongs to the same rule family.
 
 **No number is emitted alone.** A number in a prompt is decorative; the words for its
 effect are what steer. Measured against the request, with 1.0 as perfect agreement: colour
@@ -416,6 +383,35 @@ Evidence is still required, and must say what is absent.
 
 Reprocessing an image invalidates every previous approval, and the review records the
 `image_sha256` it was made against, so a review never carries over to a different file.
+
+## Measuring the review
+
+The review is measured the same way in rainmojo-so and in rangsarn, so the two numbers can
+be compared. The definitions were agreed between the two projects.
+
+| Measure | Definition | Target | Last measured |
+|---|---|---|---|
+| Recall | Faults the review answered `no`, over faults in the ground truth | 90% pooled, and **no group below its floor**: people 80% | 74% (objects 87%, places 83%, people 57%), 16 client scenes, before the `c2761f5` template fixes |
+| False-alarm rate | `no` answers on things that are correct, over all answers on correct things | 15% | Not yet measured as a rate on either side |
+| Unanswerable rate | `cannot_tell`, counted only where the thing asked about is visible in the frame | Report it | Not yet measured |
+| Attribution | Each miss and each false alarm traced to the question template that produced it | Every one | 11 of 14 misses traced to three templates |
+| First-generation pass | Images that pass on their first generation | A goal, never a gate | Not tracked |
+
+Three rules make the numbers mean something:
+
+- **Ground truth is read at the reviewer's magnification.** The first measurement read the
+  full 1200 px frame while the reviewer had 2x crops, and 9 of the person's 63 claims were
+  wrong; in 6 of those 9 the review had already answered correctly. At different
+  magnifications the comparison measures the reader's screen, not the review.
+- **A pooled figure never stands alone.** Faults involving people are fewer than faults
+  involving objects, so a pooled 90% can hide a people group at 60%. Each group is reported
+  against its own floor.
+- **Every proposed rule is run against the real-brief corpus before it lands.** A battery of
+  mutations cannot see false positives, because every mutation starts from one scene that
+  happens not to contain the phrase that the new rule wrongly refuses. One proposed rule
+  that the battery had certified would have refused 12 of 16 real client briefs. A rule
+  that no real brief reaches has been tested by nothing: it is reported as untested, not
+  as passing.
 
 ## Limits
 

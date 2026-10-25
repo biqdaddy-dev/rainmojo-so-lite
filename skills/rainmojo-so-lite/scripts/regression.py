@@ -33,6 +33,11 @@ TESTS = [
         [sys.executable, str(SCRIPTS / "content_pipeline_selftest.py")],
         "CONTENT_PRODUCTION_SELFTEST_OK",
     ),
+    (
+        "T4 every number the lite docs quote about the image spec matches the code",
+        [sys.executable, str(SCRIPTS / "doc_claims_test.py")],
+        "DOC_CLAIMS_TEST_OK",
+    ),
 ]
 
 

@@ -85,6 +85,23 @@ when the brief declares none, because the purpose opens the prompt and people te
 appear. Contract test 213 assertions, passing here unchanged; the shipped review example
 grows from 80 to 82 questions.
 
+Then `6be1a7f`. Words like perfect, epic, 4k, award-winning, best quality and sharp focus
+are refused only as a bare list item, since in a sentence they can be facts. Negation skips
+quoted lettering, all-caps signage, "No. 9", hyphenated compounds and "not only". The inline
+Constraints block no longer writes "no a ...". Contract test **234 assertions**, passing here
+unchanged, and `image-spec.contract.md` taken from the full edition with its new section on
+measuring the review.
+
+This edition's own instructions for the image spec are corrected in the same commit. From
+2.6.0 on, `content-production-lite`'s `SKILL.md` and `agent.json` described a design this
+edition had replaced: anchors read by intersecting two landmark bands, a seated eye-level
+band of one head height, a held object measured against its holder, and a face distance set
+by the distance alone. The code checks only the first landmark an anchor names, within 12 cm
+either way; uses 0.15 m for a seated eye line; measures a held object against the tallest
+person in the frame; and refuses a face closer than a per-lens floor. The instructions now
+say so, and a new test checks every number they quote against the code, so they cannot drift
+silently again. Regression is 4 of 4.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
