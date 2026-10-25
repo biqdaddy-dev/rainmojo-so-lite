@@ -182,7 +182,7 @@
     "q_pharmacist_position": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the pharmacist placed here in the frame: left of centre, behind the counter, facing across it?"
+      "_question": "Is the pharmacist placed here in the frame: left of centre, behind the counter, facing across it? Answer from where it sits in fractions of the frame width and height."
     },
     "q_pharmacist_action": {
       "answer": "yes",
@@ -224,11 +224,6 @@
       "evidence": "<what you saw and in which crop>",
       "_question": "Do both eyes of the pharmacist point here: down at the box, toward where her finger points?"
     },
-    "q_pharmacist_height": {
-      "answer": "yes",
-      "evidence": "<what you saw and in which crop>",
-      "_question": "Does the pharmacist read as 1.62 m tall against the other things in the frame?"
-    },
     "q_customer": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
@@ -247,7 +242,7 @@
     "q_customer_position": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the older customer placed here in the frame: right of centre, nearer the camera, back three-quarters to the lens?"
+      "_question": "Is the older customer placed here in the frame: right of centre, nearer the camera, back three-quarters to the lens? Answer from where it sits in fractions of the frame width and height."
     },
     "q_customer_action": {
       "answer": "yes",
@@ -289,11 +284,6 @@
       "evidence": "<what you saw and in which crop>",
       "_question": "Do both eyes of the older customer point here: down at the medicine box the pharmacist holds?"
     },
-    "q_customer_height": {
-      "answer": "yes",
-      "evidence": "<what you saw and in which crop>",
-      "_question": "Does the older customer read as 1.68 m tall against the other things in the frame?"
-    },
     "q_counter": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
@@ -312,7 +302,7 @@
     "q_counter_position": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the counter placed here: runs across the lower third of the frame, separating the two people?"
+      "_question": "Is the counter placed here: runs across the lower third of the frame, separating the two people? Answer from where it sits in fractions of the frame width and height."
     },
     "q_counter_material": {
       "answer": "yes",
@@ -342,7 +332,7 @@
     "q_medicine_box_position": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the medicine box placed here: just above the counter near the centre of the frame, tilted slightly toward the customer?"
+      "_question": "Is the medicine box placed here: just above the counter near the centre of the frame, tilted slightly toward the customer? Answer from where it sits in fractions of the frame width and height."
     },
     "q_medicine_box_material": {
       "answer": "yes",
@@ -372,7 +362,7 @@
     "q_shelving_position": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the shelving wall placed here: fills the frame behind the pharmacist?"
+      "_question": "Is the shelving wall placed here: fills the frame behind the pharmacist? Answer from where it sits in fractions of the frame width and height."
     },
     "q_shelving_material": {
       "answer": "yes",
@@ -462,7 +452,7 @@
     "q_crop_safety": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does this hold: both faces and the medicine box stay inside a centre square, so the 1:1 and 4:5 crops lose only the shelving?"
+      "_question": "Does this hold: both faces and the medicine box stay inside a centre square, so the 1:1 and 4:5 crops lose only the shelving? Check it by drawing each stated crop on the frame, not by eye."
     },
     "q_locale_01": {
       "answer": "yes",

@@ -158,6 +158,16 @@ smoothies, brownies and octopuses, and guards that keep look-alikes such as oliv
 gloves, canoes and babies untouched. Contract test **354 assertions**, passing here
 unchanged.
 
+Then `fabb04a` and `2034115`, from a second real run. The height question is asked only of a
+whole standing figure, and a support that runs out of the frame becomes a question about
+what leaves the frame. Position and crop-safety questions are measured rather than judged.
+Two new warnings flag an avoid entry that names where a picture came from rather than what is
+in it, and a person standing on a raised object whose ground height says floor. A person's
+likeness now carries its own provenance, `subject.reference`, and a rights gap is closed: a
+legacy reference image on a brief that marks its place as not real was fed to the generator
+with no check at all. Contract test **376 assertions**, passing here unchanged; the shipped
+review example drops from 80 to 78 questions.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

@@ -201,6 +201,24 @@ EXTENT_WORDS = (
 # height_m, and comparing that with a landmark is meaningless.
 FLOOR_SUPPORTED = {"stands_on", "rests_on"}
 ONE_HAND_FRACTION = 0.30
+# Postures in which a person's stature is their visible height.
+STATURE_POSTURES = {"standing", "walking", "leaning"}
+# A support the spec places outside the picture cannot be seen making contact.
+OUT_OF_FRAME_RE = re.compile(
+    r"\b(?:out of (?:the )?frame|off[- ]?frame|outside the frame|beyond the frame|"
+    r"out of shot|off[- ]?screen|past the (?:left|right|top|bottom) edge)\b",
+    re.I,
+)
+# An avoid entry naming a provenance or an origin: no reviewer can see where a
+# leaf was grown. Found by the rangsarn session ("plants from outside Southeast
+# Asia").
+UNSEEABLE_CLASS_RE = re.compile(
+    r"\b(?:from outside|native to|non-?native|not native|imported|originat\w*|"
+    r"of (?:\w+ )?origin|grown (?:in|outside)|made in|sourced from|foreign)\b",
+    re.I,
+)
+# A raised thing a person can stand on, below which their floor is the camera's.
+RAISED_FLOOR_M = 0.2
 TWO_HAND_FRACTION = 0.60
 HAND_HELD_WORDS = ("one hand", "a hand", "his hand", "her hand", "their hand", "palm", "fingers wrap")
 # The same words as a holding, not as a unit or a tree: "a hand's width above
@@ -833,9 +851,20 @@ def reference_height(name: str) -> tuple[float, float, str] | None:
     return best[1] if best else None
 
 
+def subject_reference(subject: dict[str, Any]) -> dict[str, Any]:
+    """The subject's own identity reference block, or an empty dict."""
+    block = subject.get("reference")
+    return block if isinstance(block, dict) else {}
+
+
+def reference_image_path(subject: dict[str, Any]) -> str:
+    """The image a person's likeness is conditioned on, from either place it can live."""
+    return _text(subject_reference(subject).get("path")) or _text(subject.get("reference_image"))
+
+
 def has_reference_image(subject: dict[str, Any]) -> bool:
     """Whether this person's likeness is supplied as an image."""
-    return bool(_text(subject.get("reference_image")))
+    return bool(reference_image_path(subject))
 
 
 def reference_block(spec: dict[str, Any]) -> dict[str, Any]:
@@ -1321,7 +1350,7 @@ def validate_spec(
         conditioning += [
             _text(subject.get("reference_image"))
             for subject in subjects
-            if has_reference_image(subject)
+            if _text(subject.get("reference_image")) and not subject_reference(subject)
         ]
         # Each image has to carry its own rights. Checking that the set holds one
         # owned source let a single client photograph authorise feeding anything
@@ -1689,15 +1718,81 @@ def validate_spec(
                     f"{low:g}-{high:g} m range for {name!r} ({source})."
                 )
 
+    location_reference = (
+        spec.get("location").get("reference") if isinstance(spec.get("location"), dict) else None
+    )
+    location_sources = [
+        r for r in _list((location_reference or {}).get("sources")) if isinstance(r, dict)
+    ] if isinstance(location_reference, dict) else []
     for subject in subjects:
-        if has_reference_image(subject) and not isinstance(
-            (spec.get("location") or {}).get("reference"), dict
-        ):
+        sid = _text(subject.get("id"))
+        own = subject_reference(subject)
+        if own:
+            # The likeness carries its own provenance, for a recurring character
+            # whose identity comes from an approved lock sheet rather than from
+            # a real place. Checked exactly as a conditioning image is.
+            path = _text(own.get("path"))
+            rights = _text(own.get("rights"))
+            if not path:
+                errors.append(f"subject {sid}: reference.path is required.")
+            if not _text(own.get("origin")):
+                errors.append(
+                    f"subject {sid}: reference.origin is required: say where this likeness "
+                    "comes from, such as the approved lock sheet and its version."
+                )
+            if rights not in REFERENCE_RIGHTS:
+                errors.append(
+                    f"subject {sid}: reference.rights must be one of "
+                    + ", ".join(sorted(REFERENCE_RIGHTS)) + "."
+                )
+            elif rights not in CONDITIONING_RIGHTS:
+                errors.append(
+                    f"subject {sid}: reference.rights is {rights!r}, which may inform what "
+                    "you write but may not be fed to the generator. Only client_owned or "
+                    "licensed may."
+                )
+            if _text(subject.get("reference_image")) and _text(subject.get("reference_image")) != path:
+                errors.append(
+                    f"subject {sid}: reference_image and reference.path name different "
+                    "images. Keep one."
+                )
+            continue
+        if not _text(subject.get("reference_image")):
+            continue
+        if not isinstance(location_reference, dict):
             errors.append(
-                f"subject {_text(subject.get('id'))}: reference_image needs a "
-                "location.reference block recording where the likeness comes from and on "
-                "what basis it may be used. A person's face is not a free asset."
+                f"subject {sid}: reference_image needs a provenance: a reference block "
+                "on the subject, or a row in location.reference.sources, recording where "
+                "the likeness comes from and on what basis it may be used. A person's "
+                "face is not a free asset."
             )
+        elif not location_reference.get("place_is_real"):
+            # The place_is_real branch checks this; without it nothing did, and a
+            # likeness was fed to the generator with no rights check at all.
+            image = _text(subject.get("reference_image"))
+            match = next(
+                (
+                    source for source in location_sources
+                    if _text(source.get("url"))
+                    and (image == _text(source.get("url")) or image in _text(source.get("url"))
+                         or _text(source.get("url")) in image)
+                ),
+                None,
+            )
+            if match is None:
+                errors.append(
+                    f"subject {sid}: {image!r} is fed to the generator but no source records "
+                    "where it came from. Give the subject a reference block, or a row in "
+                    "location.reference.sources with the rights it is used under."
+                )
+            elif _text(match.get("rights")) not in CONDITIONING_RIGHTS:
+                errors.append(
+                    f"subject {sid}: {image!r} is recorded as {_text(match.get('rights'))!r}, "
+                    "which may inform what you write but may not be fed to the generator. "
+                    "Only client_owned or licensed may."
+                )
+
+    for subject in subjects:
         # ground_height_m is relative to the camera's own floor, so it is negative
         # for someone below it: vendors in a boat under the landing the camera
         # stands on, a crowd in a sunken plaza.
@@ -1843,6 +1938,43 @@ def validate_spec(
                     f"spec.realism.imperfections[{index}] is too short to be located; "
                     "say where it is as well as what it is."
                 )
+
+    for value in _list(spec.get("must_not_show")):
+        found = UNSEEABLE_CLASS_RE.search(_text(value))
+        if found:
+            warnings.append(
+                f"spec.must_not_show {_text(value)!r} names a provenance ({found.group(0)!r}) "
+                "that no reviewer can see in a picture, so its question can only be "
+                "answered cannot_tell. Name what such a thing would look like instead."
+            )
+
+    # A person standing on a raised declared thing, with their floor left at the
+    # camera's: their eye line is then measured from the wrong floor, and they are
+    # grouped on the camera's floor with everything else.
+    raised = [
+        (obj, _num(obj.get("height_m")))
+        for obj in objects
+        if (_num(obj.get("height_m")) or 0) >= RAISED_FLOOR_M
+    ]
+    for subject in subjects:
+        if _text(subject.get("posture") or "standing").lower() not in STATURE_POSTURES:
+            continue
+        if _num(subject.get("ground_height_m")):
+            continue
+        position = _text(subject.get("position")).lower()
+        for obj, obj_height in raised:
+            names = [_text(obj.get(k)).lower() for k in ("short_name", "id") if _text(obj.get(k))]
+            if any(
+                re.search(r"\b(?:on|upon|atop|on top of)\s+(?:the\s+|a\s+|an\s+)?" + re.escape(n) + r"\b", position)
+                for n in names
+            ):
+                warnings.append(
+                    f"subject {_text(subject.get('id'))}: position puts them on "
+                    f"{_noun(obj)} ({obj_height:g} m), but ground_height_m is 0, so their "
+                    "eye line and their floor are measured from the camera's floor. Set "
+                    "ground_height_m to the height they stand at."
+                )
+                break
 
     for value, eid, name in collisions(spec):
         errors.append(
@@ -2700,7 +2832,20 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                     if field == "position"
                     else f"Does {noun} {lead}: {_text(subject[field])}?"
                 )
-                add(f"{base}_{field}", "attribute", text, base)
+                if field == "position":
+                    # Measured, not judged: in run 02 all four remaining misses
+                    # were in-frame position and scale.
+                    add(
+                        f"{base}_{field}",
+                        "spatial",
+                        text + " Answer from where it sits in fractions of the frame width "
+                        "and height.",
+                        base,
+                        verify_with="geometry",
+                        measure={"kind": "position", "entity": sid, "expected": _text(subject[field])},
+                    )
+                else:
+                    add(f"{base}_{field}", "attribute", text, base)
         add(
             f"{base}_action",
             "action",
@@ -2770,7 +2915,14 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 base,
             )
         height = _num(subject.get("height_m"))
-        if height:
+        # A stature can be read only off someone standing with their whole height
+        # in frame: run 02 got 8 honest cannot_tell answers from seated and
+        # cropped people.
+        whole_figure = (
+            _text(subject.get("posture") or "standing").lower() in STATURE_POSTURES
+            and derived.get("fits_in_frame", {}).get(sid, False)
+        )
+        if height and whole_figure:
             add(
                 f"{base}_height",
                 "scale",
@@ -2810,14 +2962,34 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         by = _text(support.get("by"))
         by_name = _entity_name(spec, by) if by else ""
         kind = _text(support.get("kind"))
+        if OUT_OF_FRAME_RE.search(by):
+            # The contact is outside the picture, so ask what the picture can show.
+            add(
+                f"{base}_support",
+                "physics",
+                f"Does {noun} run out of the frame toward its support, as the spec "
+                f"states: {SUPPORT_PARTICIPLE.get(kind, kind.replace('_', ' '))} {by}?",
+                base,
+                verify_with="geometry",
+                measure={"kind": "leaves_frame", "entity": oid, "expected": by},
+            )
+        else:
+            add(
+                f"{base}_support",
+                "physics",
+                f"Is {noun} visibly {SUPPORT_PARTICIPLE.get(kind, kind.replace('_', ' '))} "
+                f"{by_name}, with contact and a contact shadow where they meet?",
+                base,
+            )
         add(
-            f"{base}_support",
-            "physics",
-            f"Is {noun} visibly {SUPPORT_PARTICIPLE.get(kind, kind.replace('_', ' '))} "
-            f"{by_name}, with contact and a contact shadow where they meet?",
+            f"{base}_position",
+            "spatial",
+            f"Is {noun} placed here: {_text(obj.get('position'))}? Answer from where it sits "
+            "in fractions of the frame width and height.",
             base,
+            verify_with="geometry",
+            measure={"kind": "position", "entity": oid, "expected": _text(obj.get("position"))},
         )
-        add(f"{base}_position", "spatial", f"Is {noun} placed here: {_text(obj.get('position'))}?", base)
         if _text(obj.get("material")):
             add(
                 f"{base}_material",
@@ -3097,7 +3269,10 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         add(
             "q_crop_safety",
             "composition",
-            f"Does this hold: {_text(composition['crop_safety'])}?",
+            f"Does this hold: {_text(composition['crop_safety'])}? Check it by drawing "
+            "each stated crop on the frame, not by eye.",
+            verify_with="geometry",
+            measure={"kind": "crop_safety", "expected": _text(composition["crop_safety"])},
         )
 
     location = spec.get("location", {}) if isinstance(spec.get("location"), dict) else {}

@@ -68,7 +68,7 @@ additionally require the camera numbers and the shadow direction.
 | `location` | `place`, `locale`, `time_of_day`, `weather`, `locale_details[]`, `reference{}` for a real place |
 | `realism` | `imperfections[]`: located flaws, required for a photograph |
 | `camera` | `shot_type`, `angle`, `tilt`, `horizon`, `height_m`, `focal_length_mm`, `aperture_f`, `subject_distance_m`, `focus_on` |
-| `subjects[]` | `id`, `short_name`, `kind`, `count`, `description`, `appearance`, `wardrobe`, `posture`, `pose`, `hands`, `gaze`, `expression`, `action`, `position`, `height_m`, `ground_height_m`, `distance_m`, `plane`, `reference_image` |
+| `subjects[]` | `id`, `short_name`, `kind`, `count`, `description`, `appearance`, `wardrobe`, `posture`, `pose`, `hands`, `gaze`, `expression`, `action`, `position`, `height_m`, `ground_height_m`, `distance_m`, `plane`, `reference{path,rights,origin}` or `reference_image` |
 | `objects[]` | `id`, `short_name`, `name`, `count`, `material`, `state`, `size`, `height_m`, `width_m`, `ground_height_m`, `extends_beyond_frame`, `scale_anchor`, `support{kind,by}`, `position`, `distance_m`, `plane` |
 | `spatial_layout` | `foreground`, `midground`, `background` |
 | `lighting` | `key{source,direction,quality}`, `fill[]`, `shadow_direction`, `color_temperature_k` |
@@ -130,7 +130,9 @@ distance and the conditioning rights, and are vouched for by the contract test a
 | Forbidding what is shown | `must_not_show[]` against every declared name | An entry that reduces to a declared thing's name and nothing else ("a counter", "counters"). Any state, attribute, place, quantity or coordination ("a cluttered counter", "a second counter", "pills on the counter") is a constraint and is accepted. | The model would be given the thing twice, once as content and once as a prohibition. |
 | People implied | `purpose`, `subjects[]` | Warns when the spec declares nobody and the purpose describes a human act ("is handed over", "as its customers meet it"). Verb forms only, so "an explainer" or "the consultant's empty office" do not warn. | The purpose opens the prompt and outweighs an empty subject list: two of six zero-subject client briefs came back with people. |
 | Real place | `location.reference{}` | With `place_is_real`: no `place_name`; fewer than two `sources` (the client's `min_reference_sources`); a source without `url`, `publisher`, `shows`, `accessed`, a known `viewpoint` and `rights`; no `verified_facts`, or one that hedges; and no source that shows the space from where the camera is. Inside needs an interior viewpoint; outside needs an exterior one; a staff portrait or a product shot never answers for a room. A `state` other than `existing` warns that the image is a visualisation. | A picture of a named place that gets it wrong is worse than a generic one, because the client's own customers know the room. |
-| Conditioning rights | `reference.conditioning_images[]`, `subjects[].reference_image` | Each image fed to the generator must match its own row in `sources`, and that row's `rights` must be `client_owned` or `licensed`. `reference_only` may inform what is written but not be fed. A `reference_image` needs a reference block at all. | One owned photograph must not authorise feeding anything else. A face is not a free asset. |
+| Conditioning rights | `reference.conditioning_images[]`, `subjects[].reference{path,rights,origin}`, `subjects[].reference_image` | Each image fed to the generator carries its own rights, and only `client_owned` or `licensed` may be fed; `reference_only` may inform what is written. A subject's own `reference` block needs `path`, `rights` and `origin` ("lock sheet cast/pim v3") and is independent of any real place, for a recurring character in a fictional one. The older `reference_image` must match a row in `location.reference.sources`, whether or not the place is real: before, with `place_is_real` false, it was fed with no rights check at all. | One owned photograph must not authorise feeding anything else. A face is not a free asset. |
+| Unseeable exclusion | `must_not_show[]` | Warns on an entry that names a provenance or an origin ("plants from outside Southeast Asia", "imported", "made in"). | No reviewer can see where a leaf was grown, so the question can only be answered `cannot_tell`. Name what such a thing would look like. |
+| Floor left at the camera's | `subjects[].position`, `ground_height_m` | Warns when a standing person's position puts them on a declared thing at least 0.2 m high ("on the landing", "on the stage") and their `ground_height_m` is 0. | Their eye line and their floor are then measured from the camera's floor, and they are grouped there with everything else. |
 | Lint | every prose field that reaches the prompt | Negation, quality boosters, similes ("hands like a pianist's"; "what X is really like" is an idiom and accepted), a pose named by its effect ("a confident pose"), camera words in a drawing, and hedges in `verified_facts` (maybe, probably, reportedly; not an approximator such as "about as wide as" or "roughly square", and not "around the square"). Audit fields such as `sources` and `conflicting_claims` are exempt, because they never reach the prompt. | Each of these is measured to cost fidelity, or to put the compared thing in the frame. |
 
 ## What the review asks that the brief cannot
@@ -153,7 +155,15 @@ refuse the brief:
   10 such hands in run 01. The question asks for five wherever they can be counted, none
   extra, fused or bending the wrong way, and `cannot_tell` where none can.
 - **Position asks where someone is placed**, never whether they stand, which a seated
-  person fails.
+  person fails, and it is measured: position and crop-safety questions route to
+  `geometry` and are answered in fractions of the frame. In rangsarn's run 02 all four
+  remaining misses were in-frame position and scale, judged by eye.
+- **A stature is asked only where it shows**: of a person standing, walking or leaning
+  whose whole height fits the frame. Seated and cropped people gave 8 honest
+  `cannot_tell` answers in run 02.
+- **A support outside the picture** ("fixed in the trunk, out of frame to the right") is
+  asked as whether the thing runs out of the frame toward it, never for a contact shadow
+  nobody can see.
 - **One floor per floor.** The shared-floor question groups the people and things that
   stand on the same surface: the same `ground_height_m`, or the same declared entity for
   a thing resting on another. A man on a raised landing and baskets inside a boat are not
@@ -495,6 +505,15 @@ be compared. The definitions were agreed between the two projects.
 | Attribution | Each miss and each false alarm traced to the question template that produced it | Every one | 11 of 14 misses traced to three templates |
 | First-generation pass | Images that pass on their first generation | A goal, never a gate | Not tracked |
 
+rangsarn measured the same table on its own five specs with this module, codex-imagegen
+and a codex reviewer on 2x crops. Run 01 (050ea4e): recall 79.1%, people 68.4%, false
+alarms 16.8% once rescored under the merge rule below. Run 02 (f88e7ef, after the run 01
+template fixes): recall 91.3%, people 78.9%, every other group 100%, false alarms 17.8%,
+unanswerable 12.0% of visible questions. The same run measured prompt length for the
+first time: tier-1-only prompts about 30% shorter (689 to 1223 words against 946 to 1769)
+drew 44 spec faults against 46 over about 400 visible checks each, so trimming tiers 2 and
+3 cost no compliance there. Five specs is a small sample.
+
 Three rules make the numbers mean something:
 
 - **Ground truth is read at the reviewer's magnification.** The first measurement read the
@@ -504,6 +523,11 @@ Three rules make the numbers mean something:
 - **A pooled figure never stands alone.** Faults involving people are fewer than faults
   involving objects, so a pooled 90% can hide a people group at 60%. Each group is reported
   against its own floor.
+- **A measurement that cannot decide does not override the reviewer.** Where a tool
+  answers through `measure`, its answer wins only when it is firm, yes or no. An
+  uncertain measurement falls back to the reviewer's answer. Under the first merge rule
+  39 machine-uncertain answers sat on top of correct reviewer yeses in rangsarn's run 02,
+  and that rule moved false alarms and unanswerable answers more than anything else.
 - **Every proposed rule is run against the real-brief corpus before it lands.** A battery of
   mutations cannot see false positives, because every mutation starts from one scene that
   happens not to contain the phrase that the new rule wrongly refuses. One proposed rule

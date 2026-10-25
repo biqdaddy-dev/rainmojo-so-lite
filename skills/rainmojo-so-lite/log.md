@@ -359,6 +359,29 @@ byte-identical; the contract doc did not change. 354 assertions passing unchange
 The five were drawn from the held-out set, so they are not held out any longer, and the better
 score they give on it is not evidence of reach beyond the table.
 
+SIXTEENTH PORT, `fabb04a` and `2034115`, same version: run 02's question fixes, the height
+question only for a whole standing figure, an out-of-frame support as a leaves-frame
+question, position and crop safety measured; two new warnings; `subject.reference` for a
+likeness's provenance; and a rights gap closed, where a legacy reference image on a brief whose
+place is marked not real reached the generator unchecked. `image_spec.py`, the contract test
+and the contract doc byte-identical, and the review example regenerated from this edition's
+own defaults, 78 questions, byte-identical to the full edition's. 376 assertions passing
+unchanged, regression 4 of 4, T4 green.
+
+The two doc risks flagged upstream were searched directly, since T4 pins neither question
+wording nor the reference rules. No lite-owned doc mentions `reference_image`,
+`location.reference`, `subject.reference` or a likeness, so nothing said a reference image
+needs `location.reference`; the "identity" in the pipeline `contract.md` is the reviewer's and
+a raw source's provenance hash. No doc makes a claim about the height question; the `height_m`
+mentions are field requirements and the anchor reading, both still true.
+
+On the real briefs nothing moved, errors or warnings, and nothing reaches the new paths: no
+brief has a subject reference image, a reference block whose place is not real, a person on a
+declared object at ground height zero, or an avoid entry naming a provenance. The last of those
+four reach checks guessed the trigger words; the diff, which shows the warning firing on none of
+the eighteen, is the definitive evidence. Both warnings and the rights fix are vouched for by
+the contract test alone.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

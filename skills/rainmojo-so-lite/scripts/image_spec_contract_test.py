@@ -1647,6 +1647,7 @@ print("C38 every measurable question says what a tool should find")
 MEASURE_KINDS = {
     "count", "finger_count", "framing", "camera_angle", "horizon_band", "eye_line",
     "height_ratio", "viewpoint", "horizon_fraction", "undeclared", "glyphs", "text",
+    "position", "crop_safety", "leaves_frame",
 }
 for spec_name, spec in (("example", EXAMPLE), ("real place", REAL_PLACE)):
     questions = image_spec.build_questions(spec, image_spec.derive(spec, WIDTH, HEIGHT))
@@ -1851,6 +1852,139 @@ for entity, expected in (
 ):
     check(f"{entity} is detected as {expected!r}", image_spec.detect_as(entity) == expected, image_spec.detect_as(entity))
 check("a person is detected as a person, whatever their role", image_spec.detect_as({"short_name": "grandmother"}, person=True) == "person")
+
+print("C41 run 02: questions a correct picture cannot answer, and misses on position")
+
+
+def _q(spec):
+    return {q["id"]: q for q in image_spec.build_questions(spec, image_spec.derive(spec, WIDTH, HEIGHT))}
+
+
+base41 = _q(EXAMPLE)
+check(
+    "a stature is not asked of people the medium shot cuts at the waist",
+    "q_pharmacist_height" not in base41 and "q_customer_height" not in base41,
+)
+full = copy.deepcopy(EXAMPLE)
+full["camera"].update({"shot_type": "wide", "focal_length_mm": 24})
+full_q = _q(full)
+fits = image_spec.derive(full, WIDTH, HEIGHT)["fits_in_frame"]
+check(
+    "and is asked of a standing person whose whole height fits",
+    fits.get("pharmacist") and "q_pharmacist_height" in full_q,
+    str(fits),
+)
+seated_full = copy.deepcopy(full)
+seated_full["subjects"][0]["posture"] = "seated"
+check("but not of the same person seated", "q_pharmacist_height" not in _q(seated_full))
+out = copy.deepcopy(EXAMPLE)
+out["objects"][2]["support"] = {"kind": "fixed_in", "by": "the back wall, out of frame to the right"}
+out_q = _q(out)["q_shelving_support"]
+check(
+    "a support outside the picture is asked as leaving the frame toward it",
+    "run out of the frame toward its support" in out_q["question"]
+    and out_q.get("verify_with") == "geometry" and "contact shadow" not in out_q["question"],
+    out_q["question"],
+)
+check(
+    "a support in the picture is still asked for contact",
+    "contact shadow" in base41["q_shelving_support"]["question"],
+)
+for qid in ("q_pharmacist_position", "q_counter_position", "q_crop_safety"):
+    check(
+        f"{qid} is measured, in fractions of the frame",
+        base41[qid].get("verify_with") == "geometry" and "measure" in base41[qid],
+        str(base41[qid].get("verify_with")),
+    )
+
+
+def warns(mutate, needle):
+    spec = copy.deepcopy(EXAMPLE)
+    mutate(spec)
+    return any(needle in w for w in image_spec.validate_spec(spec, WIDTH, HEIGHT, DEFAULTS)[1])
+
+
+check(
+    "an avoid entry naming an origin nobody can see is warned",
+    warns(lambda s: s["must_not_show"].append("plants from outside Southeast Asia"), "no reviewer can see"),
+)
+check(
+    "an avoid entry naming something visible is not",
+    not warns(lambda s: s["must_not_show"].append("potted plants on the counter"), "no reviewer can see"),
+)
+
+
+def on_counter(spec):
+    spec["subjects"][1]["position"] = "standing on the counter, right of centre"
+
+
+check("a person placed on a raised declared thing at floor level is warned", warns(on_counter, "ground_height_m is 0"))
+check(
+    "and is not once their floor is given",
+    not warns(lambda s: (on_counter(s), s["subjects"][1].update({"ground_height_m": 0.9})), "ground_height_m is 0"),
+)
+check(
+    "nor when they only stand beside it",
+    not warns(lambda s: s["subjects"][1].update({"position": "standing beside the counter"}), "ground_height_m is 0"),
+)
+
+print("C42 a likeness carries its own provenance, in a fictional place too")
+# Asked for by the rangsarn session: a recurring character from an approved lock
+# sheet, in a place that does not exist.
+locked = copy.deepcopy(EXAMPLE)
+locked["subjects"][0]["appearance"] = ""
+locked["subjects"][0]["reference"] = {
+    "path": "cast/pim/lock-v3.png", "rights": "client_owned", "origin": "lock sheet cast/pim v3",
+}
+check(
+    "a client-owned lock sheet on the subject is accepted with no real place",
+    not image_spec.validate_spec(locked, WIDTH, HEIGHT, DEFAULTS)[0],
+    str(image_spec.validate_spec(locked, WIDTH, HEIGHT, DEFAULTS)[0][:2]),
+)
+locked_prompt = image_spec.compile_spec(locked, WIDTH, HEIGHT, DEFAULTS)["prompt"]
+check("and is prompted as a reference, with the identity lock", "the person from the reference image" in locked_prompt and "bone structure" in locked_prompt)
+for field, value, needle in (
+    ("rights", "reference_only", "may not be fed to the generator"),
+    ("rights", "found_online", "reference.rights must be one of"),
+    ("origin", "", "reference.origin is required"),
+    ("path", "", "reference.path is required"),
+):
+    def mutate(spec, field=field, value=value):
+        spec["subjects"][0]["appearance"] = ""
+        spec["subjects"][0]["reference"] = {
+            "path": "cast/pim/lock-v3.png", "rights": "client_owned", "origin": "lock sheet v3",
+        }
+        spec["subjects"][0]["reference"][field] = value
+    refuses(f"a subject reference with {field} {value!r} is refused", needle, mutate)
+
+
+def fictional_with_legacy(spec, rights=None):
+    spec["subjects"][0]["appearance"] = ""
+    spec["subjects"][0]["reference_image"] = "uploads/cast/pim.png"
+    spec["location"]["reference"] = {
+        "place_is_real": False,
+        "sources": [] if rights is None else [{
+            "url": "uploads/cast/pim.png", "publisher": "studio", "shows": "the character",
+            "viewpoint": "staff_or_uniform", "accessed": "2026-10-26", "rights": rights,
+        }],
+    }
+
+
+refuses(
+    "a legacy likeness in a fictional place with no source row is refused, where it used to pass",
+    "no source records where it came from",
+    fictional_with_legacy,
+)
+refuses(
+    "and one recorded as reference_only is refused",
+    "may not be fed to the generator",
+    lambda spec: fictional_with_legacy(spec, "reference_only"),
+)
+check(
+    "and one recorded as client_owned is accepted",
+    not [e for e in errors_for(lambda spec: fictional_with_legacy(spec, "client_owned")) if "subject" in e and "reference" in e],
+    str(errors_for(lambda spec: fictional_with_legacy(spec, "client_owned"))[:2]),
+)
 
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
