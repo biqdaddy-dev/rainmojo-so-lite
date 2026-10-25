@@ -97,6 +97,129 @@ EYE_FRACTION = {"standing": 0.93, "walking": 0.93, "leaning": 0.90, "crouching":
 EYE_ABSOLUTE_M = {"sitting": 1.23, "seated": 1.23, "kneeling": 1.15, "lying": 0.25}
 CHILD_EYE_FRACTION = 0.90
 
+# Landmark heights above the floor as a fraction of stature, from the standard
+# anthropometric fractions of Drillis and Contini (1966) as tabulated in Winter,
+# Biomechanics and Motor Control of Human Movement, figure 4.1. Same measured
+# family as EYE_FRACTION above, whose 0.93 agrees with this table's 0.936.
+#
+# These are what make scale_anchor more than decoration. The field is mandatory
+# because a size in metres means nothing to an image model, so the brief states
+# "its top meets the pharmacist just above the hip" instead. That is a claim about
+# two numbers already in the spec, and a wrong one puts a counter at knee height
+# while reading as correct prose. Checking it costs one comparison.
+BODY_LANDMARK_FRACTION = {
+    "eye": 0.936,
+    "eyes": 0.936,
+    "eye level": 0.936,
+    "chin": 0.870,
+    "shoulder": 0.818,
+    "shoulders": 0.818,
+    "chest": 0.720,
+    "elbow": 0.630,
+    "elbows": 0.630,
+    "waist": 0.600,
+    "hip": 0.530,
+    "hips": 0.530,
+    "wrist": 0.485,
+    "fingertip": 0.377,
+    "fingertips": 0.377,
+    "knee": 0.285,
+    "knees": 0.285,
+    "ankle": 0.039,
+    "ankles": 0.039,
+}
+# Half-width of the accepted band around a landmark, in metres: roughly the
+# population spread at the hip, and wide enough that "meets the counter at the
+# waist" is not refused for a few centimetres.
+LANDMARK_BAND_M = 0.12
+# A hedge in the anchor moves the band to one side instead of centring it. Only
+# the words just before a landmark count as its hedge, so "just above the hip, a
+# little below her waist" reads as two bands and not as one confused one.
+LANDMARK_ABOVE = ("above", "over", "higher than", "taller than", "past")
+LANDMARK_BELOW = ("below", "under", "lower than", "shorter than", "short of")
+LANDMARK_HEDGE_M = 0.25
+LANDMARK_HEDGE_WINDOW = 28
+
+# Head height as a fraction of stature: the 7.5-head canon, 1/7.5 = 0.133, which
+# is what lets an eye-line offset be stated in a unit a reviewer can count on the
+# image itself without any external scale.
+HEAD_HEIGHT_FRACTION = 0.133
+
+# A palm-sized object against the holder's stature. Above the first fraction an
+# object cannot be described as filling a hand; above the second it is a
+# two-handed load and the brief has to say so, because a one-handed grip on
+# something that large is one of the functional failures the rubric leads with.
+HAND_HELD_MAX_FRACTION = 0.30
+TWO_HANDED_MAX_FRACTION = 0.60
+ONE_HAND_WORDS = ("palm", "one hand", "single hand", "fingertips", "pinched", "finger and thumb")
+
+# Perspective distortion is set by subject distance alone, not by the lens: the
+# focal length only decides the framing. Inside about a metre the nose-to-ear
+# depth ratio is large enough to read as a caricature, which is why portrait
+# practice is 1.5 m or more with a longer lens to keep the same framing.
+FACE_MIN_DISTANCE_M = 1.0
+FACE_COMFORT_DISTANCE_M = 1.5
+TIGHT_PERSON_SHOTS = {"medium_close", "close_up", "extreme_close_up", "macro"}
+
+# A fully clouded sky is a source the size of the sky: the largest soft source
+# there is, and it removes the sun. It therefore cannot cast a crisp shadow, and
+# a brief that asks for both contradicts itself. Shadow direction is the lighting
+# error everyone checks; shadow hardness against the weather is the next one.
+OVERCAST_WEATHER = (
+    "overcast",
+    "cloudy",
+    "clouded over",
+    "heavy cloud",
+    "thick cloud",
+    "fog",
+    "foggy",
+    "mist",
+    "misty",
+    "rain",
+    "raining",
+    "rainy",
+    "drizzle",
+    "storm",
+)
+SUN_SOURCES = ("sun", "sunlight", "sunshine", "sunbeam", "sunbeams")
+HARD_LIGHT_WORDS = (
+    "hard",
+    "harsh",
+    "crisp",
+    "sharp-edged",
+    "sharp edged",
+    "crisp-edged",
+    "crisp edged",
+    "point source",
+    "small source",
+    "bare bulb",
+    "undiffused",
+)
+# A fill is by definition weaker than the key. One that claims the key's power
+# and hardness is a second key, and two of those are the two-sun scene Farid
+# found in 25 of 25 sunlit-cube images (arXiv:2206.14617).
+LIGHT_PARITY_WORDS = (
+    "same power",
+    "equal power",
+    "same strength",
+    "as strong",
+    "as bright",
+    "equally bright",
+    "matching the key",
+    "same intensity",
+    "full power",
+    "second key",
+    "another key",
+)
+
+# Support that cannot hold anything. The negation scan does not reach these,
+# because "a hovering glass shelf" states what is there rather than what is not.
+IMPOSSIBLE_SUPPORT_RE = re.compile(
+    r"\b(hover(?:ing|s)?|float(?:ing|s)?|levitat(?:ing|es|e|ion)?|"
+    r"mid-?air|thin air|nothing|invisible)\b",
+    re.I,
+)
+
 # Heights fixed by building code or settled convention, in metres, as a range.
 # Code-backed: ADA and the IRC/IBC. Convention-backed rows are marked, because a
 # convention is a default a client may legitimately override, while a code
@@ -419,6 +542,114 @@ def standing_people(spec: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+def seated_people(spec: dict[str, Any]) -> list[dict[str, Any]]:
+    """People whose eye height is set by the seat or the floor, not by stature.
+
+    They are excluded from ``standing_people`` because the fraction-of-stature
+    crossing does not apply to them, but they still have an eye line, and in an
+    interview, desk or restaurant scene they are the only people in the frame.
+    """
+    return [
+        entity
+        for kind, entity in _entities(spec)
+        if kind == "subject"
+        and _text(entity.get("kind") or "person") == "person"
+        and _text(entity.get("posture") or "standing").lower() in EYE_ABSOLUTE_M
+    ]
+
+
+def people(spec: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        entity
+        for kind, entity in _entities(spec)
+        if kind == "subject" and _text(entity.get("kind") or "person") == "person"
+    ]
+
+
+def head_heights_phrase(value: float | None) -> str:
+    """An eye-line offset in head heights, in words a reviewer can count."""
+    heads = abs(value or 0.0)
+    if heads < 0.75:
+        return "half a head"
+    if heads < 1.5:
+        return "one head height"
+    return f"{heads:.0f} head heights"
+
+
+def landmark_bands(text: str, stature: float) -> list[tuple[float, float, str]]:
+    """Every height band the landmark words in a scale anchor imply, in metres.
+
+    A well-written anchor often names two landmarks and brackets between them,
+    as in "its top meets the pharmacist just above the hip, a little below her
+    waist", and each landmark carries its own hedge. So every occurrence is read
+    with the words just before it, and the bands are combined rather than one
+    landmark deciding alone.
+    """
+    lowered = text.lower()
+    bands: list[tuple[float, float, str]] = []
+    taken: list[tuple[int, int]] = []
+    for name in sorted(BODY_LANDMARK_FRACTION, key=len, reverse=True):
+        start = 0
+        while True:
+            at = lowered.find(name, start)
+            if at < 0:
+                break
+            start = at + len(name)
+            if any(begin <= at < end for begin, end in taken):
+                continue  # a longer landmark already claimed these characters
+            taken.append((at, at + len(name)))
+            expected = BODY_LANDMARK_FRACTION[name] * stature
+            window = lowered[max(0, at - LANDMARK_HEDGE_WINDOW) : at]
+            if any(word in window for word in LANDMARK_ABOVE):
+                bands.append((expected, expected + LANDMARK_HEDGE_M, "above the " + name))
+            elif any(word in window for word in LANDMARK_BELOW):
+                bands.append((expected - LANDMARK_HEDGE_M, expected, "below the " + name))
+            else:
+                bands.append(
+                    (expected - LANDMARK_BAND_M, expected + LANDMARK_BAND_M, "at the " + name)
+                )
+    return bands
+
+
+def landmark_window(bands: list[tuple[float, float, str]]) -> tuple[float, float, str]:
+    """The height the bands agree on, or their hull where they do not.
+
+    Two landmarks that bracket a height intersect. Loose prose can produce bands
+    that do not overlap at all, and refusing a brief on that would cost more than
+    it catches, so the hull is used instead and only a height outside every band
+    is refused.
+    """
+    low = max(band[0] for band in bands)
+    high = min(band[1] for band in bands)
+    if low > high:
+        low = min(band[0] for band in bands)
+        high = max(band[1] for band in bands)
+    return low, high, ", ".join(band[2] for band in bands)
+
+
+def anchor_person(
+    text: str,
+    candidates: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """The person a scale anchor refers to: the only one, or the one it names.
+
+    With several people in the frame and no name in the anchor, nothing is
+    returned and no proportion check runs: a guessed referent would refuse a
+    correct brief, which is worse than missing one.
+    """
+    if len(candidates) == 1:
+        return candidates[0]
+    lowered = text.lower()
+    for subject in candidates:
+        for label in (subject.get("short_name"), subject.get("id")):
+            name = _text(label).lower()
+            # On word boundaries: an id of "a" would otherwise match the "a" in
+            # "waist", and name any person in the scene at random.
+            if name and re.search(r"\b" + re.escape(name) + r"\b", lowered):
+                return subject
+    return None
+
+
 def reference_height(name: str) -> tuple[float, float, str] | None:
     """The code or convention height band for a named object, if there is one."""
     lowered = name.lower()
@@ -540,6 +771,36 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
                 }
             )
     derived["horizon_crossings"] = crossings
+
+    # A seated or kneeling figure has an eye line too, and the horizon still sits
+    # at the camera's own height, so the offset between them is fixed. It is
+    # stated in head heights rather than metres because a reviewer can count head
+    # heights on the image with no external scale, which is what makes this the
+    # one eye-line cue available in an interview or desk scene.
+    eye_lines: list[dict[str, Any]] = []
+    if cam_height:
+        for subject in seated_people(spec):
+            eye = eye_height(subject)
+            stature = _num(subject.get("height_m"))
+            if eye is None or not stature:
+                continue
+            offset = cam_height - eye
+            head = HEAD_HEIGHT_FRACTION * stature
+            eye_lines.append(
+                {
+                    "id": _text(subject.get("id")),
+                    "posture": _text(subject.get("posture") or "standing").lower(),
+                    "eye_height_m": round(eye, 2),
+                    "offset_m": round(offset, 2),
+                    "offset_head_heights": round(offset / head, 2) if head else None,
+                    "relation": (
+                        "at_eyes"
+                        if abs(offset) <= head * 0.5
+                        else ("above_eyes" if offset > 0 else "below_eyes")
+                    ),
+                }
+            )
+    derived["eye_line_offsets"] = eye_lines
 
     # Apparent-size relations stated in words, because a model reads "clearly
     # larger in the frame" and cannot act on "1.55x". The exact ratios stay in
@@ -786,8 +1047,19 @@ def validate_spec(
                 f"object {oid}: support {{kind, by}} is required so nothing floats; kind is one of "
                 + ", ".join(sorted(SUPPORT_KINDS)) + "."
             )
-        elif _text(support.get("kind")) in {"held_by", "worn_by"} and _text(support.get("by")) not in ids:
+        elif (
+            _text(support.get("kind")) in {"held_by", "worn_by"}
+            and ids.get(_text(support.get("by"))) != "subject"
+        ):
             errors.append(f"object {oid}: support.by {support.get('by')!r} must be a subject id for held_by or worn_by.")
+        if isinstance(support, dict):
+            impossible = IMPOSSIBLE_SUPPORT_RE.search(_text(support.get("by")))
+            if impossible and _text(support.get("kind")) != "floats_in":
+                errors.append(
+                    f"object {oid}: support.by names {impossible.group(0)!r}, which holds "
+                    "nothing up. Name the surface, fixing or person that carries the "
+                    "weight, or use support.kind floats_in with what it floats in."
+                )
         if photographic:
             d = _num(obj.get("distance_m"))
             if d is None or d <= 0:
@@ -798,6 +1070,66 @@ def validate_spec(
         for ref in _list(obj.get("interacts_with")):
             if _text(ref) not in ids:
                 errors.append(f"object {oid}: interacts_with {ref!r} is not a known id.")
+
+    # Proportion against the human body. scale_anchor is mandatory because a size
+    # in metres means nothing to an image model, and it is the one field that ties
+    # an object's size to a person already in the frame. Where it names a body
+    # landmark, that is a claim about two numbers the spec already carries.
+    everyone = people(spec)
+    for obj in objects:
+        oid = _text(obj.get("id")) or "?"
+        anchor = _text(obj.get("scale_anchor"))
+        obj_height = _num(obj.get("height_m"))
+        if not anchor or obj_height is None:
+            continue
+        subject = anchor_person(anchor, everyone)
+        stature = _num(subject.get("height_m")) if subject else None
+        if not stature:
+            continue
+        bands = landmark_bands(anchor, stature)
+        if not bands:
+            continue
+        low, high, how = landmark_window(bands)
+        if not low <= obj_height <= high:
+            errors.append(
+                f"object {oid}: height_m {obj_height:g} contradicts its scale_anchor. On a "
+                f"{stature:g} m person, {how} means {low:.2f}-{high:.2f} m. Change the "
+                "height or the anchor; one of the two is wrong."
+            )
+
+    # A held object against the holder's stature, because what a hand is doing
+    # with an object is a functional check and those outnumber physics failures
+    # six to one in annotated prevalence.
+    for obj in objects:
+        oid = _text(obj.get("id")) or "?"
+        support = obj.get("support")
+        if not isinstance(support, dict) or _text(support.get("kind")) != "held_by":
+            continue
+        holder = next(
+            (s for s in everyone if _text(s.get("id")) == _text(support.get("by"))),
+            None,
+        )
+        stature = _num(holder.get("height_m")) if holder else None
+        size = max(
+            value for value in (_num(obj.get("height_m")) or 0.0, _num(obj.get("width_m")) or 0.0)
+        )
+        if not stature or not size:
+            continue
+        grip = (_text(obj.get("scale_anchor")) + " " + _text(holder.get("hands"))).lower()
+        if size > HAND_HELD_MAX_FRACTION * stature and any(
+            word in grip for word in ONE_HAND_WORDS
+        ):
+            errors.append(
+                f"object {oid}: it measures {size:g} m while {_text(holder.get('id'))} is "
+                f"{stature:g} m tall, so it cannot be held the way the brief describes. A "
+                f"one-handed grip holds up to about {HAND_HELD_MAX_FRACTION * stature:.2f} m."
+            )
+        elif size > TWO_HANDED_MAX_FRACTION * stature:
+            warnings.append(
+                f"object {oid}: at {size:g} m against a {stature:g} m holder it is a "
+                "two-handed load; say in hands what both hands do, or a one-handed grip "
+                "will read as impossible."
+            )
 
     # Plane ordering: every foreground entity is nearer than every midground one, and so on.
     by_plane: dict[str, list[float]] = {p: [] for p in PLANES}
@@ -843,25 +1175,61 @@ def validate_spec(
                             f"subject {subject.get('id')}: a {h:g} m standing person at {d:g} m does not fit "
                             f"the {fh:.2f} m frame height of a {shot} shot."
                         )
+            # The same question for whatever the lens is focused on, which in a
+            # product or equipment shot is an object and not a person. An object
+            # wider than the frame is ordinary when it runs out of frame, so this
+            # asks only about the subject the shot is of, in the shot sizes that
+            # promise to show the whole of it.
+            for _, entity in _entities(spec):
+                if _text(entity.get("id")) != focus_on:
+                    continue
+                d = _num(entity.get("distance_m"))
+                if not d:
+                    continue
+                fw, fh = frame_at(d, focal, width / height)
+                for dimension, value, limit in (
+                    ("width_m", _num(entity.get("width_m")), fw),
+                    ("height_m", _num(entity.get("height_m")), fh),
+                ):
+                    if value and value > limit:
+                        errors.append(
+                            f"{focus_on}: a {shot} shot shows the whole subject, but its "
+                            f"{dimension} {value:g} does not fit the {limit:.2f} m frame "
+                            f"{'width' if dimension == 'width_m' else 'height'} at {d:g} m. "
+                            "Move back, shorten the lens, or choose a tighter shot type."
+                        )
 
     # Object heights against code and settled convention, so a 1.2 m kitchen
     # counter or a 0.3 m stair riser is caught in the brief.
     for obj in objects:
         name = _text(obj.get("name"))
-        height = _num(obj.get("height_m"))
+        # Not `height`: that is the frame height parameter, and the checks below
+        # still need it.
+        obj_height = _num(obj.get("height_m"))
         band = reference_height(name) if name else None
-        if band and height:
+        if band and obj_height:
             low, high, source = band
-            if not low <= height <= high:
+            if not low <= obj_height <= high:
                 errors.append(
-                    f"object {_text(obj.get('id'))}: height_m {height:g} is outside the "
+                    f"object {_text(obj.get('id'))}: height_m {obj_height:g} is outside the "
                     f"{low:g}-{high:g} m range for {name!r} ({source})."
                 )
 
-    # Camera height against angle and the people in frame.
+    # Camera height against angle and the people in frame. The 0.35 m tolerance is
+    # the spread of standing eye heights across a population; where nobody is
+    # standing, the eye line is an absolute height set by the seat and the spread
+    # argument does not apply, so the band tightens to one head height.
+    seated_only = bool(seated_people(spec)) and not standing_people(spec)
     if photographic and cam_height is not None and eye_heights:
         mean_eye = sum(eye_heights) / len(eye_heights)
-        if angle == "eye_level" and abs(cam_height - mean_eye) > 0.35:
+        if angle == "eye_level" and seated_only and abs(cam_height - mean_eye) > 0.15:
+            posture = _text(seated_people(spec)[0].get("posture") or "seated").lower()
+            errors.append(
+                f"spec.camera angle eye_level with nobody standing needs the lens near the "
+                f"{posture} eye height (~{mean_eye:.2f} m); height_m is {cam_height:g}. A "
+                "lens above a seated eye line is a high angle, not eye level."
+            )
+        elif angle == "eye_level" and abs(cam_height - mean_eye) > 0.35:
             errors.append(
                 f"spec.camera angle eye_level needs the lens near standing eye height (~{mean_eye:.2f} m); "
                 f"height_m is {cam_height:g}."
@@ -870,6 +1238,34 @@ def validate_spec(
             errors.append("spec.camera angle high needs the lens above the subjects' eye height.")
         if angle in {"low", "worms_eye"} and cam_height >= mean_eye:
             errors.append("spec.camera angle low needs the lens below the subjects' eye height.")
+
+    # How close the lens is to a face. Perspective distortion is set by the
+    # subject distance alone: the focal length only decides the framing, so a
+    # long lens does not rescue a lens held at arm's length from a face.
+    if photographic and distance and focus_on:
+        focus_entity = next(
+            (e for _, e in _entities(spec) if _text(e.get("id")) == focus_on),
+            None,
+        )
+        is_person = bool(
+            focus_entity
+            and _text(focus_entity.get("kind") or "person") == "person"
+            and ids.get(focus_on) == "subject"
+        )
+        if is_person and distance < FACE_MIN_DISTANCE_M:
+            warnings.append(
+                f"spec.camera.subject_distance_m {distance:g} puts the lens under "
+                f"{FACE_MIN_DISTANCE_M:g} m from a face: the nose reads enlarged and the "
+                f"ears shrink, whatever the focal length. Stand at "
+                f"{FACE_COMFORT_DISTANCE_M:g} m or more and use a longer lens to keep the "
+                "same framing."
+            )
+        elif is_person and shot in TIGHT_PERSON_SHOTS and distance < FACE_COMFORT_DISTANCE_M:
+            warnings.append(
+                f"spec.camera: a {shot} of a face at {distance:g} m is inside the distance "
+                f"where perspective flattens badly; portrait practice is "
+                f"{FACE_COMFORT_DISTANCE_M:g} m or more on a longer lens."
+            )
 
     # Depth of field against an explicit background treatment.
     if photographic and focal and distance and aperture:
@@ -921,6 +1317,36 @@ def validate_spec(
     if time_of_day == "night" and any(word in key_source for word in ("sun", "daylight")):
         errors.append("spec.lighting.key.source is sunlight but location.time_of_day is night.")
 
+    # Shadow hardness against the sky. A clouded sky is a source the size of the
+    # sky and it removes the sun, so it cannot cast a crisp shadow. Direction is
+    # the lighting error everyone already checks; hardness is the next one.
+    weather = _text(location.get("weather")).lower()
+    key_quality = _text(key.get("quality")).lower() if isinstance(key, dict) else ""
+    if (
+        any(word in weather for word in OVERCAST_WEATHER)
+        and any(word in key_source for word in SUN_SOURCES)
+        and any(word in key_quality for word in HARD_LIGHT_WORDS)
+    ):
+        errors.append(
+            f"spec.lighting.key is the sun with a hard quality, but location.weather is "
+            f"{_text(location.get('weather'))!r}. A clouded sky covers the sun and becomes "
+            "the largest soft source there is, so it cannot cast a crisp shadow. Either "
+            "clear the sky or make the key soft and the shadows open."
+        )
+
+    # A fill that claims the key's power and hardness is a second key, and two of
+    # those are the two-sun scene the measurements keep finding.
+    for entry in _list(lighting.get("fill")):
+        text = _text(entry).lower()
+        if any(word in text for word in LIGHT_PARITY_WORDS) and any(
+            word in text for word in HARD_LIGHT_WORDS
+        ):
+            errors.append(
+                f"spec.lighting.fill {_text(entry)!r} is as hard and as strong as the key, "
+                "which makes it a second key. One scene has one key light; a fill is "
+                "weaker, softer, or both."
+            )
+
     # Composition and overlays.
     composition = spec.get("composition")
     if not isinstance(composition, dict):
@@ -944,6 +1370,17 @@ def validate_spec(
     max_objects = int(spec_policy.get("max_key_objects", 8))
     if len(objects) > max_objects:
         warnings.append(f"spec lists {len(objects)} key objects; above {max_objects} generators drop or merge items.")
+    # people_count sums count; the object limit used to read entries only, so one
+    # entry declaring forty cartons passed a limit of eight.
+    declared_objects = sum(
+        int(_num(obj.get("count")) or 1) for obj in objects
+    )
+    if declared_objects > max_objects >= len(objects):
+        warnings.append(
+            f"spec declares {declared_objects} objects across {len(objects)} entries; above "
+            f"{max_objects} generators drop, merge or duplicate items, and a count that high "
+            "is not reviewable one by one."
+        )
 
     if not _list(spec.get("physical_invariants")):
         warnings.append("spec.physical_invariants is empty: add the scene-specific facts a wrong picture would break.")
@@ -1245,6 +1682,19 @@ def build_clauses(
                         f"That horizon line crosses {name} about {percent} per cent of the "
                         "way up from the feet",
                     )
+        for offset in derived.get("eye_line_offsets", [])[:2]:
+            name = _entity_name(spec, offset["id"])
+            if offset["relation"] == "at_eyes":
+                add("camera", 2, f"That horizon line crosses the eyes of {name}")
+            else:
+                where = "above" if offset["relation"] == "above_eyes" else "below"
+                add(
+                    "camera",
+                    2,
+                    f"That horizon line passes {where} the eyes of {name} by about "
+                    + head_heights_phrase(offset["offset_head_heights"])
+                    + f", because {name} is {offset['posture']}",
+                )
         soft = derived.get("outside_focus", [])
         focus_name = _entity_name(spec, _text(camera.get("focus_on")))
         if soft:
@@ -1694,6 +2144,27 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 "geometry",
                 f"Does the horizon cross {name} about {percent} per cent of the way up "
                 "from the feet, measured on the image?",
+                verify_with="geometry",
+            )
+
+    for offset in derived.get("eye_line_offsets", []):
+        name = _entity_name(spec, offset["id"])
+        if offset["relation"] == "at_eyes":
+            add(
+                f"q_eye_line_{offset['id']}",
+                "geometry",
+                f"Does the horizon cross the eyes of {name}, who is {offset['posture']}, "
+                "measured on the image?",
+                verify_with="geometry",
+            )
+        else:
+            where = "above" if offset["relation"] == "above_eyes" else "below"
+            add(
+                f"q_eye_line_{offset['id']}",
+                "geometry",
+                f"Does the horizon pass {where} the eyes of {name} by about "
+                + head_heights_phrase(offset["offset_head_heights"])
+                + f", as a camera at this height over a {offset['posture']} figure requires?",
                 verify_with="geometry",
             )
 

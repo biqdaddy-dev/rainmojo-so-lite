@@ -131,6 +131,17 @@ python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compi
      the headline is laid over the image by the template and never drawn by the
      model.
 
+   A third thing the compiler checks, which is worth writing to from the start:
+
+   - **`scale_anchor` is a claim, not a flourish.** Anchor an object's size to a
+     body landmark of a person in the scene and the compiler reads that landmark
+     off their `height_m` and checks it: the hip of a 1.62 m person is 0.86 m, so
+     a 0.42 m counter "just above the hip" is refused. Bracket it where you can,
+     as in "just above the hip, a little below her waist"; both bands are read and
+     intersected. Name the person when more than one is in frame, or no check runs.
+     The same stature governs what a hand can hold, so an object above about a
+     third of the holder's height cannot be described as filling a palm.
+
    Set `images.spec.target_model` to the generator in use. `image-model-registry.json`
    then decides where exclusions go and what prompt length is worth sending. Most
    current generators have no negative-prompt field at all, so an empty

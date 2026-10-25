@@ -19,6 +19,76 @@ and packaging, docs, infrastructure.
 - [2026-10-13] fix - v2.3.1 repository moved to biqdaddy-dev: the manifests, the marketplace entry and the README install commands point at https://github.com/biqdaddy-dev/rainmojo-so-lite (DP-002).
 - [2026-10-25] feature - v2.4.0 image shot spec, physics and logic validation and the plausibility gate, ported from the full edition's DP-014 (DP-015, หมวด: image pipeline, ชม. แผน 5): every generated image now carries a shot spec with real distances, sizes, camera, one key light and a support for every object; `image_spec.py` validates the physics and logic of the brief, derives the geometry it implies (frame width, field of view, depth of field, apparent-size ratios, the fraction of each standing figure the horizon must cross), compiles it into the prompt and avoid list, and builds the reviewer's atomic questions. The prompt is never typed by hand: a hand-edited prompt or a spec changed after compilation is refused. New `image-model-registry.json` carries per-generator capability data so the compiler knows which models have a negative-prompt field at all. The 30-item plausibility rubric is ordered on measured failure prevalence (functional 58.7 per cent, anatomical 51.4, stylistic 39.0, physics 9.17) and asks the physics checks across pairs of entities, because generated frames are consistent object by object and inconsistent between objects.
 
+- [2026-10-25] feature - v2.5.0 realism checks on the image spec (DP-016, หมวด: image pipeline, ชม. แผน 3): a 25-case realism battery against a scene that validated cleanly moved the spec from 12 caught, 1 warned, 12 missed to 20 caught, 3 warned, 3 missed. `scale_anchor` is now checked against the person it names, using the standard stature fractions of Drillis and Contini (1966); seated and kneeling figures get the eye line that `standing_people` had excluded them from, stated in head heights; the focus subject of a whole-subject shot must fit the frame in width as well as height; a clouded sky cannot cast a crisp shadow and a fill with the key's power and hardness is refused as a second key; the object load limit counts declared items; and `support.by` for `held_by` no longer accepts an object id, which was a plain bug with an error message that contradicted it.
+
+## [2026-10-25] feature - v2.5.0 realism checks on the image spec (DP-016)
+
+Trigger: the owner asked to keep testing the spec until it is as realistic as it can be on
+proportion, viewing distance, the human body, objects, lighting and location, and to settle
+with the main session where the fixes land.
+
+METHOD: one pharmacy scene that validates with 0 errors and 0 warnings, then 25 mutations
+that each make it wrong in a way a reader would see, recording whether `validate_spec`
+refuses it. The battery is the evidence for every line below; it began at 12 caught, 1
+warned, 12 missed. Two of the original 12 catches turned out to be incidental, refused by
+the `eye_level` rule rather than by any proportion check, so those probes were re-run at a
+high angle to confirm the gap was real. One probe was mis-framed and corrected: an object
+wider than the frame is ordinary when it runs out of frame, so the real gap was narrower
+than it first looked and the check written for it is correspondingly narrow.
+
+THE BUG: `support.by` for `held_by` and `worn_by` checked membership in `ids`, which spans
+subjects and objects, so a carton held by a counter compiled while the error message said
+the value had to be a subject id. One expression.
+
+PROPORTION, the largest gap: `scale_anchor` is mandatory precisely because a size in metres
+means nothing to an image model, yet nothing checked it. Now a landmark named in the anchor
+is read off the person's `height_m` with `BODY_LANDMARK_FRACTION` (Drillis and Contini 1966
+as tabulated in Winter, figure 4.1, the same measured family as `EYE_FRACTION`, whose 0.93
+agrees with this table's 0.936 for the eye). Each landmark occurrence is read with the hedge
+immediately before it, so "just above the hip, a little below her waist" intersects two
+bands instead of one landmark winning; where loose prose yields bands that do not overlap,
+the hull is used, because refusing a brief over phrasing would cost more than it catches.
+With several people in the frame and no name in the anchor, no check runs at all. The check
+earned its place immediately by refusing a wrong anchor in this edition's own self-test
+fixture, written by hand an hour earlier: a 0.73 m desk top is at thigh height on a 1.7 m
+person, not at the hip.
+
+THE HUMAN BODY: `standing_people()` filters on `EYE_FRACTION`, so sitting, seated, kneeling
+and lying figures were excluded from `horizon_crossings` entirely, removing the most
+measurable cue in the module from most interview, desk and restaurant scenes. They now
+derive `eye_line_offsets` instead, stated in head heights on the 7.5-head canon so the
+reviewer can count them on the image with no external scale, each with a prompt clause and a
+`verify_with: geometry` question. The `eye_level` tolerance tightens from 0.35 m to one head
+height where nobody is standing, since 0.35 m is the spread of standing eye heights across a
+population and a seated eye line is fixed by the seat instead; a mixed scene keeps the
+standing band, and there is a test for that.
+
+ALSO: the `focus_on` entity of a `full`, `wide` or `extreme_wide` shot must fit the frame in
+width as well as height, which previously only standing people were checked for; a face
+closer than 1 m is reported whatever the lens, because perspective distortion follows the
+subject distance alone; `location.weather` is checked against the key's quality, since a
+clouded sky covers the sun and becomes the largest soft source there is; a `fill` claiming
+the key's power and hardness is refused as the second key it is; the object load limit counts
+declared items rather than entries; and `support.by` is scanned for supports that hold
+nothing, while `floats_in` is still allowed to float.
+
+TESTS: `image_spec_contract_test.py` goes from 118 to 146 assertions, with a case per fix and
+a guard per fix against the false positive it could cause - the example's own overcast window
+and its own fills stay legal, an object that merely runs out of frame stays legal, a stature
+comparison is not read as a landmark, and a one-letter entity id no longer matches as a
+substring, which was a bug the new tests caught in the new code.
+
+PARITY: `image_spec.py` is no longer byte-identical to the full edition's. That was
+deliberate and agreed: lite carries the implementation and the battery, and the full edition
+takes the file verbatim under DP-014, after which the two are identical again. Until it does,
+the editions differ and the MCP and Pro editions inherit the full edition's older behaviour.
+
+NOT DONE: a locale detail that contradicts the locale, such as snow on a Bangkok pavement,
+is still only asked of the reviewer by the rubric's sociocultural check. Checking prose
+against prose in code would cost more than it catches. The two items recorded under DP-015
+are unchanged: root `plugin.json` version drift, and `images.spec.target_model` not reaching
+`prompt_target` through `compile-spec`.
+
 ## [2026-10-25] feature - v2.4.0 image shot spec and plausibility gate (DP-015)
 
 Trigger: the owner asked for the prompt and image logic of every rainmojo-so edition to

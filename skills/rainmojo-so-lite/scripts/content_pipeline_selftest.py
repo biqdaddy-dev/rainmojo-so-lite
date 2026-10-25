@@ -83,7 +83,7 @@ def fixture_spec(image_id: str) -> dict:
                 "state": "empty",
                 "size": "0.73 m high, 1.4 m wide",
                 "height_m": 0.73,
-                "scale_anchor": "its top meets the worker at the hip",
+                "scale_anchor": "its top sits just below the worker's wrist when her arms hang",
                 "support": {"kind": "stands_on", "by": "the studio floor"},
                 "position": "across the lower third of the frame",
                 "distance_m": 2.2,
@@ -116,7 +116,7 @@ def fixture_spec(image_id: str) -> dict:
         "background_focus": "blurred",
         "physical_invariants": [
             "the worker stands behind the desk, so the desk edge crosses in front "
-            "of her hips",
+            "of her upper thighs",
         ],
         "must_not_show": ["a second desk"],
         "text_in_image": "none",

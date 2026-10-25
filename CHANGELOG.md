@@ -1,5 +1,50 @@
 # Changelog
 
+## 2.5.0 (2026-10-25)
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- ระบบตรวจสัดส่วนของวัตถุกับร่างกายคนในฉากได้แล้ว ถ้าบอกว่า "ขอบบนอยู่เหนือสะโพก"
+  ระบบจะคำนวณความสูงสะโพกจากส่วนสูงของคนคนนั้นแล้วเทียบให้จริง เคาน์เตอร์ 0.42 ม.
+  ที่อ้างว่าอยู่เหนือสะโพกคนสูง 1.62 ม. จะถูกปฏิเสธ รวมถึงของชิ้นใหญ่เกินกว่าจะถือด้วยมือเดียว
+- ฉากที่คนนั่งหรือคุกเข่าได้รับการตรวจเส้นสายตาเหมือนคนยืนแล้ว ซึ่งครอบคลุมฉากสัมภาษณ์
+  ฉากโต๊ะทำงาน และฉากร้านอาหารเกือบทั้งหมด พร้อมบอกเป็นหน่วย "ความสูงหัว" ที่นับบนรูปได้เลย
+- ตรวจแสงเพิ่ม: ท้องฟ้าที่มีเมฆปิดจะบังดวงอาทิตย์ จึงทอดเงาคมไม่ได้ และไฟเสริมที่แรงและแข็ง
+  เท่าไฟหลักถือเป็นดวงอาทิตย์ดวงที่สอง ทั้งสองกรณีถูกปฏิเสธก่อนสั่งสร้างรูป
+
+### Under the hood
+
+Driven by a 25-case realism battery against a scene that validated with 0 errors: it
+started at 12 caught, 1 warned, 12 missed and now stands at 20 caught, 3 warned, 3 missed,
+where the 3 remaining misses are a guard case that must stay legal, a valid scene, and the
+one text contradiction left to the review rubric on purpose.
+
+- Fixed: `support.by` for `held_by` and `worn_by` accepted an object id, although the error
+  message said it had to be a subject, so a carton held by a counter compiled.
+- New `BODY_LANDMARK_FRACTION`, the standard stature fractions of Drillis and Contini (1966)
+  as tabulated in Winter figure 4.1, the same measured family `EYE_FRACTION` comes from.
+  A `scale_anchor` naming a body landmark is now checked against the person's `height_m`,
+  reading each landmark with the hedge before it so an anchor that brackets between two of
+  them intersects both bands. With several people and no name in the anchor, no check runs.
+- The same table bounds a held object against its holder: above 0.30 of stature it cannot
+  fill a hand (refused when the brief says it does), above 0.60 it is a two-handed load
+  (a warning, because a person really can carry a ladder).
+- Seated and kneeling figures now derive `eye_line_offsets`, stated in head heights on the
+  7.5-head canon so a reviewer can count them on the image, with a prompt clause and a
+  `verify_with: geometry` question each. The `eye_level` band tightens from 0.35 m to one
+  head height where nobody is standing, since 0.35 m is the standing-population spread.
+- The `focus_on` entity of a `full`, `wide` or `extreme_wide` shot must fit the frame in
+  both width and height, not only standing people in height. An object that merely runs out
+  of frame is still legal.
+- A face closer than 1 m is reported whatever the focal length, since perspective
+  distortion follows the distance alone, and a tight shot inside 1.5 m is reported too.
+- `location.weather` against the key's quality: a clouded sky cannot cast a crisp shadow.
+  A `fill` claiming the key's power and hardness is refused as a second key.
+- The object load limit counts declared items, not entries, so one entry of forty cartons
+  no longer passes a limit of eight; `support.by` is scanned for supports that hold nothing.
+- `image_spec_contract_test.py` grows from 118 to 146 assertions, with a case per fix and a
+  guard per fix against the false positive it could cause.
+
 ## 2.4.0 (2026-10-25)
 
 ### สิ่งที่ผู้ใช้จะเห็น
