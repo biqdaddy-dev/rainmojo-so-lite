@@ -351,6 +351,14 @@ none right. The full edition's choice is the better one, and a sample built from
 class alone could only ever have said otherwise. What remains is the long tail outside the
 table, which only more entries or an explicit `detect_as` reach.
 
+FIFTEENTH PORT, `408c773`, same version: the five client-likely plurals this edition
+suggested, buffalo, mosquito, smoothie, brownie and octopus, added to the table as exact keys,
+and the look-alike set turned into assertions. `image_spec.py` and the contract test
+byte-identical; the contract doc did not change. 354 assertions passing unchanged, regression
+4 of 4, T4 green. All five new entries map correctly and all eight look-alikes stay untouched.
+The five were drawn from the held-out set, so they are not held out any longer, and the better
+score they give on it is not evidence of reach beyond the table.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

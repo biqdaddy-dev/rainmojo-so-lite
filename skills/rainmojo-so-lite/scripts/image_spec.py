@@ -2560,6 +2560,11 @@ _IRREGULAR_PLURALS = {
     "children": "child", "people": "person", "men": "man", "women": "woman",
     "feet": "foot", "teeth": "tooth", "geese": "goose", "mice": "mouse",
     "dice": "die", "oxen": "ox",
+    # Held out from the lite session's balanced set and likely in this client
+    # base: water buffalo on farms and tours, cafe menus, pest control, seafood
+    # markets.
+    "buffaloes": "buffalo", "mosquitoes": "mosquito", "smoothies": "smoothie",
+    "brownies": "brownie", "octopuses": "octopus",
 }
 
 

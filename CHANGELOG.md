@@ -153,6 +153,11 @@ so "buses", "lenses", "shelves", "knives", "tomatoes", "cookies" and the old irr
 as "children" and "teeth" come out as the right singular. A spec's own `detect_as` still
 overrides both. Contract test **344 assertions**, passing here unchanged.
 
+Then `408c773`: five more plurals likely in these clients' briefs, buffaloes, mosquitoes,
+smoothies, brownies and octopuses, and guards that keep look-alikes such as olives, sleeves,
+gloves, canoes and babies untouched. Contract test **354 assertions**, passing here
+unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
