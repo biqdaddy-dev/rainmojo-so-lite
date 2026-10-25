@@ -134,6 +134,45 @@ THE RE-REVIEW, and what it found in this edition's work rather than upstream's:
 - The PR figures were re-measured from session metadata rather than commit times and held:
   `createdAt` to `lastActivityAt` agrees with the earlier figure to within 0.05 hours.
 
+SIXTH PORT, `c2761f5` and `cfbdba3`, same version. Only `image_spec.py` and the shipped
+review example changed upstream; the contract test did not, so it stays at 213 and passes
+here unchanged. The review example, regenerated from this edition's own defaults, grows from
+80 to 82 questions and is byte-identical to the full edition's. Against the real briefs:
+16 of 19 clean, the same three true positives as before.
+
+The new people-implied warning fires on three real briefs that declare no people. Two are
+true positives, where the purpose's opening words would paint people the brief does not
+want: "the moment a rental car is handed over" over an empty still life, and "the truck as
+its customers meet it". The third is a false positive of a pattern: the regex matches
+`explain\w*` and `consult\w*`, so it fires on nouns that name things, "a technical
+explainer", "the consultation room", and "the consultant's empty office" where the purpose
+says empty. Bounding both to verb forms keeps the two true positives, drops the false one,
+and gets six test cases right; reported upstream, not changed here.
+
+THREE DEFECTS IN THIS EDITION'S OWN BATTERY, found while checking this port and fixed. The
+battery lives outside the repo, so none of this is in the commit, but it is the record:
+
+- `realism_probe2.py` had not run its own code since the harness was wired in. It imported
+  its base scene from `realism_probe.py`, importing runs a module, and that module had come
+  to end in `raise SystemExit`, so it ran all of its own probes and then exited the
+  interpreter before one line of the importer ran. probe2 was reported green for several
+  rounds. The tell was there to read and was not read: its totals were byte-identical to
+  probe1's. probe1 now runs only as a script.
+- Once running, probe2's prompt check asserted a false negative. It searched for "above the
+  child", which the compiler never writes, and reported the child's horizon crossing missing
+  when the prompt says "passes above the head of the child". It also labelled a prompt-only
+  search "asked" for a fact that is asked, as a review question. It now uses the compiler's
+  own phrasing, says where each fact is expected, and fails the run when one goes missing.
+- `corpus.py` resolved its scripts directory with a fresh glob, which in the full edition
+  picks `skills/activate/scripts` first, so it looked for the self-test brief in the wrong
+  skill and silently dropped it: the corpus shrank by one and still reported clean. It now
+  resolves from the module actually loaded, reports any source it cannot read, and the
+  edition loader refuses to guess if two skills ever ship `image_spec.py`.
+
+All three are the same failure, a result that looks like a pass while measuring less than it
+claims, and the last two were found only by asking why two numbers that should match did
+not. Every battery file now gives identical results in both editions.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

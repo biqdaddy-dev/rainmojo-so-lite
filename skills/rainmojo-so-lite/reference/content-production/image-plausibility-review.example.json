@@ -387,7 +387,7 @@
     "q_camera_framing": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the main subject framed like this: framed from the waist up?"
+      "_question": "Is the pharmacist framed like this: framed from the waist up?"
     },
     "q_camera_angle": {
       "answer": "yes",
@@ -412,27 +412,27 @@
     "q_soft_customer": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the older customer softer than the pharmacist, as its distance from the focus plane requires?"
+      "_question": "Is the older customer clearly out of focus, with its edges blurred and any fine detail or lettering on it unreadable, as its distance from the focus plane requires?"
     },
     "q_soft_counter": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the counter softer than the pharmacist, as its distance from the focus plane requires?"
+      "_question": "Is the counter clearly out of focus, with its edges blurred and any fine detail or lettering on it unreadable, as its distance from the focus plane requires?"
     },
     "q_soft_medicine_box": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the medicine box softer than the pharmacist, as its distance from the focus plane requires?"
+      "_question": "Is the medicine box clearly out of focus, with its edges blurred and any fine detail or lettering on it unreadable, as its distance from the focus plane requires?"
     },
     "q_soft_shelving": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the shelving wall softer than the pharmacist, as its distance from the focus plane requires?"
+      "_question": "Is the shelving wall clearly out of focus, with its edges blurred and any fine detail or lettering on it unreadable, as its distance from the focus plane requires?"
     },
     "q_light": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is every person and object lit from the front left by daylight through the shopfront window out of frame, with the shaded side on the opposite side?"
+      "_question": "Is every person and object lit mainly from the front left by daylight through the shopfront window out of frame, with the shaded side on the opposite side? A softer, weaker fill is declared as well (cool ceiling fluorescent tubes lifting the shadow side by about one stop; bounce off the white counter base under the chins) and is expected: it lifts the shadows without casting its own."
     },
     "q_shadows": {
       "answer": "yes",
@@ -558,6 +558,16 @@
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
       "_question": "Is the image free of this: retouched glossy skin or specular bloom?"
+    },
+    "q_undeclared": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the frame free of people and key objects beyond the ones the spec names, with no extra figures in the background and no added props?"
+    },
+    "q_malformed_glyphs": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the image free of malformed or invented glyphs, the half-formed marks that read as lettering at a glance without being any real script?"
     },
     "q_no_text": {
       "answer": "yes",

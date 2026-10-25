@@ -386,6 +386,15 @@ SIMILE_EXEMPT = ("lifelike", "life-like", "true-to-life", "businesslike", "liken
 # "what a first appointment looks like" is not a comparison, so the simile rule
 # has no business refusing it. It is still a weaker opening than the scene
 # itself, which is said in its own message rather than smuggled into this one.
+# Verbs and nouns in a purpose that put a person in the frame whatever the
+# subject list says. Measured on the sweep: "the moment a rental car is handed
+# over" and "as its customers meet it" both came back with people.
+PERSON_IMPLIED_RE = re.compile(
+    r"\b(handed|hands? over|handover|meet(?:s|ing)?|greet\w*|customers?|visitors?|"
+    r"guests?|patients?|staff|people|someone|anyone|crowd|audience|teaching|"
+    r"explain\w*|serv(?:e|es|ing)|welcom\w*|consult\w*)\b",
+    re.I,
+)
 LOOKS_LIKE_RE = re.compile(
     r"\b(looks?|looked|looking|sounds?|feels?) like\b"
     # "what the consultation is really like" asks for the nature of a thing,
@@ -1072,6 +1081,14 @@ def validate_spec(
     _require(errors, bool(_text(spec.get("purpose"))), "spec.purpose is required: what the reader must understand from the image.")
     if medium not in MEDIA:
         errors.append("spec.medium must be one of " + ", ".join(sorted(MEDIA)) + ".")
+
+    if not subjects and PERSON_IMPLIED_RE.search(_text(spec.get("purpose"))):
+        warnings.append(
+            "spec.purpose describes a human action but the spec declares no people. "
+            "The purpose opens the prompt, which every model weights most, so it "
+            "outweighs an empty subject list and people tend to appear. Either declare "
+            "the people, or write the purpose as the thing or the place."
+        )
 
     for path, value in _prose_fields(spec):
         if path == "purpose" and LOOKS_LIKE_RE.search(value):
@@ -1835,6 +1852,8 @@ def _entity_name(spec: dict[str, Any], eid: str) -> str:
     return eid
 
 
+MAX_MEASURABLE_RATIO = 8.0
+
 SIZE_WORDS = (
     (1.8, "much larger in the frame than"),
     (1.25, "clearly larger in the frame than"),
@@ -2102,7 +2121,11 @@ def build_clauses(
                 f"The horizon and eye-level line sit across the {horizon.replace('_', ' ')} of the frame, "
                 "parallel edges converge to vanishing points on that line, and verticals stay vertical",
             )
-        if derived.get("camera_at_eye_height"):
+        if (
+            derived.get("camera_at_eye_height")
+            and _text(camera.get("horizon")) in HORIZON_IN_FRAME
+            and standing_people(spec)
+        ):
             add(
                 "camera",
                 2,
@@ -2523,11 +2546,27 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
 
     camera = spec.get("camera", {}) if isinstance(spec.get("camera"), dict) else {}
     shot = _text(camera.get("shot_type"))
-    if shot in SHOT_FRAMING:
+    focus_id = _text(camera.get("focus_on"))
+    focus_is_person = any(
+        _text(subject.get("id")) == focus_id
+        and _text(subject.get("kind") or "person") == "person"
+        for subject in _list(spec.get("subjects"))
+        if isinstance(subject, dict)
+    )
+    focus_label = _entity_name(spec, focus_id) if focus_id else "the main subject"
+    if shot in SHOT_FRAMING and focus_is_person:
         add(
             "q_camera_framing",
             "camera",
-            f"Is the main subject framed like this: {SHOT_FRAMING[shot]}?",
+            f"Is {focus_label} framed like this: {SHOT_FRAMING[shot]}?",
+            verify_with="geometry",
+        )
+    elif shot in SHOT_FRAMING:
+        # Body-fraction framing means nothing for a desk or an empty room.
+        add(
+            "q_camera_framing",
+            "camera",
+            f"Is the view {_an(shot)} {shot.replace('_', ' ')} shot of {focus_label}?",
             verify_with="geometry",
         )
     else:
@@ -2553,7 +2592,11 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             "of the frame, level, with receding parallel edges meeting on it?",
             verify_with="geometry",
         )
-    if derived.get("camera_at_eye_height"):
+    if (
+        derived.get("camera_at_eye_height")
+        and horizon in HORIZON_IN_FRAME
+        and standing_people(spec)
+    ):
         add(
             "q_eye_line",
             "camera",
@@ -2572,14 +2615,22 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         add(
             f"q_soft_{eid}",
             "optics",
-            f"Is {_entity_name(spec, eid)} softer than {_entity_name(spec, focus)}, as its "
-            "distance from the focus plane requires?",
+            f"Is {_entity_name(spec, eid)} clearly out of focus, with its edges blurred and "
+            "any fine detail or lettering on it unreadable, as its distance from the "
+            "focus plane requires?",
         )
     fits = derived.get("fits_in_frame", {})
     measurable = [
         ratio
         for ratio in derived.get("apparent_ratios", [])
         if fits.get(ratio["a"], True) and fits.get(ratio["b"], True)
+    ]
+    # Past about 8:1 either way a frame-height ratio cannot be read off an image,
+    # and a question nobody can answer only adds cannot_tell.
+    measurable = [
+        ratio
+        for ratio in measurable
+        if 1 / MAX_MEASURABLE_RATIO <= ratio["a_to_b_apparent_height"] <= MAX_MEASURABLE_RATIO
     ]
     for ratio in measurable[:6]:
         add(
@@ -2593,11 +2644,20 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
 
     lighting = spec.get("lighting", {}) if isinstance(spec.get("lighting"), dict) else {}
     key = lighting.get("key", {}) if isinstance(lighting.get("key"), dict) else {}
+    fills = [_text(f) for f in _list(lighting.get("fill")) if _text(f)]
     add(
         "q_light",
         "light",
-        f"Is every person and object lit from the {_text(key.get('direction')).replace('_', ' ')} "
-        f"by {_text(key.get('source'))}, with the shaded side on the opposite side?",
+        f"Is every person and object lit mainly from the "
+        f"{_text(key.get('direction')).replace('_', ' ')} by {_text(key.get('source'))}, "
+        "with the shaded side on the opposite side?"
+        + (
+            " A softer, weaker fill is declared as well ("
+            + "; ".join(fills)
+            + ") and is expected: it lifts the shadows without casting its own."
+            if fills
+            else ""
+        ),
     )
     if _text(lighting.get("shadow_direction")):
         add(
@@ -2730,6 +2790,26 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             "constraint",
             f"Is the image free of this: {_text(value)}?",
         )
+    # "Exactly two walkers?" answered yes while twenty more people stood in the
+    # lane, because every count question asks about a declared entity and none
+    # asks about the frame.
+    add(
+        "q_undeclared",
+        "logic",
+        "Is the frame free of people and key objects beyond the ones the spec names, "
+        "with no extra figures in the background and no added props?",
+        verify_with="count",
+    )
+    # Four misses: pseudo-lettering passed as "nothing readable". Text that is
+    # illegible is still text, and half-formed glyphs are the most recognisable
+    # mark of a generated image.
+    add(
+        "q_malformed_glyphs",
+        "constraint",
+        "Is the image free of malformed or invented glyphs, the half-formed marks that "
+        "read as lettering at a glance without being any real script?",
+        verify_with="ocr",
+    )
     add(
         "q_no_text",
         "constraint",

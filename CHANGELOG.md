@@ -75,6 +75,16 @@ before the fix and three after, and the three that remain are true positives: tw
 photographs without placed imperfections, and one real place shot from inside with no
 source that shows the inside.
 
+Then `c2761f5` and `cfbdba3`, from the sweep's review misses. Framing follows `focus_on`, the
+soft-focus question asks how blurred, apparent-size ratios above 8 to 1 are no longer asked
+because they cannot be measured on the image, the lighting question names the declared fill,
+and two new questions ask about anything in the frame the brief did not declare and about
+malformed lettering. The eye-line question is now asked only when the horizon is in frame
+and someone in the picture is standing. A new warning flags a purpose that describes people
+when the brief declares none, because the purpose opens the prompt and people tend to
+appear. Contract test 213 assertions, passing here unchanged; the shipped review example
+grows from 80 to 82 questions.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
