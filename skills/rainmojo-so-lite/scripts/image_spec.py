@@ -2543,6 +2543,26 @@ _COLLECTIVES = ("row", "rows", "pair", "stack", "set", "line", "group", "bank", 
                 "cluster", "array", "rack", "roll", "bunch")
 
 
+# Everyday plurals whose singular no suffix rule reaches: a single-s stem that
+# looks like "houses" (buses, lenses), -ves (shelves, knives), -oes (tomatoes)
+# and -ies that keep the ie (cookies, movies). Found by the lite session, which
+# measured the suffix rule on 28 plurals.
+_IRREGULAR_PLURALS = {
+    "buses": "bus", "lenses": "lens", "gases": "gas", "canvases": "canvas",
+    "atlases": "atlas", "irises": "iris", "bonuses": "bonus", "campuses": "campus",
+    "shelves": "shelf", "knives": "knife", "leaves": "leaf", "loaves": "loaf",
+    "halves": "half", "wolves": "wolf", "calves": "calf", "lives": "life",
+    "wives": "wife", "scarves": "scarf",
+    "tomatoes": "tomato", "potatoes": "potato", "mangoes": "mango", "heroes": "hero",
+    "echoes": "echo", "volcanoes": "volcano", "dominoes": "domino", "cargoes": "cargo",
+    "cookies": "cookie", "movies": "movie", "pies": "pie", "ties": "tie",
+    "zombies": "zombie", "calories": "calorie", "rookies": "rookie",
+    "children": "child", "people": "person", "men": "man", "women": "woman",
+    "feet": "foot", "teeth": "tooth", "geese": "goose", "mice": "mouse",
+    "dice": "die", "oxen": "ox",
+}
+
+
 def detect_as(entity: dict[str, Any], person: bool = False) -> str:
     """A plain class noun a detector can be queried with.
 
@@ -2580,6 +2600,8 @@ def detect_as(entity: dict[str, Any], person: bool = False) -> str:
             inner = _HEAD_NOUN_END.sub("", members.group(1)).strip(" ,.").split()
             plural = [w for w in inner if w.endswith("s") and not w.endswith("ss")]
             head = plural[0] if plural else (inner[-1] if inner else head)
+    if head in _IRREGULAR_PLURALS:
+        return _IRREGULAR_PLURALS[head]
     if head.endswith("ies") and len(head) > 4:
         return head[:-3] + "y"
     # "es" is a suffix only after a sibilant cluster: dishes, boxes, glasses. In

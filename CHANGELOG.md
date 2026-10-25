@@ -148,6 +148,11 @@ Then `cae8c4d`: the noun a counted object is detected by keeps the e in "houses"
 "shophouses" rather than turning them into "hous" and "shophous". Contract test **320
 assertions**, passing here unchanged.
 
+Then `1e2d475`: a short table of plurals no suffix rule can reach, checked before the rule,
+so "buses", "lenses", "shelves", "knives", "tomatoes", "cookies" and the old irregulars such
+as "children" and "teeth" come out as the right singular. A spec's own `detect_as` still
+overrides both. Contract test **344 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

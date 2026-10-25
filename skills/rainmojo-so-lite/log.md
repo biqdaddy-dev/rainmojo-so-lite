@@ -326,6 +326,31 @@ through as the plural, invents no non-word but keeps eight plurals the current r
 right. Which is better turns on whether the detector counts "houses" as well as "house", which
 this edition has no measurement of; an explicit `detect_as` in the spec overrides either.
 
+FOURTEENTH PORT, `1e2d475`, same version: `_IRREGULAR_PLURALS`, a table checked before the
+suffix rule, for single-s stems, -ves, -oes, the -ies that keep their ie, and the old
+irregulars. `image_spec.py` and the contract test byte-identical; the contract doc did not
+change. 344 assertions passing unchanged, regression 4 of 4, T4 green, and the six corpus
+nouns unchanged.
+
+The 28 plurals this edition measured last port are now in the table and in the assertions,
+so they are no longer independent evidence: a table passes the test it was built from. Two
+checks it was not built from instead. First, the lookup is an exact word match, which is the
+safe choice; a suffix match would have turned "olives" into "olife" through "lives" and
+"sleeves" into "sleaf" through "leaves". Every such look-alike comes out right, and the only
+misses are compounds of table words, "townspeople" and "firemen", which exact matching returns
+as the real plural rather than inventing a word.
+
+Second, held-out words outside the table, and the first attempt was biased. Drawn only from
+the class where the suffix rule is wrong, smoothies, buffaloes, cactuses, thieves, it came out
+17 of 17 misspelled, and read as a case for passing ambiguous plurals through unchanged. But for
+every ambiguous shape the rule is wrong for one class and right for another, usually commoner
+one: babies beside smoothies, waves beside thieves, shoes beside buffaloes. On a balanced set
+of 33, both classes per shape and none in the table, the shipped design gets 19 right and
+misspells 14, and gets every word of the rule-right class; passing the plural through gets
+none right. The full edition's choice is the better one, and a sample built from the failing
+class alone could only ever have said otherwise. What remains is the long tail outside the
+table, which only more entries or an explicit `detect_as` reach.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New
