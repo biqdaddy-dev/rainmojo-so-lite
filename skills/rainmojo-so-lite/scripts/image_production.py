@@ -17,6 +17,7 @@ except ImportError:
     raise SystemExit(1)
 
 import content_pipeline
+import image_spec
 
 
 PROVENANCE_SNAPSHOT_FIELDS = (
@@ -896,6 +897,10 @@ def process_manifest(client_value: str | Path, slug: str) -> dict[str, Any]:
     for item in manifest.get("items", []):
         validate_source_review(package, item, config)
         validate_provenance(item, config)
+        if image_spec.spec_required(item, config):
+            stale = image_spec.freshness_errors(item)
+            if stale:
+                raise RuntimeError("; ".join(stale))
     reports: list[dict[str, Any]] = []
     for item in manifest.get("items", []):
         reports.append(process_item(client, package, item, config))
@@ -985,6 +990,7 @@ def mark_reviewed(
     if not notes.strip():
         raise RuntimeError("Visual review requires review notes.")
     checklist: dict[str, Any] = {}
+    evidence: dict[str, Any] = {}
     evidence_file = ""
     if checklist_path:
         checklist_file = content_pipeline.safe_path(package, checklist_path)
@@ -1028,10 +1034,33 @@ def mark_reviewed(
                 "Visual review checklist is missing required items: "
                 + ", ".join(missing)
             )
+        optimized = content_pipeline.safe_path(package, target.get("output", ""))
+        image_digest = sha256_file(optimized) if optimized.exists() else ""
+        plausibility_errors = image_spec.review_errors(
+            evidence,
+            target,
+            config,
+            image_digest,
+        )
+        if plausibility_errors:
+            raise RuntimeError(
+                "Plausibility review is incomplete or failing: "
+                + "; ".join(plausibility_errors)
+            )
     target["qa_status"] = status
     target["qa_notes"] = notes
     target["qa_reviewer"] = reviewer
     target["qa_checklist"] = checklist
+    target["qa_plausibility"] = {
+        "checks": {
+            cid: str(entry.get("status", ""))
+            for cid, entry in (evidence.get("plausibility") or {}).items()
+            if isinstance(entry, dict)
+        },
+        "failed": image_spec.failed_items(evidence),
+        "crops_reviewed": evidence.get("crops_reviewed", 0),
+        "image_sha256": str(evidence.get("image_sha256", "")),
+    }
     target["qa_evidence_file"] = evidence_file
     target["qa_reviewed_at"] = content_pipeline.now_iso()
     content_pipeline.write_json(manifest_path, manifest)
@@ -1051,6 +1080,208 @@ def mark_reviewed(
                 "Every required image passed full-resolution visual review.",
             )
     return target
+
+
+def read_manifest(
+    client_value: str | Path,
+    slug: str,
+) -> tuple[Path, Path, dict[str, Any], Path, dict[str, Any], dict[str, Any]]:
+    """Resolve one article package and return its image manifest and config."""
+    client = content_pipeline.resolve_client(client_value)
+    package, article = content_pipeline.read_package(client, slug)
+    config = load_effective_config(client, package, article)
+    manifest_path = content_pipeline.safe_path(package, article["images_file"])
+    manifest = content_pipeline.load_json(manifest_path)
+    return client, package, article, manifest_path, manifest, config
+
+
+def find_item(manifest: dict[str, Any], image_id: str) -> dict[str, Any]:
+    target = next(
+        (item for item in manifest.get("items", []) if item.get("id") == image_id),
+        None,
+    )
+    if target is None:
+        raise RuntimeError(f"Image id not found: {image_id}")
+    return target
+
+
+def compile_specs(
+    client_value: str | Path,
+    slug: str,
+    image_id: str | None = None,
+    target: str | None = None,
+) -> dict[str, Any]:
+    """Compile every image spec into the manifest prompt, avoid list and questions.
+
+    The prompt is never written by hand: it is derived from the spec, so a changed
+    spec forces a recompile and a hand-edited prompt is caught by the gate.
+    """
+    _, package, _, manifest_path, manifest, config = read_manifest(client_value, slug)
+    policy = image_spec.policy_from_config(config)["spec"]
+    prompt_target = target or str(policy.get("prompt_target", "negative_prompt"))
+    items = (
+        [find_item(manifest, image_id)]
+        if image_id
+        else list(manifest.get("items", []))
+    )
+    compiled: list[dict[str, Any]] = []
+    skipped: list[str] = []
+    for item in items:
+        iid = str(item.get("id"))
+        if not image_spec.spec_required(item, config):
+            skipped.append(iid)
+            continue
+        role_config = config["images"].get(str(item.get("role")), {})
+        width = int(item.get("width") or role_config.get("width") or 0)
+        height = int(item.get("height") or role_config.get("height") or 0)
+        spec = item.get("spec")
+        if not isinstance(spec, dict) or not spec:
+            raise RuntimeError(
+                f"{iid}: spec is empty. Fill it from the spec-template command; "
+                "the prompt is compiled from the spec, never written by hand."
+            )
+        result = image_spec.compile_spec(spec, width, height, config, prompt_target)
+        item["prompt"] = result["prompt"]
+        item["negative_prompt"] = result["negative_prompt"]
+        item["spec_compiled"] = image_spec.compile_record(
+            spec,
+            result,
+            content_pipeline.now_iso(),
+        )
+        compiled.append(
+            {
+                "id": iid,
+                "prompt_words": len(result["prompt"].split()),
+                "avoid_items": len(result["avoid"]),
+                "questions": len(result["questions"]),
+                "derived": result["derived"],
+                "warnings": result["warnings"],
+            }
+        )
+    content_pipeline.write_json(manifest_path, manifest)
+    return {
+        "compiled_at": content_pipeline.now_iso(),
+        "slug": slug,
+        "target": prompt_target,
+        "compiled": compiled,
+        "skipped": skipped,
+        "package": str(package),
+    }
+
+
+def write_review_template(
+    client_value: str | Path,
+    slug: str,
+    image_id: str,
+) -> dict[str, Any]:
+    """Write the blank plausibility review the reviewer fills in from the image."""
+    _, package, _, _, manifest, config = read_manifest(client_value, slug)
+    item = find_item(manifest, image_id)
+    template = image_spec.review_template(item, config)
+    output = content_pipeline.safe_path(
+        package,
+        f"reports/{image_id}-visual-review-input.json",
+    )
+    output.parent.mkdir(parents=True, exist_ok=True)
+    optimized = content_pipeline.safe_path(package, item.get("output", ""))
+    if optimized.exists():
+        template["image_sha256"] = sha256_file(optimized)
+    content_pipeline.write_json(output, template)
+    return {
+        "review_file": str(output.relative_to(package)),
+        "checks": len(template["plausibility"]),
+        "spec_questions": len(template["spec_answers"]),
+        "image_sha256": template.get("image_sha256", ""),
+    }
+
+
+def write_review_crops(
+    client_value: str | Path,
+    slug: str,
+    image_id: str,
+) -> dict[str, Any]:
+    """Cut the optimized image into a grid of full-resolution crops to inspect.
+
+    A whole 1200 px image hides the failures that matter: fingers, teeth, contact
+    shadows, warped lines, gibberish on signage. The reviewer looks at every crop.
+    """
+    _, package, _, _, manifest, config = read_manifest(client_value, slug)
+    item = find_item(manifest, image_id)
+    optimized = content_pipeline.safe_path(package, item.get("output", ""))
+    if not optimized.exists():
+        raise RuntimeError(f"{image_id}: optimized image is missing: {optimized}")
+    plaus = image_spec.policy_from_config(config)["plausibility"]
+    grid = int(plaus.get("zoom_grid", 3))
+    if grid < 1:
+        raise RuntimeError("images.plausibility.zoom_grid must be at least 1.")
+    scale = float(plaus.get("crop_scale", 2.0))
+    out_dir = content_pipeline.safe_path(package, f"reports/crops/{image_id}")
+    if out_dir.exists():
+        for stale in sorted(out_dir.glob("*.png")):
+            stale.unlink()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    written: list[str] = []
+    with Image.open(optimized) as image:
+        image.load()
+        width, height = image.size
+        step_x = width / grid
+        step_y = height / grid
+        for row in range(grid):
+            for col in range(grid):
+                box = (
+                    int(col * step_x),
+                    int(row * step_y),
+                    int(min((col + 1) * step_x, width)),
+                    int(min((row + 1) * step_y, height)),
+                )
+                crop = image.crop(box)
+                if scale > 1.0:
+                    crop = crop.resize(
+                        (
+                            max(1, int(crop.width * scale)),
+                            max(1, int(crop.height * scale)),
+                        ),
+                        Image.LANCZOS,
+                    )
+                name = f"{image_id}-r{row + 1}c{col + 1}.png"
+                crop.save(out_dir / name, format="PNG")
+                written.append(str((out_dir / name).relative_to(package)))
+    return {
+        "image": str(optimized.relative_to(package)),
+        "image_sha256": sha256_file(optimized),
+        "grid": grid,
+        "crop_scale": scale,
+        "crops": written,
+    }
+
+
+def command_compile_spec(args: argparse.Namespace) -> int:
+    report = compile_specs(args.client, args.slug, args.image_id, args.target)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0
+
+
+def command_spec_template(args: argparse.Namespace) -> int:
+    print(
+        json.dumps(
+            image_spec.blank_spec(args.medium, args.people),
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    return 0
+
+
+def command_review_template(args: argparse.Namespace) -> int:
+    report = write_review_template(args.client, args.slug, args.image_id)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0
+
+
+def command_review_crops(args: argparse.Namespace) -> int:
+    report = write_review_crops(args.client, args.slug, args.image_id)
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 0
 
 
 def command_process(args: argparse.Namespace) -> int:
@@ -1106,6 +1337,55 @@ def build_parser() -> argparse.ArgumentParser:
         help="Structured review JSON confined to the article package.",
     )
     review_source.set_defaults(func=command_review_source)
+
+    spec_template = sub.add_parser(
+        "spec-template",
+        help="Print a blank image spec to fill in; the prompt is compiled from it.",
+    )
+    spec_template.add_argument(
+        "--medium",
+        default="photograph",
+        choices=sorted(image_spec.MEDIA),
+    )
+    spec_template.add_argument(
+        "--people",
+        type=int,
+        default=1,
+        help="How many person subjects to scaffold (0 for an object-only scene).",
+    )
+    spec_template.set_defaults(func=command_spec_template)
+
+    compile_spec = sub.add_parser(
+        "compile-spec",
+        help="Validate every image spec and compile it into the prompt and avoid list.",
+    )
+    compile_spec.add_argument("--client", required=True)
+    compile_spec.add_argument("--slug", required=True)
+    compile_spec.add_argument("--image-id")
+    compile_spec.add_argument(
+        "--target",
+        choices=["negative_prompt", "positive_only"],
+        help="Override images.spec.prompt_target for a model that ignores a negative prompt.",
+    )
+    compile_spec.set_defaults(func=command_compile_spec)
+
+    review_template = sub.add_parser(
+        "review-template",
+        help="Write the blank plausibility review for one image.",
+    )
+    review_template.add_argument("--client", required=True)
+    review_template.add_argument("--slug", required=True)
+    review_template.add_argument("--image-id", required=True)
+    review_template.set_defaults(func=command_review_template)
+
+    review_crops = sub.add_parser(
+        "review-crops",
+        help="Cut the optimized image into full-resolution crops for close inspection.",
+    )
+    review_crops.add_argument("--client", required=True)
+    review_crops.add_argument("--slug", required=True)
+    review_crops.add_argument("--image-id", required=True)
+    review_crops.set_defaults(func=command_review_crops)
 
     mark = sub.add_parser(
         "mark-reviewed",

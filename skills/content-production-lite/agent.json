@@ -4,7 +4,7 @@
     "agent_name": "content-production-lite",
     "category": "content-production-lite",
     "title": "Content Production",
-    "description": "Callable entry point for a client-configured SEO article factory ending in a verified WordPress draft.",
+    "description": "Callable entry point for a client-configured SEO article factory ending in a verified WordPress draft, with a per-image shot spec validated for physical and logical consistency and a prompt compiled from it.",
     "standalone": true,
     "author": "RAINMOJO SO"
   },
@@ -19,6 +19,31 @@
       "Bash",
       "Skill"
     ],
+    "image_spec": {
+      "_reference": "{PLUGIN_ROOT}/skills/rainmojo-so-lite/reference/content-production/image-spec.contract.md",
+      "_reference_registry": "{PLUGIN_ROOT}/skills/rainmojo-so-lite/reference/content-production/image-model-registry.json",
+      "_note": "Read the contract before filling a spec. The worked example is image-spec.example.json and the review shape is image-plausibility-review.example.json, in the same folder. Lite has no separate image-production skill: these rules apply here.",
+      "binding_rules": [
+        "The prompt is compiled, never authored. Fill spec, run compile-spec, and change the spec when the prompt is wrong. A hand-edited prompt or a spec changed after compilation is refused at the next gate.",
+        "Say what the picture is, never what it is not. A spec field containing no, not, without or free of is refused and named; describe the state instead and put anything to exclude in must_not_show, which reaches the avoid list and never the scene description.",
+        "Set images.spec.target_model to the generator in use. image-model-registry.json then decides where exclusions go and what prompt length is worth sending; an empty negative_prompt is the normal result, because most current generators have no such field. Add a registry row for a new model rather than changing the compiler.",
+        "Every person carries height_m, because it is the scale anchor for everything else in the frame, and carries hands, because hands are the most common anatomy failure.",
+        "Every object carries support{kind,by} so nothing floats, and scale_anchor comparing its size with a person or another object in the same scene, because a size in metres means nothing to an image model.",
+        "Every photographic spec carries focal_length_mm, aperture_f, subject_distance_m, the lens height_m, the horizon position and one key light with a direction, and the shadow_direction that single light implies.",
+        "Keep people at or below images.spec.max_people and key objects at or below max_key_objects. A crowded frame loses anatomy and scale before anything else.",
+        "physical_invariants holds the scene facts a wrong picture would break, stated as facts about this scene and not as generic quality words.",
+        "composition.negative_space names something that is in the scene, an even wall or an overcast sky, not a hole in a busy frame. Expect it to fail about one time in four anyway; the headline is laid over the image by the template and never drawn by the model.",
+        "text_in_image stays none unless the client has enabled an infographic text workflow. Approved text is added deterministically after processing, never drawn by the model.",
+        "Where a check or question carries verify_with, measure it: count for fingers, limbs and objects, ocr for lettering at full resolution, geometry for the horizon and apparent heights. Those are the three things both people and vision models judge badly.",
+        "A passed review needs every rubric check and every spec question answered with evidence naming what was seen and in which crop, and crops_reviewed at least zoom_grid squared. Reprocessing invalidates every previous approval."
+      ],
+      "commands": {
+        "spec_template": "python {PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py spec-template --medium photograph --people <n>",
+        "compile": "python {PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py compile-spec --client <client> --slug <slug>",
+        "crops": "python {PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py review-crops --client <client> --slug <slug> --image-id <id>",
+        "review_template": "python {PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py review-template --client <client> --slug <slug> --image-id <id>"
+      }
+    },
     "model_draft_review_guidance": {
       "_scope": "DECISION GUIDANCE ONLY, applied inside the structured content review record. Declares no pipeline state, no ledger column, no status token.",
       "two_pass_review": "Pass 1 claim walk (verified with source, wrong, could not verify); pass 2 expert omission audit written before rereading; pass 2 outranks pass 1; a named human signs off on both with a date.",
@@ -53,7 +78,9 @@
       "Branch explicitly on engine.mode",
       "Dispatch the generic engine or the declared end-to-end client-native operations",
       "Record structured content review bound to the current article SHA-256",
-      "Coordinate image generation, processing, provenance, and visual QA",
+      "Fill one shot spec per image from spec-template and compile it with compile-spec; never write prompt or negative_prompt by hand",
+      "Generate from the compiled prompt, approve the raw source, then run deterministic processing",
+      "Cut review crops, answer every plausibility check and every spec question with evidence, and record the pass",
       "Run publish validation",
       "Use one serial WordPress writer",
       "Verify or reconcile the final draft"
@@ -62,7 +89,9 @@
       "Every required production gate passed",
       "Content review names a reviewer, passes every checklist item, and matches the current article SHA-256",
       "Required product, pillar, related, and external links match the plan",
-      "Every image passed technical and structured visual QA",
+      "Every generated image has a spec that validates and a prompt compiled from it, with no drift",
+      "Every spec states real distances and sizes, one key light with the shadow direction it implies, and a support and a scale anchor for every object",
+      "Every image passed technical processing and the plausibility review: every rubric check and every spec question answered with evidence, over the full frame and every crop",
       "The WordPress post remains draft",
       "Post, media, taxonomy, links, and SEO fields verify"
     ]
