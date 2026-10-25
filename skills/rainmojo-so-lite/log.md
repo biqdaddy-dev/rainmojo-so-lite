@@ -271,6 +271,28 @@ green, review example unchanged. On the real briefs the warning quotes "handed" 
 and "customers" and "meet" for rotkubkhao; on each of the five homograph purposes it quotes
 the word and carries the note to ignore it.
 
+ELEVENTH PORT, `4b64093`, same version: floor sitting at 0.78 m, an unknown posture reported,
+`ground_height_m` allowed below the camera's floor, a clear sky letting a hard key through
+haze, `HAND_HELD_RE` no longer reading "a hand's width" or "a palm tree", and approximators
+no longer read as doubt in a recorded fact. `image_spec.py`, the contract test and the
+contract doc byte-identical; 297 assertions passing unchanged, regression 4 of 4, review
+example unchanged. The statement that no client brief reaches these paths was checked rather
+than taken: none of the eighteen has a floor-seated or unknown posture, a negative ground, haze
+with a clear sky, or a hand's width or a palm tree, and nothing moved on any of them.
+
+No lite doc became false, and the audit to establish that found a gap in T4 itself. After the
+last port it pinned every claim it contained to a constant or a behaviour, which is not the
+same as pinning every claim the docs make. Of about ten behavioural sentences in the
+`SKILL.md` anchor bullet and the `agent.json` rules it pinned four, the numbers. The
+qualitative rules, that "above" or "below" is not part of the check, that no check runs
+without a named person, that a width anchor and a hanging or mounted object are left alone,
+and the lighting rule, had been true when written, checked by hand once, and pinned by
+nothing, which is exactly the state the hand-held claim was in when it went false. D7 and D8
+now pin all of them by behaviour. Four of the new checks assert that something passes, and a
+pass can be luck, so each has a twin that differs only in the exempting feature and must be
+refused; all four twins are refused, so each exemption is the reason its scene passes. T4 is
+at 51 checks, up from 32, and its docstring now says what it covers rather than implying more.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

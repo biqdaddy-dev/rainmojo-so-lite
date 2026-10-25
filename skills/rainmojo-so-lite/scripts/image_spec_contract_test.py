@@ -1688,6 +1688,64 @@ check(
     by_id["q_no_text"]["measure"] == {"kind": "text", "expected": "none"},
 )
 
+print("C39 four correct briefs the rangsarn session wrote, no longer refused")
+floor = copy.deepcopy(EXAMPLE)
+floor["subjects"][1]["posture"] = "floor_seated"
+check(
+    "a person sitting on the floor has an eye line at about 0.78 m",
+    abs(image_spec.eye_height(floor["subjects"][1]) - 0.78) < 1e-9,
+    str(image_spec.eye_height(floor["subjects"][1])),
+)
+check(
+    "and is not measured as if on a chair",
+    image_spec.eye_height(floor["subjects"][1]) < image_spec.EYE_ABSOLUTE_M["seated"] - 0.4,
+)
+below = copy.deepcopy(EXAMPLE)
+below["subjects"][1]["ground_height_m"] = -1.2
+check(
+    "a person below the camera's floor is allowed, and their eye line drops with it",
+    not [e for e in errors_for(lambda spec: spec["subjects"][1].update({"ground_height_m": -1.2})) if "ground_height_m" in e]
+    and abs(image_spec.eye_height(below["subjects"][1]) - (image_spec.eye_height(EXAMPLE["subjects"][1]) - 1.2)) < 1e-9,
+)
+_, odd = image_spec.validate_spec(
+    {**copy.deepcopy(EXAMPLE), "subjects": [{**EXAMPLE["subjects"][0], "posture": "perched"}, EXAMPLE["subjects"][1]]},
+    WIDTH, HEIGHT, DEFAULTS,
+)
+check("an unknown posture says its eye line is not checked", any("'perched' is not one the geometry knows" in w for w in odd))
+
+
+def hard_sun(weather):
+    def mutate(spec):
+        spec["location"]["weather"] = weather
+        spec["lighting"]["key"]["quality"] = "hard, crisp-edged shadows"
+    return [e for e in errors_for(mutate) if "key.quality is hard" in e]
+
+
+check("hard sun on a clear morning with haze in the distance", not hard_sun("a clear sunny morning, a light haze in the distant canopy"))
+check("hard light under an overcast sky is still refused", bool(hard_sun("overcast")))
+check("and in haze with no sun", bool(hard_sun("thick haze over the river")))
+for anchor_text, held in (
+    ("its top is a hand's width above the pharmacist's head", False),
+    ("its top is a hand width below the shelf", False),
+    ("a palm tree beside it is twice its height", False),
+    ("it sits in the pharmacist's palm", True),
+    ("held in one hand at her side", True),
+    ("her fingers wrap round it", True),
+):
+    check(
+        f"{anchor_text!r} is {'held' if held else 'not held'} in a hand",
+        bool(image_spec.HAND_HELD_RE.search(anchor_text)) == held,
+    )
+for fact, hedged in (
+    ("the landing is about as wide as two boats", False),
+    ("the stalls stand around the square", False),
+    ("the hall is roughly square in plan", False),
+    ("the ring is probably 6 metres across", True),
+    ("the roof is reportedly corrugated iron", True),
+    ("a green-ish roof", True),
+):
+    check(f"{fact!r} {'hedges' if hedged else 'does not hedge'}", bool(image_spec.HEDGE_RE.search(fact)) == hedged)
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

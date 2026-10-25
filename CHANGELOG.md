@@ -127,6 +127,14 @@ meeting room. Those words are spelled the same as the verbs, so no word list can
 apart; quoting the word lets the author see in a second which it is. Contract test **278
 assertions**, passing here unchanged.
 
+Then `4b64093`. A person sitting on the floor or a mat has an eye line at 0.78 m rather than
+a chair's 1.23 m, and a posture the geometry does not know is reported instead of passed
+silently. Someone below the camera's floor, in a boat under a landing or a sunken plaza, may
+be placed there. A clear or sunny sky lets a hard key through, whatever haze is mentioned
+too. "A hand's width" and "a palm tree" are no longer read as something held in a hand.
+Words like about and roughly in a recorded fact are no longer treated as doubt. Contract
+test **297 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

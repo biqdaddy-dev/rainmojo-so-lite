@@ -21,6 +21,18 @@ the hand-held rule to measure against the holder, the sentence became false and
 this file stayed green. The same was true of the 0.35 m standing band. Both are
 now tested by behaviour: a scene is built where the doc's claim and the opposite
 claim give different answers, and the code has to give the doc's.
+
+Scope. Pinning every claim IN this file is not the same as pinning every claim IN
+the docs, and for a while only the numbers were here: the qualitative rules about
+what the anchor check leaves alone, and the lighting rule, were true when written,
+checked by hand once, and then pinned by nothing. D7 and D8 cover them. The aim is
+every behavioural sentence the two lite files say about the image spec; a new
+sentence there wants a check here in the same commit.
+
+A check that something PASSES can pass for the wrong reason, because the scene may
+be fine whatever the exemption. So each "is left alone" claim has a twin that
+differs only in the exempting feature and must be refused; if the twin passes too,
+the claim's check proved nothing.
 """
 
 from __future__ import annotations
@@ -227,6 +239,141 @@ for focal_mm, floor_m in ((20, 1.2), (28, 1.0), (50, 0.9), (135, 0.9)):
         not face_errors(focal_mm, floor_m + 0.05),
         f"a face {floor_m + 0.05:.2f} m from a {focal_mm} mm lens was refused",
     )
+
+print("D7 what the scale-anchor check leaves alone, each in a scene that would be refused if it were checked")
+# Every claim below was true when it was written and was checked by hand once,
+# then pinned by nothing, which is the state the hand-held claim was in when it
+# went false. Each scene is built so the claim and its opposite disagree: the
+# object is wrong for the landmark it names, so a check that ran would refuse it.
+
+
+def anchor_errors(mutate):
+    return [e for e in errors_for(mutate) if "scale_anchor" in e]
+
+
+check(
+    "the docs give the 0.42 m counter at the hip as refused",
+    said('a 0.42 m counter "at the hip" is refused'),
+)
+check(
+    "and the code refuses it",
+    bool(anchor_errors(lambda s: s["objects"][0].update(
+        {"height_m": 0.42, "scale_anchor": "its top meets the pharmacist at the hip"}
+    ))),
+    "a 0.42 m counter at a 1.62 m person's hip passed",
+)
+
+check("the docs say above or below is not part of the check", said('"above" or "below" is not part of the check'))
+# 0.80 m is below a 1.62 m person's 0.86 m hip but inside 12 cm of it. Read as a
+# hedge, "just above the hip" would refuse a counter that sits below the hip;
+# read as a symmetric band, it passes.
+check(
+    "and a counter just below the hip passes though the anchor says just above it",
+    not anchor_errors(lambda s: s["objects"][0].update(
+        {"height_m": 0.80, "scale_anchor": "its top meets the pharmacist just above the hip"}
+    )),
+    "the anchor's 'above' was read as part of the check",
+)
+
+check("the docs say no check runs without a named person", said("Name the person when more than one is in frame, or no check runs"))
+check(
+    "and with two people and none named, a counter at knee height passes",
+    not anchor_errors(lambda s: s["objects"][0].update(
+        {"height_m": 0.42, "scale_anchor": "its top is at hip height"}
+    )),
+    "an anchor naming nobody was checked against someone",
+)
+
+check("the docs say an anchor about width is left alone", said('"as wide as her shoulders", is left alone'))
+check(
+    "and a width anchor that would miss the shoulder height passes",
+    not anchor_errors(lambda s: s["objects"][0].update(
+        {"height_m": 0.95, "scale_anchor": "it is as wide as the pharmacist's shoulders"}
+    )),
+    "an anchor about width was read as a claim about height",
+)
+
+check("the docs say a hanging or mounted object is left alone", said("anything that hangs or is mounted"))
+check(
+    "and a mounted object that would miss the shoulder height passes",
+    not anchor_errors(lambda s: s["objects"][0].update(
+        {
+            "height_m": 0.95,
+            "scale_anchor": "its top is at the pharmacist's shoulder",
+            "support": {"kind": "mounted_on", "by": "the back wall"},
+        }
+    )),
+    "a mounted object's own length was compared with a height above the floor",
+)
+
+# A check that something PASSES can pass for the wrong reason: the scene might be
+# fine whatever the exemption. So each exemption above has a twin that differs
+# only in the exempting feature and must be refused. If a twin passes, the
+# exemption check beside it was vacuous and proved nothing.
+check(
+    "twin: 0.70 m 'just above the hip' is refused, so the band is real and 0.80 m passed inside it",
+    bool(anchor_errors(lambda s: s["objects"][0].update(
+        {"height_m": 0.70, "scale_anchor": "its top meets the pharmacist just above the hip"}
+    ))),
+    "0.70 m passed too, so the 0.80 m check above proved nothing about the band",
+)
+check(
+    "twin: the same counter at knee height, with the pharmacist named, is refused",
+    bool(anchor_errors(lambda s: s["objects"][0].update(
+        {"height_m": 0.42, "scale_anchor": "its top is at the pharmacist's hip height"}
+    ))),
+    "naming the person did not trigger the check, so the unnamed case proved nothing",
+)
+check(
+    "twin: the same height phrased as a height, not a width, is refused",
+    bool(anchor_errors(lambda s: s["objects"][0].update(
+        {"height_m": 0.95, "scale_anchor": "its top is at the pharmacist's shoulders"}
+    ))),
+    "the height phrasing was not refused either, so the width case proved nothing",
+)
+check(
+    "twin: the same object standing on the floor is refused",
+    bool(anchor_errors(lambda s: s["objects"][0].update(
+        {
+            "height_m": 0.95,
+            "scale_anchor": "its top is at the pharmacist's shoulder",
+            "support": {"kind": "stands_on", "by": "the shop floor"},
+        }
+    ))),
+    "the floor-standing twin passed too, so the mounted case proved nothing",
+)
+
+print("D8 the lighting rule, by behaviour")
+check("the docs say a clouded sky cannot cast a crisp shadow", said("a clouded sky covers the sun"))
+
+
+def light_errors(mutate):
+    return [e for e in errors_for(mutate) if "lighting" in e]
+
+
+check(
+    "and the code refuses a hard key under an overcast sky",
+    bool(light_errors(lambda s: (
+        s["location"].update({"weather": "heavy overcast"}),
+        s["lighting"]["key"].update({"source": "direct sun", "quality": "hard, crisp edged shadows"}),
+    ))),
+    "a hard key under heavy overcast passed",
+)
+check("the docs say a fill as hard and strong as the key is a second key", said("a fill with the key's power and hardness is a second key"))
+check(
+    "and the code refuses a hard fill",
+    bool(light_errors(lambda s: s["lighting"].update(
+        {"fill": ["a second hard spotlight at the same power"]}
+    ))),
+    "a hard fill at the key's power passed",
+)
+check(
+    "while a soft weaker fill passes",
+    not light_errors(lambda s: s["lighting"].update(
+        {"fill": ["a soft white bounce about two stops under the key"]}
+    )),
+    "a soft, weaker fill was refused",
+)
 
 print("D6 the claims this edition once made and the code does not honour stay gone")
 for stale in (

@@ -137,7 +137,14 @@ REFERENCE_RIGHTS = CONDITIONING_RIGHTS | {"reference_only"}
 # kneeling figures are handled as an absolute height above the floor instead,
 # because the seat, not the stature, sets them.
 EYE_FRACTION = {"standing": 0.93, "walking": 0.93, "leaning": 0.90, "crouching": 0.55}
-EYE_ABSOLUTE_M = {"sitting": 1.23, "seated": 1.23, "kneeling": 1.15, "lying": 0.25}
+# Seated eye height above the seat is about 0.79 m for men and 0.74 m for women
+# (ANSUR II sitting eye height), so on a 0.45 m chair seat it is about 1.23 m and
+# on a floor mat or a cushion about 0.78 m. A family eating on a mat and vendors
+# sitting in a boat are floor-seated, not chair-seated.
+EYE_ABSOLUTE_M = {
+    "sitting": 1.23, "seated": 1.23, "floor_seated": 0.78, "sitting_on_floor": 0.78,
+    "cross_legged": 0.78, "kneeling": 1.15, "lying": 0.25,
+}
 CHILD_EYE_FRACTION = 0.90
 
 # Where the landmarks of a standing body fall, as a fraction of stature. Same
@@ -189,6 +196,15 @@ FLOOR_SUPPORTED = {"stands_on", "rests_on"}
 ONE_HAND_FRACTION = 0.30
 TWO_HAND_FRACTION = 0.60
 HAND_HELD_WORDS = ("one hand", "a hand", "his hand", "her hand", "their hand", "palm", "fingers wrap")
+# The same words as a holding, not as a unit or a tree: "a hand's width above
+# her head" and "a palm tree" were read as held in a hand, and a 2.6 m wall was
+# refused as a two-handed load. Found by the rangsarn session.
+HAND_HELD_RE = re.compile(
+    r"\b(?:one|a|his|her|their)\s+hand\b(?!['\u2019]s|[-\s](?:width|span|breadth|spans|widths))"
+    r"|\bpalm\b(?![-\s](?:tree|trees|frond|fronds|leaf|leaves|lined|oil|sugar))"
+    r"|\bfingers wrap",
+    re.I,
+)
 
 # How far the nose stands out from the ears is perspective, and perspective is
 # set by the camera-to-face distance alone, whatever the lens. With the nose
@@ -206,6 +222,10 @@ MIN_FACE_DISTANCE_M = {20: 1.2, 28: 1.0, 35: 0.9, 50: 0.9, 85: 0.9}
 # Weather that cannot coexist with a hard-edged shadow, because the sky is the
 # source and the sky is the size of the sky.
 DIFFUSE_WEATHER = ("overcast", "cloudy", "rain", "raining", "storm", "fog", "mist", "haze", "snow")
+# A sky that is clear says the sun is the source, whatever else the weather
+# clause mentions: "a clear sunny morning, a light haze in the distant canopy" is
+# hard sun. Found by the rangsarn session.
+CLEAR_SKY_WORDS = ("clear", "sunny", "cloudless", "blue sky", "bright sun", "direct sun", "full sun")
 HARD_WORDS = ("hard", "crisp", "sharp-edged", "sharp edged", "harsh", "direct sun", "point source")
 SOFT_WORDS = ("soft", "diffuse", "diffused", "wrapped", "even", "gentle")
 
@@ -458,7 +478,9 @@ HEDGE_RE = re.compile(
     r"\b(maybe|perhaps|possibly|probably|apparently|seemingly|"
     r"some kind of|sort of|kind of|or so|unclear|unknown|"
     r"appears to be|is said to be|reportedly)\b"
-    r"|\b(?:about|around|roughly|approximately)\s+(?![\d.]|a few|an? \w+ of)"
+    # about, around, roughly and approximately are left alone: they approximate
+    # a quantity ("about as wide as two boats", "roughly square") or name a
+    # place ("around the square"), and neither is doubt about the fact.
     r"|-ish\b",
     re.I,
 )
@@ -1593,7 +1615,7 @@ def validate_spec(
                     f"{expected:.2f} m, but height_m is {obj_height:g}. Change the "
                     "height, the anchor, or the person it names."
                 )
-        if any(word in anchor for word in HAND_HELD_WORDS):
+        if HAND_HELD_RE.search(anchor):
             # Measured against the person holding it. support.by names them;
             # failing that, the anchor; failing both, the tallest person, which
             # refuses only what nobody in frame could hold in one hand.
@@ -1644,11 +1666,19 @@ def validate_spec(
                 "location.reference block recording where the likeness comes from and on "
                 "what basis it may be used. A person's face is not a free asset."
             )
-        raised = _num(subject.get("ground_height_m"))
-        if raised is not None and raised < 0:
-            errors.append(
-                f"subject {_text(subject.get('id'))}: ground_height_m cannot be negative; "
-                "it is the height of the surface they stand on above the camera's floor."
+        # ground_height_m is relative to the camera's own floor, so it is negative
+        # for someone below it: vendors in a boat under the landing the camera
+        # stands on, a crowd in a sunken plaza.
+        stated_posture = _text(subject.get("posture") or "standing").lower()
+        if (
+            _text(subject.get("kind") or "person") == "person"
+            and stated_posture not in EYE_FRACTION
+            and stated_posture not in EYE_ABSOLUTE_M
+        ):
+            warnings.append(
+                f"subject {_text(subject.get('id'))}: posture {stated_posture!r} is not one the "
+                "geometry knows (" + ", ".join(sorted({*EYE_FRACTION, *EYE_ABSOLUTE_M}))
+                + "), so their eye line and horizon crossing are not checked."
             )
 
     # Camera height against angle and the people in frame.
@@ -1706,7 +1736,12 @@ def validate_spec(
         )
     quality = _text(key.get("quality")).lower() if isinstance(key, dict) else ""
     weather = _text(location.get("weather")).lower()
-    if quality and weather and any(word in weather for word in DIFFUSE_WEATHER):
+    if (
+        quality
+        and weather
+        and any(word in weather for word in DIFFUSE_WEATHER)
+        and not any(word in weather for word in CLEAR_SKY_WORDS)
+    ):
         if any(word in quality for word in HARD_WORDS) and not any(
             word in quality for word in SOFT_WORDS
         ):
