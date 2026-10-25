@@ -103,6 +103,37 @@ verdict flagged it, and the reference shapes now build on the real-place example
 edition's C33 does. That is the read-not-count failure pointing the other way: not a probe
 refused by the wrong rule, but a probe that never reached the rule at all.
 
+FIFTH PORT, `7d4748a`, same version, after a re-review of this edition's own work. The rule
+refusing a brief that forbids what it also shows fired on any shared word, and the full
+edition's tests asserted the wrong refusals as correct; it now fires only when an avoid
+entry reduces to the declared name. Contract test 213 assertions passing here unchanged.
+
+THE RE-REVIEW, and what it found in this edition's work rather than upstream's:
+
+- A battery of mutations measures what rules catch and cannot, by construction, measure
+  what they wrongly refuse, because every mutation starts from one known-good scene. Run
+  against the sixteen real client briefs the sweep wrote, this edition's validator at
+  `f808a4b` refused seven, four of them correct briefs: a quarter of real work. The battery
+  had surfaced none of them. At `7d4748a` it refuses three, all true positives.
+- Of the nine proposals this edition ranked and handed over, two were wrong and one too
+  broad, which only running each as an oracle against the real corpus showed. The one
+  ranked first, requiring `interacts_with` to be declared from both sides, would have
+  refused its own guard and twelve of sixteen real briefs: authors write the field as a
+  directed relation, and it is inert, since blanking it leaves the prompt, the questions
+  and the warnings byte-identical. A fixture comment claimed the shipped example already
+  declared both directions; it does not. The transparency proposal missed its own case,
+  because its check was not scoped to its object and an unrelated sentence in the base
+  scene satisfied it, and refused everyday glass. The reflection proposal refused chrome
+  trim and is narrowed to mirrors.
+- Neither withdrawn proposal reached the contract test. Only the two that hold were lifted
+  upstream, `state` required and `support.by` scanned, and both refuse no real brief.
+- PENDING was the weak verdict. It proved a guard passes while no rule exists and never that
+  the proposal, once built, would leave correct briefs alone. The battery now carries the
+  oracles and the corpus that test that, and reports a rule no real brief reaches as
+  UNTESTED rather than READY, since passing a corpus that never triggers it is vacuous.
+- The PR figures were re-measured from session metadata rather than commit times and held:
+  `createdAt` to `lastActivityAt` agrees with the earlier figure to within 0.05 hours.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

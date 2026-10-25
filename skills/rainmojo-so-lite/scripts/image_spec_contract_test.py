@@ -1267,36 +1267,50 @@ check(
     ],
 )
 
-print("C32 a brief may not forbid what it also puts in the picture")
+print("C32 a brief may not forbid outright what it also puts in the picture")
 # Proposed by the rangsarn session as V-collision. The avoid list and the scene
-# description go to different fields and nothing compared them, so a spec could
-# forbid a thing and describe it in the same breath, which hands the model the
-# thing twice: once as content and once as a prohibition.
+# description go to different fields and nothing compared them.
 #
-# The guards matter more than the rule here. A first cut matched any declared
-# name anywhere in an avoid entry and immediately refused the shipped example,
-# whose "pills loose on the counter" names the counter to say where the pills
-# would be. Forbidding a thing and placing a thing read the same to a word
-# match and are opposites in English.
+# The first version of this section asserted that "a cluttered counter" and
+# "the pharmacist looking away" were collisions. They are not: each constrains
+# a declared thing rather than forbidding it, which is exactly what
+# must_not_show is for. The tests were encoding the bug. Run against sixteen
+# real client briefs, that version refused five correct entries across three
+# specs; this one refuses none and still catches the real contradiction.
 
 refuses(
     "forbidding a declared object outright",
     "which the spec also puts in the picture",
-    lambda spec: spec["must_not_show"].append("a cluttered counter"),
+    lambda spec: spec["must_not_show"].append("a counter"),
 )
 refuses(
     "forbidding a declared subject outright",
     "which the spec also puts in the picture",
-    lambda spec: spec["must_not_show"].append("the pharmacist looking away"),
+    lambda spec: spec["must_not_show"].append("the pharmacist"),
 )
-for phrase, label in (
-    ("pills loose on the counter", "on"),
-    ("a queue in front of the counter", "in front of"),
-    ("a second person behind the pharmacist", "behind"),
-    ("glare from the window above the counter", "above"),
-):
+refuses(
+    "the plural is still the thing itself",
+    "which the spec also puts in the picture",
+    lambda spec: spec["must_not_show"].append("counters"),
+)
+
+# Every one of these constrains a declared thing. Five of them were refused by
+# the first version, on real client briefs.
+LEGAL_CONSTRAINTS = (
+    ("a cluttered counter", "a state of the thing"),
+    ("the pharmacist looking away", "a state of the person"),
+    ("pills loose on the counter", "the thing used as a place"),
+    ("a queue in front of the counter", "the thing used as a place"),
+    ("a second counter", "an extra instance"),
+    ("two counters in the frame", "an extra instance"),
+    ("readable words on the shelving or the counter", "coordinated objects of a preposition"),
+    ("an open medicine box lid", "a configuration of the thing"),
+    ("a counter with nothing on it", "a state of the thing"),
+    ("a stethoscope round anyone's neck", "nothing declared at all"),
+)
+for phrase, why in LEGAL_CONSTRAINTS:
     check(
-        f"a declared name after {label!r} is a place, not the thing forbidden",
+        f"{phrase!r} is legal: {why}",
         not [
             error
             for error in errors_for(lambda spec, p=phrase: spec["must_not_show"].append(p))
@@ -1304,35 +1318,21 @@ for phrase, label in (
         ],
         phrase,
     )
-for phrase, label in (
-    ("a second counter", "second"),
-    ("another counter in the background", "another"),
-    ("two counters in the frame", "two"),
-):
-    check(
-        f"forbidding {label!r} one is not forbidding the one that is declared",
-        not [
-            error
-            for error in errors_for(lambda spec, p=phrase: spec["must_not_show"].append(p))
-            if "also puts in the picture" in error
-        ],
-        phrase,
-    )
-check(
-    "an avoid entry naming nothing declared is left alone",
-    not [
-        error
-        for error in errors_for(
-            lambda spec: spec["must_not_show"].append("a stethoscope round anyone's neck")
-        )
-        if "also puts in the picture" in error
-    ],
-)
 check(
     "both shipped examples stay clean under the rule",
     not image_spec.collisions(EXAMPLE) and not image_spec.collisions(REAL_PLACE),
     str(image_spec.collisions(EXAMPLE) + image_spec.collisions(REAL_PLACE)),
 )
+
+print("C32b what X is really like is an idiom, not a simile")
+for idiom in (
+    "what the planning consultation is really like",
+    "what a first clear-aligner appointment actually looks like",
+    "what an evening at the night market is like",
+):
+    check(f"{idiom!r} is not refused as a simile", not image_spec.similes(idiom), idiom)
+for simile in ("a smile is like sunshine", "hands like a pianist's", "a dog-like grin"):
+    check(f"{simile!r} is still refused", bool(image_spec.similes(simile)), simile)
 
 print("C33 validate_spec answers; it does not raise")
 # Two UnboundLocalErrors in three days, both the same mistake: a check added to

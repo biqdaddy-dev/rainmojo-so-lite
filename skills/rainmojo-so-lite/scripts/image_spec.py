@@ -386,7 +386,14 @@ SIMILE_EXEMPT = ("lifelike", "life-like", "true-to-life", "businesslike", "liken
 # "what a first appointment looks like" is not a comparison, so the simile rule
 # has no business refusing it. It is still a weaker opening than the scene
 # itself, which is said in its own message rather than smuggled into this one.
-LOOKS_LIKE_RE = re.compile(r"\b(looks?|looked|looking|sounds?|feels?) like\b", re.I)
+LOOKS_LIKE_RE = re.compile(
+    r"\b(looks?|looked|looking|sounds?|feels?) like\b"
+    # "what the consultation is really like" asks for the nature of a thing,
+    # which is not a comparison. The leading "what" is the tell: without it,
+    # "a smile is like sunshine" is a simile and stays refused.
+    r"|\bwhat\b[^.;]{0,120}?\b(?:is|are|was|were)\s+(?:really\s+|actually\s+|truly\s+)?like\b",
+    re.I,
+)
 
 # A pose named by the impression it gives is not a pose. The model needs to know
 # where the limbs are. Adopted from rangsarn's prompt_lint P02.
@@ -635,23 +642,6 @@ def eye_line_people(spec: dict[str, Any]) -> list[dict[str, Any]]:
     return [entity for entity in people(spec) if eye_height(entity) is not None]
 
 
-# Prepositions that make the name that follows a place rather than the subject
-# of the prohibition.
-# Words that make the avoid entry about an extra instance rather than the one
-# the spec declares: forbidding a second desk is not forbidding the desk.
-ADDITIONAL_RE = re.compile(
-    r"\b(second|third|another|other|extra|additional|further|more|duplicate|"
-    r"spare|multiple|several|two|three|many|any other|a different)$",
-    re.I,
-)
-PLACING_RE = re.compile(
-    r"\b(on|in|at|behind|near|beside|under|over|above|below|against|by|from|"
-    r"across|onto|into|around|beyond|outside|inside|through|between|among|"
-    r"next to|close to|in front of|on top of)$",
-    re.I,
-)
-
-
 def entity_names(spec: dict[str, Any]) -> list[tuple[str, str]]:
     """Every name the spec declares for something that is in the picture."""
     names: list[tuple[str, str]] = []
@@ -664,34 +654,50 @@ def entity_names(spec: dict[str, Any]) -> list[tuple[str, str]]:
     return names
 
 
+# Words that leave an avoid entry still naming just the thing itself.
+_BARE_DETERMINERS = re.compile(
+    r"^(?:a|an|the|any|some|every|all|no)\s+", re.I
+)
+
+
+def _bare(text: str) -> str:
+    """An avoid entry reduced to its noun phrase, determiners and plural gone."""
+    value = " ".join(text.lower().split()).strip(" .,;")
+    previous = None
+    while previous != value:
+        previous = value
+        value = _BARE_DETERMINERS.sub("", value)
+    if value.endswith("es") and value[:-2] and not value.endswith("ses"):
+        singular = value[:-2]
+    elif value.endswith("s") and not value.endswith("ss"):
+        singular = value[:-1]
+    else:
+        singular = value
+    return singular
+
+
 def collisions(spec: dict[str, Any]) -> list[tuple[str, str, str]]:
-    """Avoid entries that forbid something the spec also puts in the picture.
+    """Avoid entries that forbid, outright, a thing the spec puts in the picture.
+
+    Only an entry that reduces to the declared name and nothing else is a
+    contradiction. "A cluttered counter", "the pharmacist looking away", "pills
+    on the counter" and "a second desk" all constrain a declared thing rather
+    than forbid it, which is what must_not_show is for, and refusing them would
+    refuse the most useful entries an author can write.
 
     Returns (avoid text, entity id, the name that matched).
     """
     found: list[tuple[str, str, str]] = []
     declared = entity_names(spec)
     for value in _list(spec.get("must_not_show")):
-        text = _text(value).lower()
+        text = _text(value)
         if not text:
             continue
+        bare = _bare(text)
         for eid, name in declared:
-            lowered = name.lower()
-            # A whole-phrase match only. A shared word is ordinary English; a
-            # shared name is the spec contradicting itself.
-            if len(lowered) < 4:
-                continue
-            match = re.search(r"\b" + re.escape(lowered) + r"\b", text)
-            if not match:
-                continue
-            # A name after a preposition is saying where, not what: "pills on
-            # the counter" forbids pills and uses the counter to place them.
-            before = text[:match.start()].rstrip()
-            before = re.sub(r"\b(the|a|an|his|her|their|its|any)\s*$", "", before).rstrip()
-            if PLACING_RE.search(before) or ADDITIONAL_RE.search(before):
-                continue
-            found.append((_text(value), eid, name))
-            break
+            if bare and bare in {_bare(name), name.lower()}:
+                found.append((text, eid, name))
+                break
     return found
 
 

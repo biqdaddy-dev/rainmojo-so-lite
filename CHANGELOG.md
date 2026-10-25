@@ -64,6 +64,17 @@ example no longer asks for a view its own numbers forbid, which exposed a compil
 a horizon value meaning "outside the frame" was treated as a position in it. Contract test
 **204 assertions**, passing here unchanged.
 
+Then `7d4748a`, which fixes a rule that was wrong in principle. The rule refusing a brief
+that forbids what it also puts in the picture fired on any shared word, so "readable words
+on the printed sheet or the laptop" was read as forbidding the laptop, and "a tidy desk
+with nothing on it" as forbidding the desk. It now fires only when an avoid entry reduces to
+the declared name and nothing else. "What X is really like" is accepted as an idiom rather
+than refused as a simile. Contract test **213 assertions**, passing here unchanged. Against
+the sixteen real client briefs the sweep wrote, this edition's validator refused seven
+before the fix and three after, and the three that remain are true positives: two
+photographs without placed imperfections, and one real place shot from inside with no
+source that shows the inside.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
