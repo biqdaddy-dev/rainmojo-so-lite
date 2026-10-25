@@ -2582,7 +2582,10 @@ def detect_as(entity: dict[str, Any], person: bool = False) -> str:
             head = plural[0] if plural else (inner[-1] if inner else head)
     if head.endswith("ies") and len(head) > 4:
         return head[:-3] + "y"
-    if head.endswith("es") and head[:-2].endswith(("sh", "ch", "x", "s")):
+    # "es" is a suffix only after a sibilant cluster: dishes, boxes, glasses. In
+    # houses, vases and cases the e belongs to the word, and "shophouses" came
+    # out as "shophous"; found by the rangsarn session.
+    if head.endswith("es") and head[:-2].endswith(("sh", "ch", "x", "ss", "zz")):
         return head[:-2]
     if head.endswith("s") and not head.endswith("ss"):
         return head[:-1]

@@ -310,6 +310,22 @@ which is the change doing what it says. probe2's one-floor check still passes an
 rather than trusted: the regrouped question still says "one floor" because that scene has a
 single grounded surface, and the held box now correctly drops out of it.
 
+THIRTEENTH PORT, `cae8c4d`, same version: `detect_as` strips "es" only after sh, ch, x, ss
+or zz, so "houses" is "house" and no longer "hous". Three files byte-identical; 320
+assertions passing unchanged, regression 4 of 4, T4 green, review example unchanged.
+
+The fix moves an error rather than removing it, measured on 28 plurals. "houses" and "buses"
+have the same letter shape, so the rule that now gets "house" right turns "buses", "lenses",
+"gases" and "canvases" into "buse", "lense", "gase" and "canvase"; and six are wrong under both
+the old rule and the new, "cooky", "movy", "shelve", "knive", "leave" and "tomatoe". It is a
+net gain, eighteen right where the old rule had sixteen, and on the real briefs every one of
+the six plural object nouns comes out right, since all are plain "-s" plurals and none reaches
+the ambiguous shapes. Reported upstream as a measured trade rather than a defect: a rule that
+emits a singular only where the suffix is certain, and passes "-ses", "-ies", "-ves" and "-oes"
+through as the plural, invents no non-word but keeps eight plurals the current rule gets
+right. Which is better turns on whether the detector counts "houses" as well as "house", which
+this edition has no measurement of; an explicit `detect_as` in the spec overrides either.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

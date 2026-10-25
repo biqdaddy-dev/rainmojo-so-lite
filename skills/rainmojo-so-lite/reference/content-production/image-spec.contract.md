@@ -179,6 +179,10 @@ refuse the brief:
   row" is "tent"). Role names as detector queries ("near vendor", "grandmother", "shared
   dishes") were counted 0 by both open-vocabulary detectors in run 01 on pictures that
   plainly showed them; the role is the reviewer's to check, the count the detector's.
+  When a thing's short name is a rare or specific noun, give `detect_as` the word a photo
+  caption would use, and keep the specific noun in the description: `boat`, not sampan;
+  `pier`, not landing; `bowl`, not dish; `house`, not shophouse. Those are the nouns
+  Grounding DINO and OWLv2 found in run 01, and the rare ones are what they missed.
 - **The eye line is asked only where it exists**: a horizon in frame and at least one
   standing person. A horizon that is not visible or falls outside the frame gets
   no question about where it crosses anyone.
