@@ -1191,6 +1191,65 @@ check(
     str(sorted(set(REVIEW["plausibility"]) ^ set(fresh["plausibility"]))[:4]),
 )
 
+print("C31 state is required, and a support has to hold something up")
+# Settled with the lite session after it tried a mechanism-word vocabulary and
+# found it could not be validated against any corpus. A word list would reward
+# "open" and refuse "the leaf swung back against its stop", which inverts this
+# module's own rule that prose beats tokens. So: state is required of every
+# object, and the judgement about whether the mechanism works stays with the
+# reviewer, where the functional rubric check already asks it.
+
+refuses(
+    "every object says what state it is in",
+    "state is required",
+    lambda spec: spec["objects"][0].update({"state": ""}),
+)
+check(
+    "any prose satisfies it, so it cannot fight a real brief",
+    not [
+        error
+        for error in errors_for(
+            lambda spec: spec["objects"][0].update(
+                {"state": "the leaf swung back against its stop"}
+            )
+        )
+        if "state is required" in error
+    ],
+)
+
+refuses(
+    "a shelf that hovers is the floating-object failure written into the brief",
+    "does not hold anything up",
+    lambda spec: spec["objects"][0]["support"].update({"by": "a hovering glass shelf"}),
+)
+refuses(
+    "nor does thin air hold anything up",
+    "does not hold anything up",
+    lambda spec: spec["objects"][0]["support"].update({"by": "thin air"}),
+)
+check(
+    "a named surface is left alone",
+    not [
+        error
+        for error in errors_for(
+            lambda spec: spec["objects"][0]["support"].update({"by": "the tiled floor"})
+        )
+        if "does not hold anything up" in error
+    ],
+)
+check(
+    "and something may still float in water",
+    not [
+        error
+        for error in errors_for(
+            lambda spec: spec["objects"][0].update(
+                {"support": {"kind": "floats_in", "by": "the floating tank"}}
+            )
+        )
+        if "does not hold anything up" in error
+    ],
+)
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

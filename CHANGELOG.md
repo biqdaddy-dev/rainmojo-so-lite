@@ -44,6 +44,19 @@ Also from upstream in this port: `spec.realism.imperfections`, required with at 
 placed entries for a photographic medium, and four lint rules including a refusal of simile
 in any spec field.
 
+Then `041193e`, which closes the last two items this edition raised. `state` is required on
+every object, so a thing with moving parts can no longer reach a generator with its
+configuration unstated; the vocabulary is left to the reviewer, because a word list would
+reward "open" and refuse "the leaf swung back against its stop", which inverts the rule
+that prose beats tokens, and it could not be validated against any corpus since not one
+object in any fixture is a mechanism. And `support.by` is scanned for supports that hold
+nothing, for bearing kinds only, so a boat may still float in water. Contract test **175
+assertions**, passing here unchanged.
+
+The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
+one per commit, and two editions assigning versions from snapshots of a moving branch
+collided twice.
+
 ## 2.6.0 (2026-10-26)
 
 ### สิ่งที่ผู้ใช้จะเห็น

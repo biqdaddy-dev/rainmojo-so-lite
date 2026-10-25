@@ -66,10 +66,32 @@ rightly refuses, the other a simile the new lint rule rightly refuses - and it a
 that an older probe of this edition's own had been reporting a miss while testing nothing,
 because moving every entity to one distance had broken plane ordering.
 
-STILL OPEN, one line: `support.by` is unscanned free text, so `{"kind": "stands_on", "by":
-"a hovering glass shelf"}` and `"by": "thin air"` both compile. This edition's superseded
-2.5.0 had the scan; upstream has not taken it. It is the only genuine miss left in the first
-axis set.
+THIRD PORT, `041193e`, same version: both remaining proposals landed upstream and are in.
+`state` is required on every object, with the vocabulary left to the reviewer for the reason
+argued in the report - a word list would reward "open" and refuse "the leaf swung back
+against its stop", inverting the file's own rule that prose beats tokens, and it could not
+be validated against any corpus because not one object in any fixture is a mechanism. And
+`support.by` is scanned for supports that hold nothing, for bearing kinds only, so a boat
+may still float. Contract test 175 assertions, passing here unchanged with no fixture edits
+needed. **The first axis set now has no genuine open gaps**: 21 caught, 2 warned, 3 missed,
+and all three misses are a guard that must stay legal, a scene that is valid, and the locale
+contradiction left to the reviewer.
+
+VERSION FROZEN AT 2.7.0 for the rest of this branch. Two editions assigned versions from
+snapshots of a moving branch and collided twice: this branch was read at 2.6.0 and the
+sitemap branch was told to take 2.7.0, by which time this branch had bumped to 2.7.0 itself.
+The release is one release, not one per commit, so further work here goes in without a bump
+and the sitemap branch takes 2.8.0.
+
+BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
+that fails: an exception aborts the run, so every probe after it never runs and the ones
+before it look fine, which means a crash in the validator reads as a clean sheet. New
+`battery.py` holds the shared harness, and every probe now reports a raise as a CRASH
+verdict with its traceback, continues the run, and exits non-zero. A crash outranks every
+other verdict, because a validator that raises on a live spec gives the caller no answer at
+all rather than a wrong one. This was prompted by the sweep session hitting two live states
+that crashed the validator, and it goes in before those fixes land rather than after, so the
+battery can see them when they arrive.
 
 - [2026-10-26] chore - v2.6.0 re-port of image_spec.py from the full edition, restoring byte-parity (DP-016, หมวด: image pipeline, ชม. แผน 1): `image_spec.py` and `image_spec_contract_test.py` taken verbatim from `ad2e1ad` on the full edition's `feat/dp-014-image-plausibility`, after the main session reproduced every battery finding in its own tree and implemented all of them there. The file now carries this edition's realism fixes plus the full edition's reference block for real places, `ground_height_m` for raised subjects, `eye_line_people`, `fits_in_frame`, and the framing-against-angle question split. The contract test runs here unchanged at 135 assertions, so parity is proven rather than assumed, and the regenerated review example drops from 73 spec questions to 68.
 

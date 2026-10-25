@@ -220,6 +220,15 @@ REFERENCE_HEIGHTS_M = {
     "pickup truck": (1.75, 2.02, "model data: Ram 1500 at 1917 mm"),
 }
 SUPPORT_KINDS = {"rests_on", "held_by", "mounted_on", "hangs_from", "worn_by", "stands_on", "floats_in", "fixed_in"}
+# A support that holds nothing is the floating-object failure written into the
+# brief. Scanned only for the kinds that bear weight: something may legitimately
+# float in water, and nothing here should stop it.
+UNSUPPORTING_RE = re.compile(
+    r"\b(thin air|mid-?air|the air|nothing|nowhere|no (?:visible )?support|"
+    r"hovering|floating|levitat\w*|suspended in (?:the )?air|an invisible \w+)\b",
+    re.I,
+)
+BEARING_SUPPORT = {"rests_on", "stands_on", "mounted_on", "fixed_in", "hangs_from"}
 SUPPORT_PARTICIPLE = {
     "rests_on": "resting on",
     "held_by": "held by",
@@ -1229,7 +1238,7 @@ def validate_spec(
         count = _num(obj.get("count"))
         if count is None or count < 1 or int(count) != count:
             errors.append(f"object {oid}: count must be a whole number of at least 1.")
-        for field in ("name", "position", "material"):
+        for field in ("name", "position", "material", "state"):
             if not _text(obj.get(field)):
                 errors.append(f"object {oid}: {field} is required.")
         if not _text(obj.get("size")) and _num(obj.get("height_m")) is None and _num(obj.get("width_m")) is None:
@@ -1241,6 +1250,15 @@ def validate_spec(
             errors.append(
                 f"object {oid}: support {{kind, by}} is required so nothing floats; kind is one of "
                 + ", ".join(sorted(SUPPORT_KINDS)) + "."
+            )
+        elif (
+            _text(support.get("kind")) in BEARING_SUPPORT
+            and UNSUPPORTING_RE.search(_text(support.get("by")))
+        ):
+            errors.append(
+                f"object {oid}: support.by {support.get('by')!r} does not hold anything "
+                "up. Name the surface, the fixing or the person that takes its weight, or "
+                "change the scene so it does not need one."
             )
         elif (
             _text(support.get("kind")) in {"held_by", "worn_by"}
