@@ -84,7 +84,7 @@ refuses(
 )
 refuses(
     "eye level needs the lens near eye height",
-    "near standing eye height",
+    "near the eye height of the people",
     lambda spec: spec["camera"].update({"height_m": 0.6}),
 )
 refuses(
@@ -598,7 +598,7 @@ check(
 )
 refuses(
     "an eye-level camera cannot be at a seated person's eye height and a standing one's",
-    "near standing eye height",
+    "near the eye height of the people",
     lambda spec: spec["camera"].update({"height_m": 1.15}),
 )
 
@@ -667,11 +667,30 @@ check(
 check("finger counts are routed to a counter", routes.get("q_pharmacist_hands") == "count", str(routes))
 check("the text ban is routed to OCR", routes.get("q_no_text") == "ocr", str(routes))
 check(
-    "shot size, horizon and scale ratios are measured, not judged",
-    routes.get("q_camera_shot") == "geometry"
+    "framing, angle and the horizon are measured, not judged",
+    routes.get("q_camera_framing") == "geometry"
+    and routes.get("q_camera_angle") == "geometry"
     and routes.get("q_horizon") == "geometry"
     and routes.get("q_horizon_cut_pharmacist") == "geometry",
     str(routes),
+)
+check(
+    "framing and angle are asked separately, one fact each",
+    "q_camera_framing" in ids and "q_camera_angle" in ids and "q_camera_shot" not in ids,
+    str(sorted(i for i in ids if i.startswith("q_camera"))),
+)
+check(
+    "a ratio is asked only where both things fit the frame and can be measured",
+    all(
+        compiled["derived"]["fits_in_frame"].get(a, True)
+        and compiled["derived"]["fits_in_frame"].get(b, True)
+        for a, b in (
+            question["id"][len("q_ratio_"):].split("_", 1)
+            for question in compiled["questions"]
+            if question["id"].startswith("q_ratio_")
+        )
+    ),
+    str(compiled["derived"]["fits_in_frame"]),
 )
 check(
     "the rubric routes its text and count checks too",
@@ -695,314 +714,149 @@ check(
     str(groups),
 )
 
+print("C22 realism battery: briefs that are wrong in ways a reader would see")
+# Twenty-five mutations of a valid brief, run against the ported module in the
+# lite edition. Twelve compiled. These cases hold the fixes in place for both
+# editions, which carry image_spec.py byte for byte.
+
+refuses(
+    "only a person holds or wears something",
+    "must be a subject id",
+    lambda spec: spec["objects"][1]["support"].update({"by": "counter"}),
+)
+
+print("  proportion against the body the anchor names")
+refuses(
+    "a counter cannot reach the hip at 0.42 m",
+    "scale_anchor says it reaches the hip",
+    lambda spec: spec["objects"][0].update({"height_m": 0.42, "size": "0.42 m high"}),
+)
+refuses(
+    "nor can the same counter reach it with a 2.25 m person",
+    "scale_anchor says it reaches the hip",
+    lambda spec: (
+        spec["subjects"][0].update({"height_m": 2.25}),
+        spec["camera"].update({"angle": "high", "tilt": "down", "horizon": "upper_third", "height_m": 2.4}),
+    ),
+)
+refuses(
+    "a 1.4 m carton is not held in one hand",
+    "two-handed load at best",
+    lambda spec: spec["objects"][1].update({"height_m": 1.4, "size": "about 1.4 m tall"}),
+)
+check(
+    "the anchor takes the landmark it leads with, not the one it mentions second",
+    any(
+        "reaches the hip" in error
+        for error in errors_for(lambda spec: spec["objects"][0].update({"height_m": 0.42}))
+    ),
+    str(errors_for(lambda spec: spec["objects"][0].update({"height_m": 0.42}))[:1]),
+)
+check(
+    "mid-thigh is a landmark too, because that is what a desk top meets",
+    abs(image_spec.BODY_LANDMARK_FRACTION["thigh"] * 1.7 - 0.714) < 0.01,
+    str(image_spec.BODY_LANDMARK_FRACTION["thigh"]),
+)
+
+print("  a seated figure has an eye line as well")
+
+
+def seated(spec):
+    for subject in spec["subjects"]:
+        subject["posture"] = "sitting"
+
+
+seated_spec = copy.deepcopy(EXAMPLE)
+seated(seated_spec)
+seated_derived = image_spec.derive(seated_spec, WIDTH, HEIGHT)
+check(
+    "a seated scene still derives a horizon crossing",
+    len(seated_derived["horizon_crossings"]) == 2,
+    str(seated_derived["horizon_crossings"]),
+)
+check(
+    "everyone with a known eye height counts, standing or not",
+    len(image_spec.eye_line_people(seated_spec)) == 2
+    and len(image_spec.standing_people(seated_spec)) == 0,
+    f"{len(image_spec.eye_line_people(seated_spec))} / {len(image_spec.standing_people(seated_spec))}",
+)
+refuses(
+    "eye level over a seated subject is not a standing lens height",
+    "near the eye height of the people",
+    lambda spec: (seated(spec), spec["camera"].update({"height_m": 1.52})),
+)
+
+print("  the frame has a width, and a lens has a nearest face")
+refuses(
+    "a 6 m counter cannot sit 2.1 m from a 50 mm lens",
+    "where the lens frames",
+    lambda spec: spec["objects"][0].update({"width_m": 6.0, "distance_m": 2.1}),
+)
+refuses(
+    "a face 0.55 m from a 20 mm lens is the wide-angle portrait",
+    "renders the nose larger than the ears",
+    lambda spec: (
+        spec["camera"].update(
+            {"focal_length_mm": 20, "subject_distance_m": 0.55, "shot_type": "close_up"}
+        ),
+        spec["subjects"][0].update({"distance_m": 0.55}),
+        spec["subjects"][1].update({"distance_m": 0.6}),
+        spec["objects"][0].update({"distance_m": 0.5}),
+        spec["objects"][1].update({"distance_m": 0.55}),
+        spec["objects"][2].update({"distance_m": 1.2}),
+    ),
+)
+
+print("  one light, and a sky the size of the sky")
+refuses(
+    "an overcast sky does not cast a hard-edged shadow",
+    "the size of the sky",
+    lambda spec: (
+        spec["location"].update({"weather": "heavy overcast, rain on the pavement"}),
+        spec["lighting"]["key"].update(
+            {"source": "direct sunlight", "quality": "hard, crisp edged shadows"}
+        ),
+    ),
+)
+refuses(
+    "a hard fill is a second key under another name",
+    "second key",
+    lambda spec: spec["lighting"].update(
+        {"fill": ["a second hard spotlight at the same power from the right"]}
+    ),
+)
+check(
+    "a soft fill is still a fill",
+    not any(
+        "second key" in error
+        for error in errors_for(
+            lambda spec: spec["lighting"].update({"fill": ["a soft bounce from a white card"]})
+        )
+    ),
+)
+
+print("  a count of many things is still many things to draw")
+_, count_warnings = image_spec.validate_spec(
+    {**copy.deepcopy(EXAMPLE), "objects": [
+        {**copy.deepcopy(EXAMPLE["objects"][0]), "count": 40},
+        *copy.deepcopy(EXAMPLE["objects"][1:]),
+    ]},
+    WIDTH,
+    HEIGHT,
+    DEFAULTS,
+)
+check(
+    "one entry with a count of 40 reaches the load limit",
+    any("42 objects across" in warning for warning in count_warnings),
+    str(count_warnings),
+)
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(
     "an empty checks list falls back to the shipped rubric",
     len(image_spec.rubric(thin)) == len(image_spec.rubric(DEFAULTS)),
     str(len(image_spec.rubric(thin))),
-)
-
-print("C22 scale_anchor is a claim about two numbers, so it is checked")
-check(
-    "a landmark fraction is read off the stature",
-    abs(image_spec.BODY_LANDMARK_FRACTION["hip"] * 1.62 - 0.8586) < 0.002,
-    str(image_spec.BODY_LANDMARK_FRACTION["hip"] * 1.62),
-)
-check(
-    "an anchor that brackets between two landmarks intersects their bands",
-    (
-        lambda window: abs(window[0] - 0.8586) < 0.01 and abs(window[1] - 0.972) < 0.01
-    )(
-        image_spec.landmark_window(
-            image_spec.landmark_bands(
-                "its top meets the pharmacist just above the hip, a little below her waist",
-                1.62,
-            )
-        )
-    ),
-    str(
-        image_spec.landmark_window(
-            image_spec.landmark_bands(
-                "its top meets the pharmacist just above the hip, a little below her waist",
-                1.62,
-            )
-        )
-    ),
-)
-refuses(
-    "a counter at knee height anchored above the hip",
-    "contradicts its scale_anchor",
-    lambda spec: spec["objects"][0].update({"height_m": 0.42}),
-)
-refuses(
-    "the same counter when the person grows to 2.25 m",
-    "contradicts its scale_anchor",
-    lambda spec: spec["subjects"][0].update({"height_m": 2.25}),
-)
-check(
-    "an anchor naming no landmark is left alone",
-    not image_spec.landmark_bands("about a third taller than she is", 1.62),
-    "a stature comparison was read as a landmark",
-)
-check(
-    "with several people and no name in the anchor, nothing is guessed",
-    image_spec.anchor_person(
-        "its top is at waist height", [{"id": "a", "height_m": 1.6}, {"id": "b", "height_m": 1.8}]
-    )
-    is None,
-    "a referent was guessed from an anchor that names nobody",
-)
-
-print("C23 a held object is checked against the holder")
-refuses(
-    "a carton the size of a torso cannot fill a hand",
-    "cannot be held the way the brief describes",
-    lambda spec: spec["objects"][1].update(
-        {"height_m": 1.4, "scale_anchor": "it sits in the pharmacist's palm"}
-    ),
-)
-check(
-    "a two-handed load is a warning, not a refusal, because it is possible",
-    (
-        lambda result: not any("cannot be held" in error for error in result[0])
-        and any("two-handed load" in warning for warning in result[1])
-    )(
-        (
-            lambda spec: image_spec.validate_spec(spec, WIDTH, HEIGHT, DEFAULTS)
-        )(
-            {
-                **copy.deepcopy(EXAMPLE),
-                "objects": [
-                    {
-                        **copy.deepcopy(EXAMPLE["objects"][1]),
-                        "height_m": 1.2,
-                        "width_m": 0.4,
-                        "scale_anchor": "it reaches from her knee to her shoulder",
-                    }
-                ],
-            }
-        )
-    ),
-    "a 1.2 m held object against a 1.62 m holder was not reported as two-handed",
-)
-
-print("C24 support must be something that holds weight, and a holder must be a person")
-refuses(
-    "held_by must name a person, not another object",
-    "must be a subject id",
-    lambda spec: spec["objects"][1].update(
-        {"support": {"kind": "held_by", "by": "counter"}}
-    ),
-)
-refuses(
-    "a support that hovers holds nothing up",
-    "holds nothing up",
-    lambda spec: spec["objects"][1].update(
-        {"support": {"kind": "stands_on", "by": "a hovering glass shelf"}}
-    ),
-)
-check(
-    "floats_in is still allowed to float",
-    not any(
-        "holds nothing up" in error
-        for error in errors_for(
-            lambda spec: spec["objects"][1].update(
-                {"support": {"kind": "floats_in", "by": "the floating tray of water"}}
-            )
-        )
-    ),
-    "floats_in was refused for floating",
-)
-
-print("C25 a seated figure has an eye line too")
-seated_spec = copy.deepcopy(EXAMPLE)
-for person in seated_spec["subjects"]:
-    person["posture"] = "sitting"
-    person["pose"] = "seated at the consultation desk, both feet on the floor"
-seated_spec["camera"]["height_m"] = 1.23
-seated_derived = image_spec.derive(seated_spec, WIDTH, HEIGHT)
-check(
-    "standing_people does not claim them",
-    not image_spec.standing_people(seated_spec) and len(image_spec.seated_people(seated_spec)) == 2,
-    str(len(image_spec.seated_people(seated_spec))),
-)
-check(
-    "every seated person still gets an eye line",
-    {offset["id"] for offset in seated_derived["eye_line_offsets"]} == {"pharmacist", "customer"},
-    str(seated_derived["eye_line_offsets"]),
-)
-check(
-    "a lens at the seated eye height crosses the eyes",
-    all(
-        offset["relation"] == "at_eyes" for offset in seated_derived["eye_line_offsets"]
-    ),
-    str(seated_derived["eye_line_offsets"]),
-)
-check(
-    "the offset is stated in head heights, which a reviewer can count on the image",
-    all(
-        offset["offset_head_heights"] is not None
-        for offset in seated_derived["eye_line_offsets"]
-    ),
-    str(seated_derived["eye_line_offsets"]),
-)
-seated_questions = image_spec.build_questions(seated_spec, seated_derived)
-check(
-    "and it is asked as a measured question",
-    [
-        question
-        for question in seated_questions
-        if question["id"].startswith("q_eye_line_")
-        and question.get("verify_with") == "geometry"
-    ],
-    "no measured eye-line question for a seated scene",
-)
-check(
-    "the eye_level band tightens to one head height when nobody is standing",
-    any(
-        "with nobody standing" in error
-        for error in image_spec.validate_spec(
-            {**seated_spec, "camera": {**seated_spec["camera"], "height_m": 1.52}},
-            WIDTH,
-            HEIGHT,
-            DEFAULTS,
-        )[0]
-    ),
-    "a 1.52 m lens over a 1.23 m seated eye line passed as eye level",
-)
-check(
-    "a mixed scene keeps the standing tolerance, because a seated eye line may sit lower",
-    not any(
-        "with nobody standing" in error
-        for error in image_spec.validate_spec(
-            {
-                **copy.deepcopy(EXAMPLE),
-                "subjects": [
-                    copy.deepcopy(EXAMPLE["subjects"][0]),
-                    {
-                        **copy.deepcopy(EXAMPLE["subjects"][1]),
-                        "posture": "sitting",
-                        "pose": "seated on the waiting bench, both feet on the floor",
-                    },
-                ],
-            },
-            WIDTH,
-            HEIGHT,
-            DEFAULTS,
-        )[0]
-    ),
-    "the seated-only rule fired on a scene that has someone standing",
-)
-
-print("C26 the focus subject of a whole-subject shot has to fit the frame")
-refuses(
-    "a full shot cannot show a 6 m counter from 5 m",
-    "does not fit the 3.60 m frame width",
-    lambda spec: (
-        spec["camera"].update(
-            {"shot_type": "full", "focus_on": "counter", "subject_distance_m": 5.0}
-        ),
-        spec["subjects"][0].update({"distance_m": 5.0}),
-        spec["subjects"][1].update({"distance_m": 4.6}),
-        spec["objects"][0].update({"distance_m": 5.0, "width_m": 6.0}),
-    ),
-)
-check(
-    "an object wider than the frame is legal when it is not the subject",
-    not any(
-        "does not fit" in error
-        for error in errors_for(lambda spec: spec["objects"][0].update({"width_m": 6.0}))
-    ),
-    "a background object running out of frame was refused",
-)
-
-print("C27 how close the lens is to a face, which the focal length does not fix")
-warnings_at = lambda mutate: image_spec.validate_spec(  # noqa: E731
-    (lambda spec: (mutate(spec), spec)[1])(copy.deepcopy(EXAMPLE)), WIDTH, HEIGHT, DEFAULTS
-)[1]
-check(
-    "under a metre from a face is reported whatever the lens",
-    any(
-        "from a face" in warning
-        for warning in warnings_at(
-            lambda spec: (
-                spec["camera"].update(
-                    {"focal_length_mm": 20, "subject_distance_m": 0.55, "shot_type": "close_up"}
-                ),
-                spec["subjects"][0].update({"distance_m": 0.55}),
-            )
-        )
-    ),
-    "a 0.55 m lens-to-face distance passed without a word",
-)
-check(
-    "the shipped example, at 2.2 m, says nothing",
-    not any("from a face" in warning for warning in warnings_at(lambda spec: None)),
-    "the example picked up a face-distance warning",
-)
-
-print("C28 shadow hardness against the sky, and a fill that is really a second key")
-refuses(
-    "a clouded sky cannot cast a crisp shadow",
-    "cannot cast a crisp shadow",
-    lambda spec: (
-        spec["location"].update({"weather": "heavy overcast, rain on the pavement"}),
-        spec["lighting"]["key"].update(
-            {
-                "source": "direct sunlight through the shopfront",
-                "quality": "hard, a small bright source with crisp edged shadows",
-            }
-        ),
-    ),
-)
-check(
-    "the example's overcast window stays legal, because its key is soft",
-    not any(
-        "crisp shadow" in error
-        for error in image_spec.validate_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)[0]
-    ),
-    "the example's own overcast daylight was refused",
-)
-refuses(
-    "a fill with the key's power and hardness is a second key",
-    "makes it a second key",
-    lambda spec: spec["lighting"].update(
-        {"fill": ["a second hard spotlight from the right at the same power"]}
-    ),
-)
-check(
-    "the example's own fills are not read as second keys",
-    not any(
-        "second key" in error
-        for error in image_spec.validate_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)[0]
-    ),
-    "a legitimate fill was refused",
-)
-
-print("C29 the object load limit counts items, not entries")
-check(
-    "one entry declaring forty cartons is reported",
-    any(
-        "across" in warning and "entries" in warning
-        for warning in image_spec.validate_spec(
-            (
-                lambda spec: (spec["objects"][1].update({"count": 40}), spec)[1]
-            )(copy.deepcopy(EXAMPLE)),
-            WIDTH,
-            HEIGHT,
-            DEFAULTS,
-        )[1]
-    ),
-    "forty objects in one entry passed a limit of eight",
-)
-check(
-    "the example's own object list is quiet",
-    not any(
-        "entries" in warning
-        for warning in image_spec.validate_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)[1]
-    ),
-    "the example picked up a load warning",
 )
 
 if failures:

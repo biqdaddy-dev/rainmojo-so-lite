@@ -19,6 +19,47 @@ and packaging, docs, infrastructure.
 - [2026-10-13] fix - v2.3.1 repository moved to biqdaddy-dev: the manifests, the marketplace entry and the README install commands point at https://github.com/biqdaddy-dev/rainmojo-so-lite (DP-002).
 - [2026-10-25] feature - v2.4.0 image shot spec, physics and logic validation and the plausibility gate, ported from the full edition's DP-014 (DP-015, หมวด: image pipeline, ชม. แผน 5): every generated image now carries a shot spec with real distances, sizes, camera, one key light and a support for every object; `image_spec.py` validates the physics and logic of the brief, derives the geometry it implies (frame width, field of view, depth of field, apparent-size ratios, the fraction of each standing figure the horizon must cross), compiles it into the prompt and avoid list, and builds the reviewer's atomic questions. The prompt is never typed by hand: a hand-edited prompt or a spec changed after compilation is refused. New `image-model-registry.json` carries per-generator capability data so the compiler knows which models have a negative-prompt field at all. The 30-item plausibility rubric is ordered on measured failure prevalence (functional 58.7 per cent, anatomical 51.4, stylistic 39.0, physics 9.17) and asks the physics checks across pairs of entities, because generated frames are consistent object by object and inconsistent between objects.
 
+- [2026-10-26] chore - v2.6.0 re-port of image_spec.py from the full edition, restoring byte-parity (DP-016, หมวด: image pipeline, ชม. แผน 1): `image_spec.py` and `image_spec_contract_test.py` taken verbatim from `ad2e1ad` on the full edition's `feat/dp-014-image-plausibility`, after the main session reproduced every battery finding in its own tree and implemented all of them there. The file now carries this edition's realism fixes plus the full edition's reference block for real places, `ground_height_m` for raised subjects, `eye_line_people`, `fits_in_frame`, and the framing-against-angle question split. The contract test runs here unchanged at 135 assertions, so parity is proven rather than assumed, and the regenerated review example drops from 73 spec questions to 68.
+
+## [2026-10-26] chore - v2.6.0 re-port from the full edition (DP-016)
+
+The direction was settled with the main session while this work was in flight: the full
+edition is the source of truth, because the MCP and Pro editions are thin pointers served
+from its bundle and inherit whatever is in it, so a fix written here and copied back would
+invert that. This edition keeps the battery and reports; the full edition writes the module
+and this edition takes it verbatim.
+
+WHAT WAS TAKEN: `scripts/image_spec.py` and `scripts/image_spec_contract_test.py` from
+`ad2e1ad`, byte for byte, plus the one fixture line in `content_pipeline_selftest.py` that
+the new landmark check requires ("its top meets the worker at mid-thigh"). Neither script
+carries a plugin-name reference, so no path edit was needed again.
+
+PARITY PROVEN, NOT ASSUMED: the ported contract test passes here unchanged at 135
+assertions, and `regression.py` is 3/3 including the end-to-end run to `publish_ready` on
+WEBP and AVIF. The two edition-specific files are regenerated rather than copied:
+`image-plausibility-review.example.json` is rebuilt from this edition's own `defaults.json`
+and `review_template`, which is how the question-count change from 73 to 68 surfaced.
+
+WHAT THE UPSTREAM FILE ADDS over the 2.5.0 local implementation: `spec.location.reference`
+for scenes that depict a real place, with two-source corroboration, a fixed viewpoint
+vocabulary, rights on every source and verified facts that reach both the prompt and the
+review questions; `ground_height_m` per subject, so a figure on a stage does not inherit a
+floor-standing eye line; `eye_line_people` covering everyone whose eye height is known,
+measured against the height the pose gives rather than the stature; `fits_in_frame`, so a
+ratio question is only asked where both entities are in the frame; framing split from
+camera angle; horizon questions suppressed where the spec puts the horizon out of shot; and
+`thigh` at 0.420 in the landmark table. The main session measured the effect of the last
+group on a live client scene run twice through codex exec: unanswerable review answers fell
+from 54 per cent of the set to 26.
+
+WHAT THE LOCAL 2.5.0 IMPLEMENTATION DID DIFFERENTLY, now superseded: it intersected the
+bands of every landmark an anchor named, where upstream takes the first landmark named as
+the claim; it shifted the band by the hedge ("above the hip" meant higher than the hip)
+where upstream uses a symmetric tolerance; and it resolved the anchor's referent by name,
+declining to check when several people were in frame and none was named. Nothing it caught
+is lost, and the differences are recorded in the report to the main session rather than
+re-litigated here.
+
 - [2026-10-25] feature - v2.5.0 realism checks on the image spec (DP-016, หมวด: image pipeline, ชม. แผน 3): a 25-case realism battery against a scene that validated cleanly moved the spec from 12 caught, 1 warned, 12 missed to 20 caught, 3 warned, 3 missed. `scale_anchor` is now checked against the person it names, using the standard stature fractions of Drillis and Contini (1966); seated and kneeling figures get the eye line that `standing_people` had excluded them from, stated in head heights; the focus subject of a whole-subject shot must fit the frame in width as well as height; a clouded sky cannot cast a crisp shadow and a fill with the key's power and hardness is refused as a second key; the object load limit counts declared items; and `support.by` for `held_by` no longer accepts an object id, which was a plain bug with an error message that contradicted it.
 
 ## [2026-10-25] feature - v2.5.0 realism checks on the image spec (DP-016)

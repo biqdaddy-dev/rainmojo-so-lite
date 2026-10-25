@@ -1,5 +1,49 @@
 # Changelog
 
+## 2.6.0 (2026-10-26)
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- ฉากที่อ้างอิงสถานที่จริงทำได้แล้ว: ระบุชื่อและที่อยู่ พร้อมแหล่งอ้างอิงอย่างน้อยสองแหล่ง
+  ที่บอกว่าเห็นอะไรจากมุมไหน ข้อเท็จจริงที่ยืนยันแล้วจะเข้าไปใน prompt และกลายเป็นคำถามตรวจของตัวเอง
+  ภาพที่ใช้ป้อนโมเดลต้องมีสิทธิ์รองรับ ไม่ใช่รูปที่หาเจอบนเว็บ
+- คนที่ยืนบนเวที บนแท่น หรือบนพื้นต่างระดับ คิดเส้นสายตาจากระดับพื้นที่เขายืนจริง
+  ไม่เหมาะเอาระดับพื้นห้องมาใช้แล้ว
+- คำถามตรวจรูปแยกเรื่องการจัดเฟรมออกจากมุมกล้อง และไม่ถามเรื่องเส้นขอบฟ้าเมื่อบรีฟบอกว่าไม่เห็นขอบฟ้า
+  ทำให้คำถามที่ตอบไม่ได้ลดลงจาก 54 เปอร์เซ็นต์เหลือ 26
+
+### Under the hood
+
+`image_spec.py` and `image_spec_contract_test.py` are taken verbatim from the full edition
+at `ad2e1ad` on `feat/dp-014-image-plausibility`, which restores byte-parity: the full
+edition is the source of truth, because the MCP and Pro editions are thin pointers served
+from its bundle and inherit whatever is in it. The contract test runs here unchanged at 135
+assertions, so parity is proven rather than assumed.
+
+That file now carries both the realism fixes this edition prototyped in 2.5.0 and the
+reference-block work the full edition did alongside them:
+
+- `spec.location.reference`: `place_is_real`, place name and address, at least two sources
+  each with publisher, access date, what it shows, a viewpoint from a fixed list and a
+  rights value, plus `verified_facts`, `conflicting_claims` and `conditioning_images`
+  gated on rights. Facts reach the prompt and become their own review questions.
+- `ground_height_m` per subject, carried into eye height and the horizon crossing, so a
+  figure on a stage or a platform no longer inherits a floor-standing eye line.
+- `eye_line_people` covers everyone whose eye height is known, measuring the crossing
+  against the height the pose gives rather than the stature, which is what finally gives
+  seated and kneeling figures an eye line.
+- `fits_in_frame` in the derivation, so an apparent-size ratio is only asked about where
+  both entities are in the frame. On the worked example this drops seven unanswerable
+  ratio questions.
+- framing and camera angle are separate questions, horizon questions are suppressed when
+  the spec puts the horizon out of shot, and a viewpoint clause opens the prompt.
+- `thigh` and `mid-thigh` at 0.420 join the landmark table, the midpoint of knee and hip,
+  because that is the height a desk or a counter actually meets.
+
+The 2.5.0 implementation of the realism checks was this edition's own and is superseded by
+the upstream file; nothing it caught has been lost, and `regression.py` stays 3/3. The
+regenerated `image-plausibility-review.example.json` drops from 73 spec questions to 68.
+
 ## 2.5.0 (2026-10-25)
 
 ### สิ่งที่ผู้ใช้จะเห็น

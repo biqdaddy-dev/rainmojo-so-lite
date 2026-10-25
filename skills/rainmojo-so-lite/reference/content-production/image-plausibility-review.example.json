@@ -344,10 +344,15 @@
       "evidence": "<what you saw and in which crop>",
       "_question": "Is the shelving wall fully stocked, boxes squared up?"
     },
-    "q_camera_shot": {
+    "q_camera_framing": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the view a medium shot, framed from the waist up, from an eye level angle?"
+      "_question": "Is the main subject framed like this: framed from the waist up?"
+    },
+    "q_camera_angle": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the camera at an eye level angle to the main subject?"
     },
     "q_horizon": {
       "answer": "yes",
@@ -384,36 +389,6 @@
       "evidence": "<what you saw and in which crop>",
       "_question": "Is the shelving wall softer than the pharmacist, as its distance from the focus plane requires?"
     },
-    "q_ratio_pharmacist_customer": {
-      "answer": "yes",
-      "evidence": "<what you saw and in which crop>",
-      "_question": "Does the pharmacist measure about 0.66 times the frame height of the older customer, as their distances require?"
-    },
-    "q_ratio_pharmacist_counter": {
-      "answer": "yes",
-      "evidence": "<what you saw and in which crop>",
-      "_question": "Does the pharmacist measure about 1.55 times the frame height of the counter, as their distances require?"
-    },
-    "q_ratio_pharmacist_medicine_box": {
-      "answer": "yes",
-      "evidence": "<what you saw and in which crop>",
-      "_question": "Does the pharmacist measure about 16.36 times the frame height of the medicine box, as their distances require?"
-    },
-    "q_ratio_pharmacist_shelving": {
-      "answer": "yes",
-      "evidence": "<what you saw and in which crop>",
-      "_question": "Does the pharmacist measure about 1.2 times the frame height of the shelving wall, as their distances require?"
-    },
-    "q_ratio_customer_counter": {
-      "answer": "yes",
-      "evidence": "<what you saw and in which crop>",
-      "_question": "Does the older customer measure about 2.36 times the frame height of the counter, as their distances require?"
-    },
-    "q_ratio_customer_medicine_box": {
-      "answer": "yes",
-      "evidence": "<what you saw and in which crop>",
-      "_question": "Does the older customer measure about 24.89 times the frame height of the medicine box, as their distances require?"
-    },
     "q_light": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
@@ -437,7 +412,7 @@
     "q_pair_ground_plane": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Do the pharmacist, the older customer, the counter all sit on one floor that recedes consistently, rather than on separate invisible shelves?"
+      "_question": "Do the pharmacist, the older customer and the counter all sit on one floor that recedes consistently, rather than on separate invisible shelves?"
     },
     "q_horizon_cut_pharmacist": {
       "answer": "yes",
