@@ -129,7 +129,7 @@
     },
     "straight_lines": {
       "status": "not_applicable",
-      "evidence": "<say what is absent from the frame, for example no reflective surface and no liquid anywhere>",
+      "evidence": "<say what is absent from the frame>",
       "_check": "Do the lines that are straight in the world stay straight and evenly spaced: wall edges, tile grids, window frames, stair treads, shelf fronts?"
     },
     "focus_falloff": {
@@ -139,12 +139,12 @@
     },
     "reflection_and_transparency": {
       "status": "not_applicable",
-      "evidence": "<say what is absent from the frame, for example no reflective surface and no liquid anywhere>",
+      "evidence": "<say what is absent from the frame>",
       "_check": "Does every mirror, glass and glossy surface show what actually stands in front of it, in the right place, and does transparent material bend what is behind it?"
     },
     "fluid_and_fabric": {
       "status": "not_applicable",
-      "evidence": "<say what is absent from the frame, for example no reflective surface and no liquid anywhere>",
+      "evidence": "<say what is absent from the frame>",
       "_check": "Do liquid surfaces sit level, pours fall downward, steam rise, and fabric hang and crease under gravity rather than floating or standing stiff?"
     },
     "locale_truth": {
@@ -478,6 +478,26 @@
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
       "_question": "Does the image respect this: the shelving behind is parallel to the counter, so both recede to the same vanishing point?"
+    },
+    "q_imperfection_01": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is this actually visible: a scuff in the counter laminate at the near corner, where customers rest their bags?"
+    },
+    "q_imperfection_02": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is this actually visible: one shelf box on the middle row pushed out of line with its neighbours?"
+    },
+    "q_imperfection_03": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is this actually visible: a few strands of the pharmacist's hair loose at the left temple?"
+    },
+    "q_imperfection_04": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is this actually visible: a thumbprint on the glass of the shopfront door behind the customer?"
     },
     "q_must_not_01": {
       "answer": "yes",

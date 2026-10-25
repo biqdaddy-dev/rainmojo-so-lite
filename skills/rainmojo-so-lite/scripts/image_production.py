@@ -1264,7 +1264,7 @@ def command_compile_spec(args: argparse.Namespace) -> int:
 def command_spec_template(args: argparse.Namespace) -> int:
     print(
         json.dumps(
-            image_spec.blank_spec(args.medium, args.people),
+            image_spec.blank_spec(args.medium, args.people, args.reference),
             ensure_ascii=False,
             indent=2,
         )
@@ -1352,6 +1352,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=1,
         help="How many person subjects to scaffold (0 for an object-only scene).",
+    )
+    spec_template.add_argument(
+        "--reference",
+        action="store_true",
+        help="Scaffold location.reference for a real named place, which a picture of "
+             "somewhere real needs and nobody guesses is there.",
     )
     spec_template.set_defaults(func=command_spec_template)
 

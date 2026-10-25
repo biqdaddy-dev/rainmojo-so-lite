@@ -1,5 +1,49 @@
 # Changelog
 
+## 2.7.0 (2026-10-26)
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- ทุกภาพถ่ายต้องระบุ "ตำหนิที่วางไว้" อย่างน้อยสองจุด เช่น รอยขูดที่ขอบเคาน์เตอร์ตรงใกล้แคชเชียร์
+  หรือผมหลุดลงมาข้างขวา เพราะสิ่งนี้คือสิ่งที่ทำให้ภาพอ่านได้ว่าเป็นภาพถ่าย ไม่ใช่ภาพเรนเดอร์
+- บรีฟห้ามใช้คำเปรียบเทียบอย่าง "มือเหมือนนักเปียโน" แล้ว เพราะโมเดลจะวาดสิ่งที่เอาไปเปรียบ
+  เปียโนจะโผล่เข้ามาในภาพจริง ๆ
+- เพิ่มตัวอย่างบรีฟสำหรับสถานที่จริงเต็มรูปแบบ (`image-spec.real-place.example.json`)
+  และ `spec-template --reference` สร้างโครงบล็อกอ้างอิงสถานที่ให้ ซึ่งก่อนหน้านี้ไม่มีใครรู้ว่ามีอยู่
+- รูปที่ใช้เป็นต้นแบบป้อนโมเดลต้องมีแถวสิทธิ์ของตัวเองทีละภาพ รวมถึงรูปใบหน้าคนที่ใช้อ้างอิง
+
+### Under the hood
+
+`image_spec.py`, `image_spec_contract_test.py`, `image-spec.example.json` and the new
+`image-spec.real-place.example.json` are byte-identical to the full edition at `f632e00` on
+`feat/dp-014-image-plausibility`; `image_production.py` takes that commit's
+`spec-template --reference` flag. The contract test runs here unchanged at **169
+assertions** and `regression.py` is 3/3.
+
+`image-plausibility-review.example.json` is regenerated from this edition's own
+`defaults.json` and `review_template` and comes out byte-identical to the full edition's,
+which is the strongest parity statement available: the generator and the data agree in both
+editions independently. The contract test now asserts that this file matches what the
+compiler writes, so it cannot drift again.
+
+Upstream carries the six findings this edition reported against `ad2e1ad`, three of which
+were bugs that refused correct briefs:
+
+- the scale anchor is resolved to the person it names, on word boundaries, declining to
+  check when several people are in frame and none is named;
+- the landmark check runs only for `stands_on` and `rests_on`, so a hanging or mounted
+  object's own length is no longer compared with a height above the floor;
+- an extent word before the landmark marks the anchor as a claim about width or length and
+  the height check stands down;
+- `conditioning_images` are matched to a source one by one, and an image matching no source
+  is refused, so one client-owned photo no longer authorises feeding anything to a model;
+- `spec-template --reference` scaffolds the reference block;
+- and the shipped review example is asserted against the compiler.
+
+Also from upstream in this port: `spec.realism.imperfections`, required with at least two
+placed entries for a photographic medium, and four lint rules including a refusal of simile
+in any spec field.
+
 ## 2.6.0 (2026-10-26)
 
 ### สิ่งที่ผู้ใช้จะเห็น

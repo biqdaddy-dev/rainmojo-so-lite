@@ -114,6 +114,12 @@ def fixture_spec(image_id: str) -> dict:
             "crop_safety": "the head and the desk edge survive a square crop",
         },
         "background_focus": "blurred",
+        "realism": {
+            "imperfections": [
+                "a scratch in the desk veneer near the front right corner",
+                "one sleeve of the grey shirt pushed up further than the other",
+            ],
+        },
         "physical_invariants": [
             "the worker stands behind the desk, so the desk edge crosses in front "
             "of her upper thighs",

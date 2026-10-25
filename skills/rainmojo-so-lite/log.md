@@ -19,6 +19,58 @@ and packaging, docs, infrastructure.
 - [2026-10-13] fix - v2.3.1 repository moved to biqdaddy-dev: the manifests, the marketplace entry and the README install commands point at https://github.com/biqdaddy-dev/rainmojo-so-lite (DP-002).
 - [2026-10-25] feature - v2.4.0 image shot spec, physics and logic validation and the plausibility gate, ported from the full edition's DP-014 (DP-015, หมวด: image pipeline, ชม. แผน 5): every generated image now carries a shot spec with real distances, sizes, camera, one key light and a support for every object; `image_spec.py` validates the physics and logic of the brief, derives the geometry it implies (frame width, field of view, depth of field, apparent-size ratios, the fraction of each standing figure the horizon must cross), compiles it into the prompt and avoid list, and builds the reviewer's atomic questions. The prompt is never typed by hand: a hand-edited prompt or a spec changed after compilation is refused. New `image-model-registry.json` carries per-generator capability data so the compiler knows which models have a negative-prompt field at all. The 30-item plausibility rubric is ordered on measured failure prevalence (functional 58.7 per cent, anatomical 51.4, stylistic 39.0, physics 9.17) and asks the physics checks across pairs of entities, because generated frames are consistent object by object and inconsistent between objects.
 
+- [2026-10-26] chore - v2.7.0 re-port from f632e00, carrying the six findings this edition reported (DP-016, หมวด: image pipeline, ชม. แผน 1): `image_spec.py`, `image_spec_contract_test.py`, `image-spec.example.json` and the new `image-spec.real-place.example.json` taken byte-identical from the full edition, plus the `spec-template --reference` flag in `image_production.py`. The contract test runs here unchanged at 169 assertions and `regression.py` is 3/3. The regenerated review example comes out byte-identical to the full edition's while being built from this edition's own defaults and generator, and the contract test now asserts it against the compiler so it cannot drift again. Upstream carries all six findings, three of which were bugs that refused correct briefs, plus `spec.realism.imperfections` and four lint rules.
+
+## [2026-10-26] chore - v2.7.0 re-port from f632e00 (DP-016)
+
+The review loop ran twice: this edition ported `ad2e1ad`, proved parity, and reported six
+findings against it; the full edition fixed all six and this edition ported `f632e00` and
+proved parity again. That is the loop working as intended, with the module in one place and
+the battery in the other.
+
+WHAT THE REPORT FOUND, all six fixed upstream. Three were bugs that refused correct briefs,
+which is worse than no check at all: the scale anchor was resolved to `subjects[0]` rather
+than to the person the anchor names, so a brief naming the second person was refused with a
+message quoting the first; the landmark check compared `height_m` with a height above the
+floor for objects that hang or are mounted, where `height_m` is the object's own length; and
+a landmark word was read as a height claim even when the anchor was about width, which real
+briefs write constantly. The other three: `conditioning_images` were gated on the set rather
+than per image, so one client-owned photo authorised feeding anything to a generator,
+including a URL with no provenance row; `blank_spec` scaffolded neither the reference block
+nor `ground_height_m`, leaving the headline features undiscoverable; and the shipped review
+example had drifted from the compiler.
+
+The licensing one earned its keep immediately on the other side: the new per-image rights
+check failed one of the full edition's own fixtures on its first run, where a subject's
+reference image had no source row. A person's likeness now needs a rights row like anything
+else fed to a model.
+
+WHAT CAME BACK IN RETURN: `spec.realism.imperfections`, required with at least two placed
+entries for a photographic medium, because an unplaced flaw is decoration and a placed one
+is what makes a frame read as a photograph; four lint rules, including a refusal of simile
+anywhere in a spec, since a generator draws the thing you compared to and a hand "like a
+pianist's" puts a piano in the frame; and a full worked real-place example.
+
+THE BATTERY, now four files in the shared notes folder and run against `f632e00`: 20 caught,
+2 warned, 4 missed on the first axis set, where three of the four misses are a guard that
+must stay legal, a scene that is valid, and the locale contradiction left to the reviewer.
+The nine brief-checkable cases on the second axis set are written as fixtures with a guard
+each, and all nine report as valid isolated probes against both editions.
+
+THE RULE THAT PAID FOR ITSELF: a probe that comes back caught has to be read, not counted,
+because it may have been refused by a rule that fired before the probe tested anything. It
+is now enforced in the fixture file rather than left as advice: every case asserts which
+error fired and carries a correct brief of the same shape that must stay legal. On its first
+run it rejected two fixtures written an hour earlier - one used a negation the module
+rightly refuses, the other a simile the new lint rule rightly refuses - and it also found
+that an older probe of this edition's own had been reporting a miss while testing nothing,
+because moving every entity to one distance had broken plane ordering.
+
+STILL OPEN, one line: `support.by` is unscanned free text, so `{"kind": "stands_on", "by":
+"a hovering glass shelf"}` and `"by": "thin air"` both compile. This edition's superseded
+2.5.0 had the scan; upstream has not taken it. It is the only genuine miss left in the first
+axis set.
+
 - [2026-10-26] chore - v2.6.0 re-port of image_spec.py from the full edition, restoring byte-parity (DP-016, หมวด: image pipeline, ชม. แผน 1): `image_spec.py` and `image_spec_contract_test.py` taken verbatim from `ad2e1ad` on the full edition's `feat/dp-014-image-plausibility`, after the main session reproduced every battery finding in its own tree and implemented all of them there. The file now carries this edition's realism fixes plus the full edition's reference block for real places, `ground_height_m` for raised subjects, `eye_line_people`, `fits_in_frame`, and the framing-against-angle question split. The contract test runs here unchanged at 135 assertions, so parity is proven rather than assumed, and the regenerated review example drops from 73 spec questions to 68.
 
 ## [2026-10-26] chore - v2.6.0 re-port from the full edition (DP-016)

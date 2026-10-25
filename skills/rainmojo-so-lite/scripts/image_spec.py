@@ -167,6 +167,16 @@ LANDMARK_TOLERANCE_M = 0.12
 # An object taller than this fraction of a person's stature does not fit in one
 # hand; above the second it is a two-handed load. Read off the same table: a
 # palm spans roughly the distance from fingertip to wrist.
+# A landmark in a claim about width or length says nothing about height: "as
+# wide as her shoulders" is a real sentence about a sign 0.5 m tall.
+EXTENT_WORDS = (
+    "wide", "width", "across", "broad", "long", "length", "span", "spans",
+    "deep", "depth", "thick", "diameter", "tall as", "high as",
+)
+# Only something that stands on a surface has a height above that surface. A
+# banner that hangs or a shelf that is mounted carries its own length in
+# height_m, and comparing that with a landmark is meaningless.
+FLOOR_SUPPORTED = {"stands_on", "rests_on"}
 ONE_HAND_FRACTION = 0.30
 TWO_HAND_FRACTION = 0.60
 HAND_HELD_WORDS = ("one hand", "a hand", "his hand", "her hand", "their hand", "palm", "fingers wrap")
@@ -317,6 +327,68 @@ SHOT_FRAMING = {
 # the best model scores 31.4 per cent overall on negation (arXiv:2406.02965,
 # NegT2IBench arXiv:2610.03084). Every vendor says the same in its own words:
 # a party prompted with "no cake" still gets a cake. Describe the state instead.
+# Words that push the model's own idealising prior harder without adding a fact.
+# Banned from the brief for the same reason negation is: they feel like effort
+# and they cost fidelity. One vendor's guidance reports they actively degrade
+# the result; everywhere else they merely crowd out the facts that would have
+# worked.
+BOOSTER_WORDS = (
+    "4k", "8k", "16k", "uhd", "ultra detailed", "ultra-detailed", "hyper detailed",
+    "hyper-detailed", "ultra realistic", "ultra-realistic", "hyperrealistic",
+    "hyper-realistic", "photorealistic", "photo-realistic", "masterpiece",
+    "best quality", "high quality", "award winning", "award-winning", "stunning",
+    "flawless", "perfect", "intricate detail", "highly detailed", "sharp focus",
+    "crisp", "breathtaking", "epic", "insane detail", "trending on artstation",
+)
+BOOSTER_RE = re.compile(
+    r"\b(" + "|".join(word.replace(" ", r"[\s-]") for word in BOOSTER_WORDS) + r")\b",
+    re.I,
+)
+
+# The identity of a person who comes with a reference image is carried by the
+# image, not by the text. Describing the face in words fights the reference.
+IDENTITY_LOCK = (
+    "the face, bone structure, eye shape and colour, nose, mouth, jawline, skin "
+    "tone and every identifying mark stay exactly as they are in the reference "
+    "image"
+)
+
+# A simile is drawn, not understood: "hands like a pianist's" puts a piano in
+# the frame. Adopted from rangsarn's prompt_lint P01.
+SIMILE_RE = re.compile(
+    r"\b(like|as if|as though|resembl\w*|reminiscent of|in the manner of|evoking)\b"
+    r"|\b\w+-like\b",
+    re.I,
+)
+# Words that are about a material or a finish rather than a comparison.
+SIMILE_EXEMPT = ("lifelike", "life-like", "true-to-life", "businesslike", "likeness")
+
+# A pose named by the impression it gives is not a pose. The model needs to know
+# where the limbs are. Adopted from rangsarn's prompt_lint P02.
+EFFECT_POSE_RE = re.compile(
+    r"\b(graceful(?:ly)?|elegant|dynamic|striking|confident|powerful|natural|relaxed|"
+    r"casual|professional|stylish|heroic|iconic|expressive|effortless|poised|candid)\s+"
+    r"(pose|posture|stance|gesture|look|manner|air|vibe)\b"
+    r"|\bposed? (?:elegantly|gracefully|dynamically|confidently|naturally|professionally)\b",
+    re.I,
+)
+
+# Camera words in a brief for a drawing get a photograph. The reverse of the
+# medium the client asked for. Adopted from rangsarn's prompt_lint P04.
+PHOTO_WORDS_RE = re.compile(
+    r"\b(photograph\w*|photo-?real\w*|dslr|mirrorless|shot on \w+|film still|raw photo|"
+    r"\d{2,3}\s?mm lens|bokeh|depth of field|shutter|exposure|iso \d+)\b",
+    re.I,
+)
+
+# A fact recorded with a hedge was not established. Adopted from rangsarn's B01.
+HEDGE_RE = re.compile(
+    r"\b(maybe|perhaps|possibly|probably|apparently|seemingly|roughly|approximately|"
+    r"about \d+|around \d+|some kind of|sort of|kind of|or so|unclear|unknown|"
+    r"appears to be|is said to be|reportedly)\b|-ish\b",
+    re.I,
+)
+
 NEGATION_RE = re.compile(
     r"\b(no|not|none|never|without|free of|empty of|devoid of|avoid|exclude|"
     r"excluding|absent|lacking|remove|omit)\b",
@@ -533,6 +605,40 @@ def eye_line_people(spec: dict[str, Any]) -> list[dict[str, Any]]:
     return [entity for entity in people(spec) if eye_height(entity) is not None]
 
 
+def anchor_person(anchor: str, subjects: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """The person a scale anchor is about, or None when it does not say.
+
+    Matched on word boundaries against the id and the short name, because an id
+    of "a" otherwise matches the "a" inside "waist". With several people in
+    frame and none of them named, the anchor is ambiguous and no check runs: a
+    wrong referent produces a confident error message naming someone the author
+    never mentioned, which is worse than no check at all.
+    """
+    lowered = anchor.lower()
+    named = []
+    for subject in subjects:
+        for token in (subject.get("id"), subject.get("short_name")):
+            text = _text(token).lower()
+            if text and re.search(r"\b" + re.escape(text) + r"\b", lowered):
+                named.append(subject)
+                break
+    if len(named) == 1:
+        return named[0]
+    if not named and len(subjects) == 1:
+        return subjects[0]
+    return None
+
+
+def anchor_is_about_extent(anchor: str, word: str) -> bool:
+    """Whether the landmark sits in a claim about width or length, not height."""
+    lowered = anchor.lower()
+    index = lowered.find(word)
+    if index < 0:
+        return False
+    window = lowered[max(0, index - 40):index]
+    return any(extent in window for extent in EXTENT_WORDS)
+
+
 def reference_height(name: str) -> tuple[float, float, str] | None:
     """The code or convention height band for a named object, if there is one."""
     lowered = name.lower()
@@ -541,6 +647,11 @@ def reference_height(name: str) -> tuple[float, float, str] | None:
         if key in lowered and (best is None or len(key) > best[0]):
             best = (len(key), band)
     return best[1] if best else None
+
+
+def has_reference_image(subject: dict[str, Any]) -> bool:
+    """Whether this person's likeness is supplied as an image."""
+    return bool(_text(subject.get("reference_image")))
 
 
 def reference_block(spec: dict[str, Any]) -> dict[str, Any]:
@@ -776,6 +887,22 @@ def negated_fields(value: Any, path: str = "") -> list[tuple[str, str]]:
     return found
 
 
+def _prose_fields(value: Any, path: str = "") -> list[tuple[str, str]]:
+    """Every free-text field in the spec, with its path, for the lint rules."""
+    found: list[tuple[str, str]] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key in NEGATION_EXEMPT_KEYS:
+                continue
+            found.extend(_prose_fields(child, f"{path}.{key}" if path else str(key)))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            found.extend(_prose_fields(child, f"{path}[{index}]"))
+    elif isinstance(value, str) and value.strip():
+        found.append((path or "<root>", value))
+    return found
+
+
 def _require(errors: list[str], cond: bool, message: str) -> None:
     if not cond:
         errors.append(message)
@@ -798,6 +925,13 @@ def validate_spec(
     for path in sorted(unfilled_placeholders(spec)):
         errors.append(f"spec.{path} still holds the template question; answer it.")
 
+    for path, word in sorted(boosted_fields(spec)):
+        errors.append(
+            f"spec.{path} reaches for {word!r}, which is a booster word, not a fact. It "
+            "pushes the model's own idea of a good picture and crowds out the detail that "
+            "would have steered it. Say what is actually there instead."
+        )
+
     for path, word in sorted(negated_fields(spec)):
         errors.append(
             f"spec.{path} says what the picture is not ({word!r}). Describe the state "
@@ -813,6 +947,28 @@ def validate_spec(
     if medium not in MEDIA:
         errors.append("spec.medium must be one of " + ", ".join(sorted(MEDIA)) + ".")
     photographic = medium in PHOTOGRAPHIC_MEDIA
+
+    for path, value in _prose_fields(spec):
+        for word in similes(value):
+            errors.append(
+                f"spec.{path} compares with {word!r}. A generator draws the thing you "
+                "compared to, so a hand like a pianist's puts a piano in the frame. Say "
+                "what is actually there instead."
+            )
+        if EFFECT_POSE_RE.search(value) and path.split(".")[-1].rstrip("0123456789[]") in (
+            "pose", "action", "expression", "gaze", "subject_placement"
+        ):
+            errors.append(
+                f"spec.{path} names the impression a pose gives rather than the pose. "
+                "Say where the limbs are: which hand, which foot, where the weight sits, "
+                "which way the body faces."
+            )
+        if not photographic and PHOTO_WORDS_RE.search(value):
+            errors.append(
+                f"spec.{path} uses camera words in a brief for {medium.replace('_', ' ')}. "
+                "A generator reads those as an instruction to make a photograph. Describe "
+                "the medium the client asked for instead."
+            )
 
     # Location and time.
     location = spec.get("location")
@@ -864,6 +1020,15 @@ def validate_spec(
                     f"{where}.rights must be one of " + ", ".join(sorted(REFERENCE_RIGHTS)) + "."
                 )
         facts = [_text(v) for v in _list(reference.get("verified_facts")) if _text(v)]
+        for index, fact in enumerate(facts):
+            hedge = HEDGE_RE.search(fact)
+            if hedge:
+                errors.append(
+                    f"spec.location.reference.verified_facts[{index}] hedges with "
+                    f"{hedge.group(0)!r}. A fact recorded with a hedge was not verified. "
+                    "Either establish it and state it plainly, or move it to "
+                    "conflicting_claims where an unsettled claim belongs."
+                )
         if not facts:
             errors.append(
                 "spec.location.reference.verified_facts is empty: write down what the "
@@ -887,16 +1052,35 @@ def validate_spec(
                 )
 
         conditioning = [_text(v) for v in _list(reference.get("conditioning_images")) if _text(v)]
-        if conditioning:
-            owned = any(
-                _text(source.get("rights")) in CONDITIONING_RIGHTS for source in sources
-            )
-            if not owned:
+        # The subject list is built further down, so read it from the spec here.
+        conditioning += [
+            _text(subject.get("reference_image"))
+            for subject in _list(spec.get("subjects"))
+            if isinstance(subject, dict) and has_reference_image(subject)
+        ]
+        # Each image has to carry its own rights. Checking that the set holds one
+        # owned source let a single client photograph authorise feeding anything
+        # at all to the generator, including a path with no provenance row.
+        for image in conditioning:
+            match = None
+            for source in sources:
+                url = _text(source.get("url"))
+                if not url:
+                    continue
+                if image == url or image in url or url in image:
+                    match = source
+                    break
+            if match is None:
                 errors.append(
-                    "spec.location.reference.conditioning_images may only be fed to a "
-                    "generator when a source records rights client_owned or licensed. A "
-                    "page found on the web informs what you write; it is not an input to "
-                    "the model."
+                    f"spec.location.reference: {image!r} is fed to the generator but no "
+                    "source records where it came from. Every conditioning image needs "
+                    "its own row in sources with the rights it is used under."
+                )
+            elif _text(match.get("rights")) not in CONDITIONING_RIGHTS:
+                errors.append(
+                    f"spec.location.reference: {image!r} is recorded as "
+                    f"{_text(match.get('rights'))!r}, which may inform what you write but "
+                    "may not be fed to the generator. Only client_owned or licensed may."
                 )
     elif isinstance(reference, dict) and _list(reference.get("conditioning_images")):
         errors.append(
@@ -1003,7 +1187,21 @@ def validate_spec(
             if not _text(subject.get(field)):
                 errors.append(f"subject {sid}: {field} is required.")
         if kind == "person":
-            for field in ("appearance", "wardrobe", "pose", "gaze"):
+            required_fields = ["wardrobe", "pose", "gaze"]
+            if has_reference_image(subject):
+                # The likeness is in the image. A description of the face in the
+                # prompt competes with it, so the field is refused rather than
+                # merely ignored: an author who writes it expects it to be used.
+                if _text(subject.get("appearance")):
+                    errors.append(
+                        f"subject {sid}: appearance must be empty when reference_image is "
+                        "set. The likeness comes from the image, and describing the face "
+                        "in words fights it and loses the likeness. Put anything that is "
+                        "not the person, such as what they are wearing, in wardrobe."
+                    )
+            else:
+                required_fields.insert(0, "appearance")
+            for field in required_fields:
                 if not _text(subject.get(field)):
                     errors.append(f"subject {sid}: {field} is required for a person.")
             if not _text(subject.get("hands")):
@@ -1130,9 +1328,11 @@ def validate_spec(
     )
     for obj in objects:
         anchor = _text(obj.get("scale_anchor")).lower()
-        height = _num(obj.get("height_m"))
-        if not anchor or not height or not tallest:
+        obj_height = _num(obj.get("height_m"))
+        if not anchor or not obj_height or not tallest:
             continue
+        support = obj.get("support", {}) if isinstance(obj.get("support"), dict) else {}
+        floor_supported = _text(support.get("kind")) in FLOOR_SUPPORTED
         ground = _num(obj.get("ground_height_m")) or 0.0
         # An anchor often names two landmarks, "just above the hip, a little
         # below her waist". Take the one it leads with: that is the claim.
@@ -1141,31 +1341,37 @@ def validate_spec(
              for word, fraction in BODY_LANDMARK_FRACTION.items()
              if word in anchor),
         )
+        referent = anchor_person(anchor, subjects)
         for _, word, fraction in named[:1]:
-            for subject in subjects:
-                stature = _num(subject.get("height_m"))
-                if not stature:
-                    continue
-                expected = fraction * stature
-                if abs((height + ground) - expected) > LANDMARK_TOLERANCE_M:
-                    errors.append(
-                        f"object {_text(obj.get('id'))}: scale_anchor says it reaches the "
-                        f"{word} of a {stature:g} m person, which is {expected:.2f} m, but "
-                        f"height_m is {height:g}. Change the height, the anchor, or the "
-                        "person."
-                    )
+            if not floor_supported:
+                # height_m is the thing's own length, not a height above a floor.
                 break
+            if anchor_is_about_extent(anchor, word):
+                break
+            if referent is None:
+                break
+            stature = _num(referent.get("height_m"))
+            if not stature:
+                break
+            expected = fraction * stature
+            if abs((obj_height + ground) - expected) > LANDMARK_TOLERANCE_M:
+                errors.append(
+                    f"object {_text(obj.get('id'))}: scale_anchor says it reaches the "
+                    f"{word} of {_noun(referent)}, who is {stature:g} m, so that is "
+                    f"{expected:.2f} m, but height_m is {obj_height:g}. Change the "
+                    "height, the anchor, or the person it names."
+                )
         if any(word in anchor for word in HAND_HELD_WORDS):
-            if height > tallest * TWO_HAND_FRACTION:
+            if obj_height > tallest * TWO_HAND_FRACTION:
                 errors.append(
                     f"object {_text(obj.get('id'))}: scale_anchor says it is held in a hand, "
-                    f"but at {height:g} m against a {tallest:g} m person it is a two-handed "
-                    "load at best."
+                    f"but at {obj_height:g} m against a {tallest:g} m person it is a "
+                    "two-handed load at best."
                 )
-            elif height > tallest * ONE_HAND_FRACTION:
+            elif obj_height > tallest * ONE_HAND_FRACTION:
                 warnings.append(
-                    f"object {_text(obj.get('id'))}: at {height:g} m it is large for the one "
-                    "hand its scale_anchor describes."
+                    f"object {_text(obj.get('id'))}: at {obj_height:g} m it is large for the "
+                    "one hand its scale_anchor describes."
                 )
 
     # Object heights against code and settled convention, so a 1.2 m kitchen
@@ -1183,6 +1389,14 @@ def validate_spec(
                 )
 
     for subject in subjects:
+        if has_reference_image(subject) and not isinstance(
+            (spec.get("location") or {}).get("reference"), dict
+        ):
+            errors.append(
+                f"subject {_text(subject.get('id'))}: reference_image needs a "
+                "location.reference block recording where the likeness comes from and on "
+                "what basis it may be used. A person's face is not a free asset."
+            )
         raised = _num(subject.get("ground_height_m"))
         if raised is not None and raised < 0:
             errors.append(
@@ -1288,6 +1502,34 @@ def validate_spec(
         _require(errors, bool(_text(composition.get("subject_placement"))), "spec.composition.subject_placement is required.")
         _require(errors, bool(_text(composition.get("negative_space"))), "spec.composition.negative_space is required (where the frame stays quiet for crops, title or logo).")
 
+    # Both model families beautify unless told otherwise: skin loses pores,
+    # clothes lose creases, rooms tidy themselves, backgrounds gain saturation.
+    # A photograph of a real place has specific, placed flaws, and naming them is
+    # the only thing that survives the prior.
+    realism = spec.get("realism")
+    if realism is not None and not isinstance(realism, dict):
+        errors.append("spec.realism must be an object.")
+        realism = None
+    if photographic:
+        imperfections = [
+            _text(v) for v in _list((realism or {}).get("imperfections")) if _text(v)
+        ]
+        minimum = int(spec_policy.get("min_imperfections", 2))
+        if len(imperfections) < minimum:
+            errors.append(
+                f"spec.realism.imperfections has {len(imperfections)} entries; a "
+                f"photograph needs at least {minimum}. Name them and place them: a scuff "
+                "on the counter edge by the till, flyaway hair at the left temple, one "
+                "chair pushed out of line. An unplaced flaw is decoration; a placed one "
+                "is what makes the frame read as a photograph rather than a render."
+            )
+        for index, value in enumerate(imperfections):
+            if len(value.split()) < 4:
+                warnings.append(
+                    f"spec.realism.imperfections[{index}] is too short to be located; "
+                    "say where it is as well as what it is."
+                )
+
     text_in_image = _text(spec.get("text_in_image") or policy["text_default"] or "none")
     if text_in_image not in {"none", ""} and not policy["infographic_allowed"]:
         errors.append("spec.text_in_image must be none: the client has not enabled an infographic text workflow.")
@@ -1343,6 +1585,41 @@ def _phrase_for(value: float, table: tuple[tuple[float, str], ...]) -> str:
 def negations(text: str) -> list[str]:
     """Every negation word in a prompt, which a positive prompt must not carry."""
     return sorted({match.group(0).lower() for match in NEGATION_RE.finditer(text)})
+
+
+def similes(text: str) -> list[str]:
+    """Comparisons a generator will draw as the thing compared."""
+    lowered = text.lower()
+    found = set()
+    for match in SIMILE_RE.finditer(text):
+        word = match.group(0).lower()
+        start = max(0, match.start() - 12)
+        if any(ok in lowered[start:match.end() + 4] for ok in SIMILE_EXEMPT):
+            continue
+        found.add(word)
+    return sorted(found)
+
+
+def boosters(text: str) -> list[str]:
+    """Quality-booster words, which buy nothing and cost fidelity."""
+    return sorted({" ".join(m.group(0).lower().split()) for m in BOOSTER_RE.finditer(text)})
+
+
+def boosted_fields(value: Any, path: str = "") -> list[tuple[str, str]]:
+    """Spec fields reaching for a booster word instead of a fact."""
+    found: list[tuple[str, str]] = []
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key in NEGATION_EXEMPT_KEYS:
+                continue
+            found.extend(boosted_fields(child, f"{path}.{key}" if path else str(key)))
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            found.extend(boosted_fields(child, f"{path}[{index}]"))
+    elif isinstance(value, str):
+        for word in boosters(value):
+            found.append((path or "<root>", word))
+    return found
 
 
 def _an(word: str) -> str:
@@ -1425,6 +1702,7 @@ GROUP_ORDER = (
     "style",
     "locale",
     "invariant",
+    "realism",
     "constraint",
     "closing",
 )
@@ -1547,13 +1825,21 @@ def build_clauses(
         count = int(_num(subject.get("count")) or 1)
         noun = _noun(subject)
         who = _text(subject.get("description"))
-        line = (f"{count} " if count > 1 else "One ") + who
-        if _text(subject.get("appearance")):
-            line += f", {_text(subject['appearance'])}"
+        if has_reference_image(subject):
+            line = (
+                (f"{count} " if count > 1 else "One ")
+                + f"{who}, the person from the reference image"
+            )
+        else:
+            line = (f"{count} " if count > 1 else "One ") + who
+            if _text(subject.get("appearance")):
+                line += f", {_text(subject['appearance'])}"
         if _text(subject.get("wardrobe")):
             line += f", wearing {_text(subject['wardrobe'])}"
         line += f", {_text(subject.get('position'))}"
         add("subject", 1, line)
+        if has_reference_image(subject):
+            add("subject", 1, f"For {noun}, {IDENTITY_LOCK}")
         actor = "They" if count > 1 else _cap(noun)
         add("subject", 1, f"{actor} {_text(subject.get('action'))}")
         if _text(subject.get("hands")):
@@ -1739,6 +2025,16 @@ def build_clauses(
     if invariants:
         add("invariant", 2, "Physically and logically: " + "; ".join(invariants))
 
+    realism = spec.get("realism", {}) if isinstance(spec.get("realism"), dict) else {}
+    flaws = [_text(v) for v in _list(realism.get("imperfections")) if _text(v)]
+    if flaws:
+        add(
+            "realism",
+            1,
+            "This is a photograph of a real place and it carries the marks of use: "
+            + "; ".join(flaws),
+        )
+
     # constraints and closing -------------------------------------------------
     if _text(spec.get("text_in_image") or "none") == "none":
         # Stated as the state of the scene, not as a prohibition, because a
@@ -1904,6 +2200,14 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             f"Does the image show exactly {count} {_text(subject.get('description'))}?",
             verify_with="count",
         )
+        if has_reference_image(subject):
+            add(
+                f"{base}_identity",
+                "attribute",
+                f"Is {noun} recognisably the same person as the reference image, in the "
+                "face, the bone structure and every identifying mark?",
+                base,
+            )
         for field, lead in (
             ("appearance", "look like this"),
             ("wardrobe", "wear this"),
@@ -2194,6 +2498,12 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         )
     for index, inv in enumerate(_list(spec.get("physical_invariants")), start=1):
         add("q_invariant_%02d" % index, "physics", f"Does the image respect this: {_text(inv)}?")
+    for index, flaw in enumerate(_list((spec.get("realism") or {}).get("imperfections")), start=1):
+        add(
+            "q_imperfection_%02d" % index,
+            "stylistic",
+            f"Is this actually visible: {_text(flaw)}?",
+        )
     for index, value in enumerate(_list(spec.get("must_not_show")), start=1):
         add(
             "q_must_not_%02d" % index,
@@ -2213,7 +2523,43 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
 # ---------------------------------------------------------------- scaffolding
 
 
-def blank_spec(medium: str = "photograph", people: int = 1) -> dict[str, Any]:
+REFERENCE_STUB = {
+    "place_is_real": True,
+    "place_name": "<the name the client and their customers use for this place>",
+    "address": "<street address>",
+    "sources": [
+        {
+            "url": "<where you read it>",
+            "publisher": "<who published it>",
+            "shows": "<what this source actually shows of the place>",
+            "viewpoint": "interior_wide",
+            "accessed": "<YYYY-MM-DD>",
+            "rights": "reference_only",
+        },
+        {
+            "url": "<a second source, because one page is a claim and two that agree are evidence>",
+            "publisher": "<who published it>",
+            "shows": "<what this one shows>",
+            "viewpoint": "exterior",
+            "accessed": "<YYYY-MM-DD>",
+            "rights": "reference_only",
+        },
+    ],
+    "verified_facts": [
+        "<what the sources establish, stated plainly and with no hedge>",
+    ],
+    "conflicting_claims": [
+        "<where the sources disagree, so nobody picks a side by accident>",
+    ],
+    "conditioning_images": [],
+}
+
+
+def blank_spec(
+    medium: str = "photograph",
+    people: int = 1,
+    reference: bool = False,
+) -> dict[str, Any]:
     """A spec skeleton with every required field present and empty.
 
     Every string is a question, not a placeholder, so an unfilled field reads as an
@@ -2241,6 +2587,7 @@ def blank_spec(medium: str = "photograph", people: int = 1) -> dict[str, Any]:
                 "action": "<the verb of the picture>",
                 "position": "<where in the frame, and on what ground>",
                 "height_m": 1.7,
+                "ground_height_m": 0,
                 "distance_m": 3.0 if photographic else None,
                 "plane": "midground",
                 "interacts_with": [],
@@ -2317,12 +2664,20 @@ def blank_spec(medium: str = "photograph", people: int = 1) -> dict[str, Any]:
             "crop_safety": "<what must survive the client's other aspect ratios>",
         },
         "background_focus": "blurred" if photographic else "",
+        "realism": {
+            "imperfections": [
+                "<a flaw with a place: a scuff on the counter edge by the till>",
+                "<another: one chair pushed out of line, flyaway hair at the left temple>",
+            ],
+        },
         "physical_invariants": [
             "<a scene fact a wrong picture would break>",
         ],
         "must_not_show": [],
         "text_in_image": "none",
     }
+    if reference:
+        spec["location"]["reference"] = json.loads(json.dumps(REFERENCE_STUB))
     if not photographic:
         for key in ("height_m", "focal_length_mm", "aperture_f", "subject_distance_m"):
             spec["camera"].pop(key, None)

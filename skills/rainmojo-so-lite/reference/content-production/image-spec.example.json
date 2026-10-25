@@ -170,6 +170,14 @@
     "crop_safety": "both faces and the medicine box stay inside a centre square, so the 1:1 and 4:5 crops lose only the shelving"
   },
   "background_focus": "blurred",
+  "realism": {
+    "imperfections": [
+      "a scuff in the counter laminate at the near corner, where customers rest their bags",
+      "one shelf box on the middle row pushed out of line with its neighbours",
+      "a few strands of the pharmacist's hair loose at the left temple",
+      "a thumbprint on the glass of the shopfront door behind the customer"
+    ]
+  },
   "physical_invariants": [
     "the counter separates the two people: each keeps their arms on their own side of it",
     "the medicine box is small enough to sit in one hand and stays smaller than the pharmacist's forearm",

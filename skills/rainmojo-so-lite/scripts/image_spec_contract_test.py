@@ -851,6 +851,346 @@ check(
     str(count_warnings),
 )
 
+print("C23 lint rules from the reference study")
+# A generator takes every word literally. These four come from rangsarn's
+# prompt_lint (P01, P02, P04, B01), reached independently by several of the
+# reference prompt systems, and the booster ban from the de-slop discipline.
+
+refuses(
+    "a simile puts the thing compared into the frame",
+    "compares with",
+    lambda spec: spec["subjects"][0].update(
+        {"pose": "shoulders squared like a soldier on parade"}
+    ),
+)
+check(
+    "a word about a material is not a comparison",
+    not image_spec.similes("lifelike skin with true-to-life colour"),
+    str(image_spec.similes("lifelike skin with true-to-life colour")),
+)
+refuses(
+    "a pose named by its effect is not a pose",
+    "names the impression a pose gives",
+    lambda spec: spec["subjects"][0].update({"pose": "a confident pose behind the counter"}),
+)
+refuses(
+    "camera words in a brief for a drawing produce a photograph",
+    "uses camera words in a brief for",
+    lambda spec: (
+        spec.update({"medium": "illustration"}),
+        spec["style"].update({"look": "flat editorial illustration, shot on a 50 mm lens"}),
+        spec["camera"].pop("focal_length_mm", None),
+        spec["camera"].pop("aperture_f", None),
+        spec["camera"].pop("subject_distance_m", None),
+        spec["camera"].pop("height_m", None),
+    ),
+)
+refuses(
+    "a booster word is not a fact",
+    "booster word",
+    lambda spec: spec["style"].update({"look": "ultra-detailed photorealistic masterpiece"}),
+)
+
+print("C24 a photograph carries located imperfection")
+refuses(
+    "a photograph with no imperfections is a render",
+    "needs at least",
+    lambda spec: spec["realism"].update({"imperfections": []}),
+)
+check(
+    "the imperfections reach the prompt, because the model beautifies by default",
+    "marks of use" in compiled["prompt"],
+    compiled["prompt"][-400:],
+)
+check(
+    "and each one is asked at review",
+    any(q["id"].startswith("q_imperfection_") for q in compiled["questions"]),
+    str([q["id"] for q in compiled["questions"] if "imperf" in q["id"]]),
+)
+
+print("C25 identity comes from the reference image, not the text")
+with_ref = copy.deepcopy(EXAMPLE)
+with_ref["location"]["reference"] = {
+    "place_is_real": True,
+    "place_name": "the client's own dispensary",
+    "sources": [
+        {
+            "url": "https://example.com/about",
+            "publisher": "the client",
+            "shows": "the dispensing counter from the customer side",
+            "viewpoint": "interior_wide",
+            "accessed": "2026-10-26",
+            "rights": "client_owned",
+        },
+        {
+            "url": "uploads/brand-assets/pharmacist.jpg",
+            "publisher": "the client",
+            "shows": "the pharmacist at the counter, the likeness this image is built on",
+            "viewpoint": "staff_or_uniform",
+            "accessed": "2026-10-26",
+            "rights": "client_owned",
+        },
+    ],
+    "verified_facts": ["the dispensing counter runs the width of the shop"],
+}
+with_ref["subjects"][0]["reference_image"] = "uploads/brand-assets/pharmacist.jpg"
+with_ref["subjects"][0]["appearance"] = ""
+errors, _ = image_spec.validate_spec(with_ref, WIDTH, HEIGHT, DEFAULTS)
+check("a person with a reference image needs no appearance", not errors, str(errors[:2]))
+ref_compiled = image_spec.compile_spec(with_ref, WIDTH, HEIGHT, DEFAULTS)
+check(
+    "the prompt points at the reference instead of describing the face",
+    "the person from the reference image" in ref_compiled["prompt"]
+    and "mid-thirties, medium build" not in ref_compiled["prompt"],
+    ref_compiled["prompt"][:300],
+)
+check(
+    "and carries an identity lock",
+    "bone structure" in ref_compiled["prompt"],
+    ref_compiled["prompt"][:400],
+)
+check(
+    "the review asks whether it is the same person",
+    any(q["id"].endswith("_identity") for q in ref_compiled["questions"]),
+    str([q["id"] for q in ref_compiled["questions"] if "identity" in q["id"]]),
+)
+described = copy.deepcopy(with_ref)
+described["subjects"][0]["appearance"] = "mid-thirties, medium build, black hair tied back"
+check(
+    "describing the face anyway is refused, not ignored",
+    any(
+        "appearance must be empty" in error
+        for error in image_spec.validate_spec(described, WIDTH, HEIGHT, DEFAULTS)[0]
+    ),
+    str(image_spec.validate_spec(described, WIDTH, HEIGHT, DEFAULTS)[0][:1]),
+)
+no_provenance = copy.deepcopy(EXAMPLE)
+no_provenance["subjects"][0]["reference_image"] = "uploads/brand-assets/pharmacist.jpg"
+no_provenance["subjects"][0]["appearance"] = ""
+check(
+    "a likeness needs a recorded basis for using it",
+    any(
+        "not a free asset" in error
+        for error in image_spec.validate_spec(no_provenance, WIDTH, HEIGHT, DEFAULTS)[0]
+    ),
+    str(image_spec.validate_spec(no_provenance, WIDTH, HEIGHT, DEFAULTS)[0][:1]),
+)
+
+print("C26 a real place is shipped as a worked example")
+REAL_PLACE = json.loads(
+    (ROOT / "reference" / "content-production" / "image-spec.real-place.example.json").read_text(
+        encoding="utf-8"
+    )
+)
+real_errors, real_warnings = image_spec.validate_spec(REAL_PLACE, WIDTH, HEIGHT, DEFAULTS)
+check("the real-place example validates", not real_errors, "; ".join(real_errors[:2]))
+check("and is warning-free", not real_warnings, "; ".join(real_warnings[:2]))
+real_compiled = image_spec.compile_spec(REAL_PLACE, WIDTH, HEIGHT, DEFAULTS)
+check(
+    "its established facts reach the prompt",
+    "a real place, and these things about it are established" in real_compiled["prompt"],
+    real_compiled["prompt"][:200],
+)
+check(
+    "and each one is asked at review",
+    any(q["id"].startswith("q_reference_") for q in real_compiled["questions"]),
+    str([q["id"] for q in real_compiled["questions"] if q["id"].startswith("q_reference")]),
+)
+hedged = copy.deepcopy(REAL_PLACE)
+hedged["location"]["reference"]["verified_facts"].append("the ring is probably 6 metres across")
+check(
+    "a fact recorded with a hedge was never verified",
+    any(
+        "hedges with" in error
+        for error in image_spec.validate_spec(hedged, WIDTH, HEIGHT, DEFAULTS)[0]
+    ),
+    str(image_spec.validate_spec(hedged, WIDTH, HEIGHT, DEFAULTS)[0][:1]),
+)
+
+print("C27 the scale anchor measures the right thing, against the right person")
+# Three false positives the lite session's port review found in the anchor check.
+# Each one refused a correct brief, which is worse than not checking at all,
+# because the message named a person or a dimension the author never wrote.
+
+
+def two_people(spec):
+    """A child first in the list, the pharmacist renamed, the anchor naming her."""
+    spec["subjects"][0].update(
+        {"id": "child", "short_name": "child", "description": "child waiting with her father",
+         "height_m": 1.02, "distance_m": 2.2}
+    )
+    spec["subjects"][1].update({"id": "pharmacist2", "short_name": "pharmacist2", "height_m": 1.68})
+    spec["objects"][0]["scale_anchor"] = "its top meets the pharmacist2 just above the hip"
+    spec["objects"][1]["support"]["by"] = "pharmacist2"
+    spec["camera"]["focus_on"] = "pharmacist2"
+    for group in ("subjects", "objects"):
+        for item in spec[group]:
+            item["interacts_with"] = [
+                "pharmacist2" if ref == "pharmacist" else ref
+                for ref in item.get("interacts_with", [])
+            ]
+
+
+def anchor_errors(mutate):
+    return [e for e in errors_for(mutate) if "scale_anchor says it reaches" in e]
+
+
+check(
+    "the anchor is measured against the person it names, not the first in the list",
+    not anchor_errors(two_people),
+    str(anchor_errors(two_people)[:1]),
+)
+check(
+    "and it still catches a real mismatch against that person",
+    any(
+        "pharmacist2" in error and "0.42" in error
+        for error in anchor_errors(
+            lambda spec: (two_people(spec), spec["objects"][0].update({"height_m": 0.42}))
+        )
+    ),
+    str(anchor_errors(lambda spec: (two_people(spec), spec["objects"][0].update({"height_m": 0.42})))[:1]),
+)
+check(
+    "an id that is a substring of a landmark does not count as naming someone",
+    image_spec.anchor_person(
+        "its top meets her just above the waist",
+        [{"id": "a", "height_m": 1.6}, {"id": "b", "height_m": 1.7}],
+    )
+    is None,
+)
+check(
+    "with one person in frame the anchor does not have to name them",
+    image_spec.anchor_person("its top meets her at the hip", [{"id": "only", "height_m": 1.6}])
+    is not None,
+)
+check(
+    "a hanging object carries its own length, not a height above the floor",
+    not anchor_errors(
+        lambda spec: spec["objects"][0].update(
+            {"support": {"kind": "hangs_from", "by": "the ceiling track"},
+             "height_m": 1.2,
+             "scale_anchor": "it hangs down to about the pharmacist's shoulder"}
+        )
+    ),
+)
+check(
+    "a claim about width is not read as a claim about height",
+    not anchor_errors(
+        lambda spec: spec["objects"][0].update(
+            {"height_m": 0.5, "scale_anchor": "it is about as wide as the pharmacist's shoulders"}
+        )
+    ),
+)
+check(
+    "but a height claim on a floor-standing object is still checked",
+    anchor_errors(lambda spec: spec["objects"][0].update({"height_m": 0.42})),
+)
+
+print("C28 every conditioning image carries its own rights")
+REAL = json.loads(
+    (ROOT / "reference" / "content-production" / "image-spec.real-place.example.json").read_text(
+        encoding="utf-8"
+    )
+)
+
+
+def real_errors(mutate):
+    spec = copy.deepcopy(REAL)
+    mutate(spec)
+    return image_spec.validate_spec(spec, WIDTH, HEIGHT, DEFAULTS)[0]
+
+
+def own_first(spec):
+    spec["location"]["reference"]["sources"][0]["rights"] = "client_owned"
+
+
+check(
+    "an image with no source row at all is refused",
+    any(
+        "no source records where it came from" in error
+        for error in real_errors(
+            lambda spec: (
+                own_first(spec),
+                spec["location"]["reference"].update(
+                    {"conditioning_images": ["https://elsewhere.example.com/x.jpg"]}
+                ),
+            )
+        )
+    ),
+    "an unprovenanced image reached the generator",
+)
+check(
+    "one owned source does not authorise a reference-only image",
+    any(
+        "may not be fed to the generator" in error
+        for error in real_errors(
+            lambda spec: (
+                own_first(spec),
+                spec["location"]["reference"].update(
+                    {"conditioning_images": [spec["location"]["reference"]["sources"][1]["url"]]}
+                ),
+            )
+        )
+    ),
+    "a reference-only image reached the generator",
+)
+check(
+    "the owned image itself is still allowed",
+    not [
+        error
+        for error in real_errors(
+            lambda spec: (
+                own_first(spec),
+                spec["location"]["reference"].update(
+                    {"conditioning_images": [spec["location"]["reference"]["sources"][0]["url"]]}
+                ),
+            )
+        )
+        if "conditioning" in error or "no source records" in error
+    ],
+)
+
+print("C29 the template teaches the fields nobody guesses")
+plain = image_spec.blank_spec("photograph", 1)
+with_reference = image_spec.blank_spec("photograph", 1, reference=True)
+check("the default template stays short", "reference" not in plain["location"])
+check(
+    "the reference scaffold is there on request",
+    "reference" in with_reference["location"]
+    and len(with_reference["location"]["reference"]["sources"]) == 2,
+)
+check(
+    "and ground_height_m is scaffolded, since a subject may stand on something",
+    "ground_height_m" in plain["subjects"][0],
+)
+
+print("C30 the shipped review example matches the generator that writes it")
+REVIEW = json.loads(
+    (ROOT / "reference" / "content-production" / "image-plausibility-review.example.json").read_text(
+        encoding="utf-8"
+    )
+)
+fresh_item = {
+    "id": "featured",
+    "provenance": {"source_type": "generated"},
+    "spec": EXAMPLE,
+    "prompt": compiled["prompt"],
+    "negative_prompt": compiled["negative_prompt"],
+    "spec_compiled": image_spec.compile_record(EXAMPLE, compiled, "2026-10-26T00:00:00Z"),
+}
+fresh = image_spec.review_template(fresh_item, DEFAULTS)
+check(
+    "the example asks exactly the questions the compiler now writes",
+    set(REVIEW["spec_answers"]) == set(fresh["spec_answers"]),
+    f"example {len(REVIEW['spec_answers'])} vs generated {len(fresh['spec_answers'])}; "
+    f"only in example: {sorted(set(REVIEW['spec_answers']) - set(fresh['spec_answers']))[:4]}",
+)
+check(
+    "and exactly the rubric checks the config now carries",
+    set(REVIEW["plausibility"]) == set(fresh["plausibility"]),
+    str(sorted(set(REVIEW["plausibility"]) ^ set(fresh["plausibility"]))[:4]),
+)
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(
