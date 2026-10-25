@@ -1,5 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
+  Sitemap stylesheet: a PROGRESSIVE ENHANCEMENT with a known end date.
+
+  Browsers are removing client-side XSLT. Chrome stops running it on Stable
+  from version 158 (17 November 2026); Firefox and Safari intend the same.
+  After that this file stops rendering and the sitemap shows as raw XML.
+
+  Nothing about that is an SEO problem. Crawlers never ran this stylesheet;
+  they parse the XML underneath it. Keep the `<?xml-stylesheet?>` line in the
+  sitemap either way: an unsupported processing instruction is inert, so the
+  XML stays valid and byte-identical for crawlers while browsers that still
+  support XSLT keep rendering the table.
+
+  The durable readable view is a real HTML sitemap page at its own URL. See
+  "The human-readable view" in ../SKILL.md.
+
+  Serve this file with an explicit text/xsl or application/xslt+xml content
+  type; static hosts commonly guess wrong and break the transform silently.
+-->
+<!--
   One stylesheet for both sitemap roots. It branches on the root node name so
   <sitemapindex> and <urlset> each get the table that suits them.
 

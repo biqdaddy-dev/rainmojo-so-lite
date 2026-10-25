@@ -3,6 +3,15 @@
 Per-framework specifics for implementing the sitemap standard. Read only the
 section for the stack in front of you.
 
+**One thing has changed across all of them.** Browsers are removing client-side
+XSLT (Chrome stops honouring it on 17 November 2026; Firefox and Safari intend
+the same). Attaching the `<?xml-stylesheet?>` instruction is still correct and
+still worth doing, because it is inert where unsupported and free where it
+works, but it is no longer a reason to fight a framework. Where a section below
+once said "hand-roll this to get the styled view", the remaining reason to
+hand-roll is the `<sitemapindex>` root. The durable readable view is an HTML
+sitemap page at its own URL; the main skill has the rules for it.
+
 ## Contents
 
 - [Next.js App Router](#nextjs-app-router)
@@ -26,11 +35,15 @@ Two constraints decide the approach, and both come from the built-in
    `<?xml-stylesheet?>` processing instruction or to change the root element.
 
 `MetadataRoute.Sitemap` does support `alternates.languages`, so hreflang
-alternates alone do not force you off the convention. An index file or a
-stylesheet does.
+alternates alone do not force you off the convention. **An index file does. The
+missing stylesheet hook no longer does**, now that the styled view is a
+progressive enhancement with an end date: if the only thing the convention
+cannot give you is the processing instruction, stay on the convention and put
+the readable view in an HTML sitemap page, which is a normal route anyway.
 
-**The trade-off.** Getting both a spec-correct `<sitemapindex>` root and the
-styled browser view means hand-rolling the XML in Route Handlers:
+**The trade-off.** Getting a spec-correct `<sitemapindex>` root, and with it the
+option of the styled browser view, means hand-rolling the XML in Route
+Handlers:
 
 ```ts
 return new Response(xml, {
@@ -42,10 +55,10 @@ That gives up `MetadataRoute.Sitemap`'s type safety and the convention's
 built-in caching semantics, which you recover manually via route segment
 config (`export const revalidate` / `dynamic`).
 
-**Do not mix the two mechanisms in one tree.** If every sub-sitemap should be
-styled, use `route.ts` for the index and all sub-sitemaps and keep
-`generateSitemaps()` out of the picture. Two XML generation paths in one app is
-how the namespace declarations end up different between files.
+**Do not mix the two mechanisms in one tree.** If you hand-roll at all, use
+`route.ts` for the index and every sub-sitemap and keep `generateSitemaps()`
+out of the picture. Two XML generation paths in one app is how the namespace
+declarations end up different between files.
 
 ### Layout
 
@@ -56,6 +69,7 @@ app/
   sitemaps/
     pages-th.xml/route.ts
     services-th.xml/route.ts
+  sitemap/page.tsx              # the HTML sitemap page, for people
 lib/
   sitemap-xml.ts                # buildUrlsetXml(), buildSitemapIndexXml()
 ```
@@ -91,7 +105,10 @@ Both are template-level fixes rather than architectural ones:
 - **Stylesheet and alternates:** override `sitemap.xml` and `sitemap_index.xml`
   in your own `templates/` directory. Copy Django's originals, add the
   processing instruction as the second line, add the `xmlns:xhtml` declaration
-  to `<urlset>`, and emit the alternate cluster per URL.
+  to `<urlset>`, and emit the alternate cluster per URL. The alternates are the
+  part that matters; the processing instruction is a one-line enhancement you
+  add while you are in the file, not a reason to override a template on its
+  own.
 - **Alternates data:** add a method on the `Sitemap` subclass that returns the
   cluster for an object, and call it from the overridden template.
 - **`i18n = True`** on a `Sitemap` subclass generates one entry per language
@@ -100,19 +117,29 @@ Both are template-level fixes rather than architectural ones:
   your URL scheme before writing anything custom.
 
 Serve the stylesheet from a view with an explicit content type rather than
-through `staticfiles`, for the MIME-type reason in the main skill.
+through `staticfiles`, for the MIME-type reason in the main skill. The HTML
+sitemap page is an ordinary Django view over the same querysets the `Sitemap`
+subclasses use; build it from those, not from a second set of filters.
 
 ---
 
 ## Static hosting and CDNs
 
-- **MIME type is the usual failure.** Many static hosts serve `.xsl` as
+- **MIME type was the usual failure.** Many static hosts serve `.xsl` as
   `text/plain` or `application/octet-stream`, and browsers then skip the
   transform silently. Configure the host explicitly (`_headers`,
   `netlify.toml`, `staticwebapp.config.json`, CloudFront response headers
   policy, whatever the platform uses) or serve the stylesheet from a function.
+  **Time-box this.** The payoff ends when browsers stop running XSLT, so if a
+  host fights you, ship the HTML sitemap page as a static page instead and
+  leave the stylesheet unstyled. A static host is the one place where the
+  server-side transform is not available anyway.
+- **The readable view on a static host.** Generate the HTML sitemap page at
+  build time from the same data that generates the XML, in the same build step.
+  Two generators reading two sources is how the page and the sitemap come to
+  disagree about what the site contains.
 - **Compression.** XML sitemaps compress extremely well. Make sure gzip or
-  brotli is on for `application/xml` — measure the compressed size of your own
+  brotli is on for `application/xml` and measure the compressed size of your own
   file, because that is the size that decides how urgent splitting really is.
 - **Cache headers.** A sitemap that changes on publish wants a short
   `max-age` with revalidation, not a long immutable cache. A crawler holding a
