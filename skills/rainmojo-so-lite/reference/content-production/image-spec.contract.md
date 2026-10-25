@@ -65,10 +65,11 @@ additionally require the camera numbers and the shadow direction.
 | `purpose` | What the reader must understand from the image, in one sentence |
 | `medium` | `photograph`, `3d_render`, `illustration`, `flat_vector`, `infographic_base` |
 | `style` | `look`, `color_palette`, `mood`, `texture` |
-| `location` | `place`, `locale`, `time_of_day`, `weather`, `locale_details[]` |
+| `location` | `place`, `locale`, `time_of_day`, `weather`, `locale_details[]`, `reference{}` for a real place |
+| `realism` | `imperfections[]`: located flaws, required for a photograph |
 | `camera` | `shot_type`, `angle`, `tilt`, `horizon`, `height_m`, `focal_length_mm`, `aperture_f`, `subject_distance_m`, `focus_on` |
-| `subjects[]` | `id`, `short_name`, `kind`, `count`, `description`, `appearance`, `wardrobe`, `posture`, `pose`, `hands`, `gaze`, `expression`, `action`, `position`, `height_m`, `distance_m`, `plane`, `interacts_with[]` |
-| `objects[]` | `id`, `short_name`, `name`, `count`, `material`, `state`, `size`, `height_m`, `width_m`, `scale_anchor`, `support{kind,by}`, `position`, `distance_m`, `plane`, `interacts_with[]` |
+| `subjects[]` | `id`, `short_name`, `kind`, `count`, `description`, `appearance`, `wardrobe`, `posture`, `pose`, `hands`, `gaze`, `expression`, `action`, `position`, `height_m`, `ground_height_m`, `distance_m`, `plane`, `reference_image` |
+| `objects[]` | `id`, `short_name`, `name`, `count`, `material`, `state`, `size`, `height_m`, `width_m`, `ground_height_m`, `extends_beyond_frame`, `scale_anchor`, `support{kind,by}`, `position`, `distance_m`, `plane` |
 | `spatial_layout` | `foreground`, `midground`, `background` |
 | `lighting` | `key{source,direction,quality}`, `fill[]`, `shadow_direction`, `color_temperature_k` |
 | `composition` | `subject_placement`, `negative_space`, `crop_safety` |
@@ -97,6 +98,70 @@ has been introduced once, so a long description does not repeat ten times.
 
 Every string in the blank template is a question in angle brackets. An unanswered one is an
 error, so a half-filled template cannot become a prompt.
+
+`interacts_with[]` is still accepted on a subject or an object, and its ids are checked,
+but nothing else reads it: blanking it in both shipped examples leaves the prompt, the
+questions and the warnings byte-identical. It is no longer in the blank template, so an
+author does not spend time on a field with no effect. Contact between a person and a
+thing is carried by `support{kind: held_by, by}` instead.
+
+## What validate_spec refuses, and why
+
+Each rule below refuses a brief, or warns on one, from fields in the spec alone. The
+message names the field and says what would fix it. Every rule here has been run against
+sixteen real client briefs, but several are reached by none of them, among them face
+distance and the conditioning rights, and are vouched for by the contract test alone; see
+"Measuring the review".
+
+| Rule | Fields | Refuses or warns when | Why |
+|---|---|---|---|
+| Body landmark | `objects[].scale_anchor`, `height_m`, `ground_height_m`, `support.kind` | An anchor names a landmark on a person ("just above the hip"), and the object's top, `height_m + ground_height_m`, is more than 0.12 m from that landmark on that person. Landmark fractions: eye .936, chin .870, shoulder .818, chest .72, elbow .630, waist .600, wrist .485, hip .530, thigh .420, fingertip .377, knee .285, ankle .039 (Drillis and Contini; Winter, fig. 4.1). | A size the model can read is a size against a body; one that disagrees with the metres is a contradiction the picture will resolve at random. |
+| Which landmark, which person | the same | The first landmark the anchor names is the claim, so "just above the hip, a little below her waist" is checked at the hip. The person is the one the anchor names by id or `short_name`, or the only person in frame. With several people and none named, the rule does not run. | A wrong referent produces a confident error about someone the author never mentioned, which is worse than no check. |
+| Not a height | the same | No landmark check when the anchor talks about width or length ("as wide as her shoulders"), or the object does not stand or rest on a surface (it hangs, is mounted, fixed, held, worn or floats), because then `height_m` is its own length and not a height above a floor. | Comparing a banner's length with a hip is meaningless. |
+| Held in one hand | `scale_anchor`, `support.by`, `height_m` | An anchor says it is held in a hand and the object is over 0.60 of the holder's height (refused) or over 0.30 (warned). The holder is `support.by` for `held_by`, else the person the anchor names, else the tallest person in frame. | A child cannot hold in one hand what an adult can. |
+| Support | `objects[].support{kind,by}` | `kind` is missing or not one of `rests_on`, `stands_on`, `mounted_on`, `hangs_from`, `fixed_in`, `held_by`, `worn_by`, `floats_in`; `by` is empty or names nothing that bears weight ("thin air", "nothing", "floating"); or `held_by`/`worn_by` names something that is not a person. | An unsupported object is the commonest physically impossible thing a generator draws. |
+| State | `objects[].state` | Empty. | "New", "worn", "open", "lit" and "wet" are what make an object a particular one rather than the model's average. |
+| Wider than the frame | `objects[].width_m`, `distance_m`, `extends_beyond_frame` | An object is more than three times the width the lens covers at its distance, and `extends_beyond_frame` is not set. | Either the numbers are wrong, or the thing genuinely runs past the edge (a floor, a roof deck, a lake) and should say so, which keeps `width_m` its real size for every ratio computed from it. |
+| Raised floor | `ground_height_m` | Negative. Otherwise it is added to eye height and to an object's top, so a fighter on a 1.2 m ring and a spectator at ringside cross the horizon at different points on their bodies. | Getting it wrong is how a picture ends up with a fighter whose eye line matches a spectator's. |
+| Eye level | `camera.angle`, `height_m`, people's posture | `angle: eye_level` with the lens more than 0.35 m from the mean eye height of the people in frame, or 0.15 m when nobody in frame is standing. Seated eye height is 1.23 m above the floor whatever the stature. | Eye level is a height, and a seated eye line is the only one in a desk or restaurant scene. |
+| Face distance | `camera.focal_length_mm`, nearest person's `distance_m` | The nearest person is closer than 0.9 m on any lens, or 1.0 m at 28 mm and 1.2 m at 20 mm. | The nose renders `(d + 0.10) / d` times the scale of the ears, set by distance alone; a long lens up close only crops into it, and a wide lens adds its own stretch toward the edges. |
+| Located imperfection | `realism.imperfections[]` | A photograph with fewer than two (the client's `min_imperfections`); an entry under four words is warned as too short to place. | An unplaced flaw is decoration. A placed one ("a scuff on the counter edge by the till") is what reads as a photograph rather than a render. |
+| Forbidding what is shown | `must_not_show[]` against every declared name | An entry that reduces to a declared thing's name and nothing else ("a counter", "counters"). Any state, attribute, place, quantity or coordination ("a cluttered counter", "a second counter", "pills on the counter") is a constraint and is accepted. | The model would be given the thing twice, once as content and once as a prohibition. |
+| People implied | `purpose`, `subjects[]` | Warns when the spec declares nobody and the purpose describes a human act ("is handed over", "as its customers meet it"). Verb forms only, so "an explainer" or "the consultant's empty office" do not warn. | The purpose opens the prompt and outweighs an empty subject list: two of six zero-subject client briefs came back with people. |
+| Real place | `location.reference{}` | With `place_is_real`: no `place_name`; fewer than two `sources` (the client's `min_reference_sources`); a source without `url`, `publisher`, `shows`, `accessed`, a known `viewpoint` and `rights`; no `verified_facts`, or one that hedges; and no source that shows the space from where the camera is. Inside needs an interior viewpoint; outside needs an exterior one; a staff portrait or a product shot never answers for a room. A `state` other than `existing` warns that the image is a visualisation. | A picture of a named place that gets it wrong is worse than a generic one, because the client's own customers know the room. |
+| Conditioning rights | `reference.conditioning_images[]`, `subjects[].reference_image` | Each image fed to the generator must match its own row in `sources`, and that row's `rights` must be `client_owned` or `licensed`. `reference_only` may inform what is written but not be fed. A `reference_image` needs a reference block at all. | One owned photograph must not authorise feeding anything else. A face is not a free asset. |
+| Lint | every prose field that reaches the prompt | Negation, quality boosters, similes ("hands like a pianist's"; "what X is really like" is an idiom and accepted), a pose named by its effect ("a confident pose"), camera words in a drawing, and hedges in `verified_facts`. Audit fields such as `sources` and `conflicting_claims` are exempt, because they never reach the prompt. | Each of these is measured to cost fidelity, or to put the compared thing in the frame. |
+
+## What the review asks that the brief cannot
+
+The compiled questions also carry rules of their own, which shape the review rather than
+refuse the brief:
+
+- **Framing follows `camera.focus_on`.** A person in focus is asked about a body fraction
+  ("framed from the waist up"); an object in focus is asked about the shot ("a medium shot
+  of the counter"), never about a waist it does not have.
+- **Depth of field asks how soft, not whether softer.** Anything outside the focus range is
+  asked whether its edges are blurred and any lettering on it unreadable, because "softer
+  than the pharmacist" is yes for any blur at all.
+- **Ratios a person can read.** A height ratio is asked only between 1:8 and 8:1; beyond
+  that it cannot be read off an image and only adds `cannot_tell`.
+- **The declared fill is named** in the light question, so a reviewer does not count it as
+  a second key light.
+- **Nothing undeclared** (`q_undeclared`, counted) and **no invented glyphs**
+  (`q_malformed_glyphs`, read as text) are asked of every image: a count of declared
+  people says nothing about twenty extras in the lane, and illegible pseudo-lettering is
+  still lettering.
+- **Every routed question carries a `measure`**, a structured statement of what a tool
+  should find: `count` (entity, label, `is_person`, expected), `finger_count`, `framing`
+  (entity, `is_person`, shot), `camera_angle`, `horizon_band`, `eye_line` (the standing
+  ids), `height_ratio` (a, b, expected), `viewpoint`, `horizon_fraction` (entity, relation,
+  expected fraction from the feet), `undeclared` (expected people, declared ids), `glyphs`
+  and `text`. A measuring tool maps its reading onto the question through this, never by
+  parsing the id. A pose estimate counts only inside a box a detector called a person:
+  a pose model fits a full skeleton to a frog.
+- **The eye line is asked only where it exists**: a horizon in frame and at least one
+  standing person. A horizon that is not visible or falls outside the frame gets
+  no question about where it crosses anyone.
 
 ## What the measurements say, and what this module does about it
 

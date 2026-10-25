@@ -811,7 +811,7 @@ refuses(
 )
 refuses(
     "a face 0.55 m from a 20 mm lens is the wide-angle portrait",
-    "renders the nose larger than the ears",
+    "times the scale of the ears",
     lambda spec: (
         spec["camera"].update(
             {"focal_length_mm": 20, "subject_distance_m": 0.55, "shot_type": "close_up"}
@@ -1589,6 +1589,99 @@ for horizon in ("not_visible", "above_frame", "below_frame"):
         f"horizon {horizon}: no question about a line that is not in the picture",
         "q_eye_line" not in _questions(hidden) and "horizon line crosses their eyes" not in _prompt_text(hidden),
     )
+
+print("C37 a hand is measured against its holder, a face against its distance")
+# Both found by the lite session reading the code to write its docs.
+refuses(
+    "a child cannot hold in one hand what an adult could",
+    "against the pharmacist, who is 1.02 m,",
+    lambda spec: (
+        spec["subjects"][0].update({"height_m": 1.02}),
+        spec["objects"][1].update({"height_m": 0.65}),
+    ),
+)
+check(
+    "the shipped example names the holder, not the tallest person",
+    not [e for e in errors_for(lambda spec: spec["objects"][1].update({"height_m": 1.10})) if "1.68 m" in e]
+    and any(
+        "the pharmacist, who is 1.62 m," in e
+        for e in errors_for(lambda spec: spec["objects"][1].update({"height_m": 1.10}))
+    ),
+    str(errors_for(lambda spec: spec["objects"][1].update({"height_m": 1.10}))),
+)
+for focal, near, refused in (
+    (85, 0.6, True),
+    (135, 0.6, True),
+    (50, 0.8, True),
+    (20, 1.0, True),
+    (50, 1.5, False),
+    (85, 0.95, False),
+    (20, 1.25, False),
+):
+    def set_lens(spec, focal=focal, near=near):
+        spec["camera"]["focal_length_mm"] = focal
+        spec["subjects"][1]["distance_m"] = near
+    hit = any("times the scale of the ears" in e for e in errors_for(set_lens))
+    check(
+        f"a face {near} m from a {focal} mm lens is {'refused' if refused else 'allowed'}",
+        hit == refused,
+        str([e for e in errors_for(set_lens) if "ears" in e]),
+    )
+check(
+    "the blank template no longer asks for interacts_with, which nothing reads",
+    "interacts_with" not in json.dumps(image_spec.blank_spec("photograph", 1)),
+)
+check(
+    "and a brief that still carries it is accepted",
+    not errors_for(lambda spec: spec["objects"][1].update({"interacts_with": ["pharmacist"]})),
+)
+
+print("C38 every measurable question says what a tool should find")
+# Asked for by the rangsarn session, so a measuring tool maps its reading onto a
+# question without parsing the id.
+MEASURE_KINDS = {
+    "count", "finger_count", "framing", "camera_angle", "horizon_band", "eye_line",
+    "height_ratio", "viewpoint", "horizon_fraction", "undeclared", "glyphs", "text",
+}
+for spec_name, spec in (("example", EXAMPLE), ("real place", REAL_PLACE)):
+    questions = image_spec.build_questions(spec, image_spec.derive(spec, WIDTH, HEIGHT))
+    routed = [q for q in questions if q.get("verify_with")]
+    check(
+        f"{spec_name}: every routed question carries a measure of a known kind",
+        routed and all(q.get("measure", {}).get("kind") in MEASURE_KINDS for q in routed),
+        str([q["id"] for q in routed if q.get("measure", {}).get("kind") not in MEASURE_KINDS]),
+    )
+    check(
+        f"{spec_name}: and judgement questions carry none",
+        not [q["id"] for q in questions if not q.get("verify_with") and "measure" in q],
+    )
+by_id = {q["id"]: q for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))}
+check(
+    "a count names the entity, its label and the number",
+    by_id["q_pharmacist"]["measure"] == {
+        "kind": "count", "entity": "pharmacist", "label": "pharmacist", "is_person": True, "expected": 1,
+    },
+    str(by_id["q_pharmacist"].get("measure")),
+)
+check(
+    "framing names the focus entity and the shot",
+    by_id["q_camera_framing"]["measure"] == {
+        "kind": "framing", "entity": "pharmacist", "is_person": True, "expected": "medium",
+    },
+    str(by_id["q_camera_framing"].get("measure")),
+)
+crossing = next(q for qid, q in by_id.items() if qid.startswith("q_horizon_cut_"))
+check(
+    "a horizon crossing carries the fraction the prompt states",
+    crossing["measure"]["kind"] == "horizon_fraction"
+    and 0 < crossing["measure"]["expected"] < 1.2
+    and crossing["measure"]["relation"] in {"crosses", "above_head", "below_feet"},
+    str(crossing.get("measure")),
+)
+check(
+    "text expects what text_in_image says",
+    by_id["q_no_text"]["measure"] == {"kind": "text", "expected": "none"},
+)
 
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}

@@ -12,6 +12,15 @@ files were checked byte for byte; the prose about them was checked by nothing.
 So each claim here pairs the sentence the docs actually contain with the fact in
 image_spec.py it describes. A claim fails when the code moves, and also when the
 sentence is edited away, so the pairing cannot drift in either direction.
+
+Every claim is pinned to a constant or to a behaviour, never to its own presence
+alone. A presence check proves a sentence was not deleted and says nothing about
+whether it is true. The first version of this file checked "compared with the
+tallest person in the frame" only for presence, and when the full edition moved
+the hand-held rule to measure against the holder, the sentence became false and
+this file stayed green. The same was true of the 0.35 m standing band. Both are
+now tested by behaviour: a scene is built where the doc's claim and the opposite
+claim give different answers, and the code has to give the doc's.
 """
 
 from __future__ import annotations
@@ -97,7 +106,7 @@ check(
     f"expected a knee refusal, got {miss_first}",
 )
 
-print("D3 the hand-held fractions the docs quote")
+print("D3 the hand-held fractions the docs quote, and whom they are measured against")
 check("the docs say three tenths warns", said("above three tenths of that height it is a warning"))
 check("and six tenths refuses", said("above six tenths it is refused"))
 check(
@@ -106,8 +115,30 @@ check(
     str((image_spec.ONE_HAND_FRACTION, image_spec.TWO_HAND_FRACTION)),
 )
 check(
-    "the docs say it is measured against the tallest person in the frame",
-    said("compared with the tallest person in the frame"),
+    "the docs say it is measured against the person holding it",
+    said("compared with the person holding it"),
+)
+
+
+def holder_scene(spec):
+    # The holder is a 1.02 m child and an adult of 1.68 m is also in frame. A
+    # 0.70 m object is 0.69 of the child, past six tenths, and 0.42 of the
+    # adult, under it. Measured against the holder it is refused; measured
+    # against the tallest it would only warn. So this scene can tell the two
+    # claims apart, which a presence check never could.
+    spec["subjects"][0].update(
+        {"height_m": 1.02, "description": "a child of about four", "appearance": "about four years old"}
+    )
+    spec["subjects"][1]["height_m"] = 1.68
+    spec["objects"][1].update({"height_m": 0.70, "scale_anchor": "it sits in her palm"})
+
+
+refused_by_holder = [e for e in errors_for(holder_scene) if "two-handed load" in e]
+check(
+    "and the code measures against the holder, not the tallest person in frame",
+    bool(refused_by_holder),
+    "a 0.70 m object in a 1.02 m child's palm was not refused, so the code is "
+    "measuring against someone taller than the holder",
 )
 
 print("D4 the eye-level bands the docs quote")
@@ -126,31 +157,75 @@ def seated(lens_height: float):
     return mutate
 
 
+def eye_level_errors(mutate):
+    return [e for e in errors_for(mutate) if "eye_level" in e or "eye level" in e]
+
+
 seated_eye = image_spec.EYE_ABSOLUTE_M["sitting"]
-inside = [e for e in errors_for(seated(seated_eye + 0.14)) if "eye_level" in e or "eye level" in e]
-outside = [e for e in errors_for(seated(seated_eye + 0.16)) if "eye_level" in e or "eye level" in e]
+inside = eye_level_errors(seated(seated_eye + 0.14))
+outside = eye_level_errors(seated(seated_eye + 0.16))
 check("a lens 0.14 m above a seated eye line is still eye level", not inside, str(inside))
 check("a lens 0.16 m above it is not", bool(outside), "0.16 m above a seated eye line passed")
 
-print("D5 the face-distance floors the docs quote")
-floors = image_spec.MIN_FACE_DISTANCE_M
-quoted = {20: "1.2 m on 20 mm", 28: "1.0 m on 28 mm", 35: "0.9 m on 35 mm", 50: "0.7 m on 50 mm", 85: "0.6 m on 85 mm"}
+# The standing band was quoted but only checked for presence. Pin it the same
+# way: everyone standing, the lens 0.34 m and then 0.36 m from their mean eye.
+standing_eyes = [image_spec.eye_height(s) for s in EXAMPLE["subjects"]]
+mean_standing_eye = sum(standing_eyes) / len(standing_eyes)
+
+
+def lens_at(height_m):
+    def mutate(spec):
+        spec["camera"]["height_m"] = height_m
+    return mutate
+
+
 check(
-    "the docs quote exactly the lenses the code has",
-    sorted(floors) == sorted(quoted),
-    f"code {sorted(floors)} against docs {sorted(quoted)}",
+    "a lens 0.34 m from the standing eye line is still eye level",
+    not eye_level_errors(lens_at(mean_standing_eye + 0.34)),
+    "0.34 m from the standing eye line was refused",
 )
-for lens, phrase in quoted.items():
-    in_docs = said(phrase)
-    matches = abs(floors.get(lens, -1) - float(phrase.split()[0])) < 1e-9
+check(
+    "a lens 0.36 m from it is not",
+    bool(eye_level_errors(lens_at(mean_standing_eye + 0.36))),
+    "0.36 m from the standing eye line passed",
+)
+
+print("D5 the face-distance floors the docs quote")
+check(
+    "the docs say 0.9 m on any lens",
+    said("closer than 0.9 m on any lens"),
+)
+check(
+    "and the code's perspective floor is 0.9 m",
+    image_spec.FACE_PERSPECTIVE_FLOOR_M == 0.9,
+    str(image_spec.FACE_PERSPECTIVE_FLOOR_M),
+)
+check(
+    "the docs give the two wide lenses more room",
+    said("1.2 m up to 20 mm and 1.0 m up to 28 mm"),
+)
+
+
+def face_errors(focal_mm, distance_m):
+    def mutate(spec):
+        spec["camera"].update({"focal_length_mm": focal_mm, "subject_distance_m": distance_m})
+        spec["subjects"][0]["distance_m"] = distance_m
+        spec["subjects"][1]["distance_m"] = distance_m
+    return [e for e in errors_for(mutate) if "nose" in e]
+
+
+# Each floor pinned by behaviour on both sides of it, including above 85 mm,
+# where the table has no row and the perspective floor alone decides.
+for focal_mm, floor_m in ((20, 1.2), (28, 1.0), (50, 0.9), (135, 0.9)):
     check(
-        f"{phrase} matches the code",
-        in_docs and matches,
-        (
-            f"the docs no longer contain {phrase!r}"
-            if not in_docs
-            else f"docs say {phrase!r}, but the code's floor for {lens} mm is {floors.get(lens)} m"
-        ),
+        f"{focal_mm} mm refuses a face at {floor_m - 0.05:.2f} m",
+        bool(face_errors(focal_mm, floor_m - 0.05)),
+        f"a face {floor_m - 0.05:.2f} m from a {focal_mm} mm lens passed",
+    )
+    check(
+        f"{focal_mm} mm accepts a face at {floor_m + 0.05:.2f} m",
+        not face_errors(focal_mm, floor_m + 0.05),
+        f"a face {floor_m + 0.05:.2f} m from a {focal_mm} mm lens was refused",
     )
 
 print("D6 the claims this edition once made and the code does not honour stay gone")
@@ -159,6 +234,10 @@ for stale in (
     "Bracket between two landmarks",
     "eye_level band is one head height",
     "whatever the focal length",
+    # true until the full edition's 569a7ae, which moved both rules
+    "compared with the tallest person in the frame",
+    "0.7 m on 50 mm",
+    "0.6 m on 85 mm",
 ):
     check(f"the docs no longer say {stale!r}", not said(stale))
 

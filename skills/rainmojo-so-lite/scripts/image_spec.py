@@ -190,10 +190,18 @@ ONE_HAND_FRACTION = 0.30
 TWO_HAND_FRACTION = 0.60
 HAND_HELD_WORDS = ("one hand", "a hand", "his hand", "her hand", "their hand", "palm", "fingers wrap")
 
-# A lens has a nearest sensible working distance for a face. Closer than this
-# and the nose renders larger than the ears: the wide-angle portrait everyone
-# recognises and nobody asks for.
-MIN_FACE_DISTANCE_M = {20: 1.2, 28: 1.0, 35: 0.9, 50: 0.7, 85: 0.6}
+# How far the nose stands out from the ears is perspective, and perspective is
+# set by the camera-to-face distance alone, whatever the lens. With the nose
+# about 0.10 m nearer the camera than the ears it renders (d + 0.10) / d times
+# their scale: 1.11 at 0.9 m, 1.17 at 0.6 m. A long lens up close does not
+# avoid that, it only crops into it. The first version of this table let an
+# 85 mm lens come to 0.6 m, the most distortion on the lens it treated as
+# safest, and set no floor above 85 mm; found by the lite session.
+FACE_PERSPECTIVE_FLOOR_M = 0.9
+NOSE_TO_EAR_DEPTH_M = 0.10
+# A wide lens adds its own stretch toward the frame edges, so it keeps a longer
+# floor than perspective alone asks for.
+MIN_FACE_DISTANCE_M = {20: 1.2, 28: 1.0, 35: 0.9, 50: 0.9, 85: 0.9}
 
 # Weather that cannot coexist with a hard-edged shadow, because the sky is the
 # source and the sky is the size of the sky.
@@ -1319,16 +1327,22 @@ def validate_spec(
             (d for d in (_num(s.get("distance_m")) for s in people(spec)) if d),
             default=None,
         )
-        floor = None
+        floor = FACE_PERSPECTIVE_FLOOR_M
         for lens, limit in sorted(MIN_FACE_DISTANCE_M.items()):
             if focal <= lens:
-                floor = limit
+                floor = max(limit, FACE_PERSPECTIVE_FLOOR_M)
                 break
-        if nearest and floor and nearest < floor:
+        if nearest and nearest < floor:
+            scale = (nearest + NOSE_TO_EAR_DEPTH_M) / nearest
             errors.append(
-                f"spec.camera: a face {nearest:g} m from a {focal:g} mm lens renders the "
-                f"nose larger than the ears. Keep a person at least {floor:g} m away on "
-                "this lens, or use a longer one."
+                f"spec.camera: a face {nearest:g} m from the camera renders the nose "
+                f"{scale:.2f} times the scale of the ears, on any lens"
+                + (
+                    f", and a {focal:g} mm lens stretches it further toward the edges"
+                    if floor > FACE_PERSPECTIVE_FLOOR_M
+                    else ""
+                )
+                + f". Keep the nearest person at least {floor:g} m from the camera."
             )
 
     if horizon and tilt in TILTS:
@@ -1569,13 +1583,28 @@ def validate_spec(
                     "height, the anchor, or the person it names."
                 )
         if any(word in anchor for word in HAND_HELD_WORDS):
-            if obj_height > tallest * TWO_HAND_FRACTION:
+            # Measured against the person holding it. support.by names them;
+            # failing that, the anchor; failing both, the tallest person, which
+            # refuses only what nobody in frame could hold in one hand.
+            holder = None
+            if _text(support.get("kind")) == "held_by":
+                holder = next(
+                    (s for s in subjects if _text(s.get("id")) == _text(support.get("by"))),
+                    None,
+                )
+            holder = holder or referent
+            stature = _num(holder.get("height_m")) if holder else None
+            against = stature or tallest
+            who = (
+                f"{_noun(holder)}, who is {against:g} m," if stature else f"a {against:g} m person"
+            )
+            if obj_height > against * TWO_HAND_FRACTION:
                 errors.append(
                     f"object {_text(obj.get('id'))}: scale_anchor says it is held in a hand, "
-                    f"but at {obj_height:g} m against a {tallest:g} m person it is a "
+                    f"but at {obj_height:g} m against {who} it is a "
                     "two-handed load at best."
                 )
-            elif obj_height > tallest * ONE_HAND_FRACTION:
+            elif obj_height > against * ONE_HAND_FRACTION:
                 warnings.append(
                     f"object {_text(obj.get('id'))}: at {obj_height:g} m it is large for the "
                     "one hand its scale_anchor describes."
@@ -2441,6 +2470,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         text: str,
         parent: str = "",
         verify_with: str = "",
+        measure: dict[str, Any] | None = None,
     ) -> None:
         question = {
             "id": qid,
@@ -2448,6 +2478,11 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             "question": " ".join(text.split()),
             "parent": parent,
         }
+        if measure:
+            # What a measuring tool should find, so it can map its reading onto
+            # this question without parsing the id. Ids are for people; this is
+            # the contract. Asked for by the rangsarn session.
+            question["measure"] = measure
         if verify_with:
             # Three kinds of question are routed away from judgement. Counting and
             # rendered text are what a vision model gets wrong often enough to be
@@ -2470,6 +2505,13 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             "entity",
             f"Does the image show exactly {count} {_text(subject.get('description'))}?",
             verify_with="count",
+            measure={
+                "kind": "count",
+                "entity": sid,
+                "label": _text(subject.get("short_name")) or _text(subject.get("kind") or "person"),
+                "is_person": _text(subject.get("kind") or "person") == "person",
+                "expected": count,
+            },
         )
         if has_reference_image(subject):
             add(
@@ -2524,6 +2566,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 "the thumb, with no finger hidden behind another?",
                 base,
                 verify_with="count",
+                measure={"kind": "finger_count", "entity": sid, "expected": 5, "per": "visible_hand"},
             )
             add(
                 f"{base}_hands_joints",
@@ -2572,6 +2615,13 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             "entity",
             f"Does the image show exactly {count} {_text(obj.get('name'))}?",
             verify_with="count",
+            measure={
+                "kind": "count",
+                "entity": oid,
+                "label": _text(obj.get("short_name")) or _text(obj.get("name")),
+                "is_person": False,
+                "expected": count,
+            },
         )
         if _text(obj.get("size")) or _text(obj.get("scale_anchor")):
             add(
@@ -2620,6 +2670,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             "camera",
             f"Is {focus_label} framed like this: {SHOT_FRAMING[shot]}?",
             verify_with="geometry",
+            measure={"kind": "framing", "entity": focus_id, "is_person": True, "expected": shot},
         )
     elif shot in SHOT_FRAMING:
         # Body-fraction framing means nothing for a desk or an empty room.
@@ -2628,6 +2679,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             "camera",
             f"Is the view {_an(shot)} {shot.replace('_', ' ')} shot of {focus_label}?",
             verify_with="geometry",
+            measure={"kind": "framing", "entity": focus_id, "is_person": False, "expected": shot},
         )
     else:
         add(
@@ -2635,6 +2687,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             "camera",
             f"Is the view {_an(shot)} {shot.replace('_', ' ')} shot?",
             verify_with="geometry",
+            measure={"kind": "framing", "entity": "", "is_person": False, "expected": shot},
         )
     angle = _text(camera.get("angle"))
     add(
@@ -2642,6 +2695,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         "camera",
         f"Is the camera at {_an(angle)} {angle.replace('_', ' ')} angle to the main subject?",
         verify_with="geometry",
+        measure={"kind": "camera_angle", "expected": angle},
     )
     horizon = _text(camera.get("horizon"))
     if horizon in HORIZON_IN_FRAME:
@@ -2651,6 +2705,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             f"Does the horizon or eye-level line sit across the {horizon.replace('_', ' ')} "
             "of the frame, level, with receding parallel edges meeting on it?",
             verify_with="geometry",
+            measure={"kind": "horizon_band", "expected": horizon},
         )
     if (
         derived.get("camera_at_eye_height")
@@ -2663,6 +2718,10 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             "Does that horizon line cross the eyes of the standing people, as a camera at "
             "their eye height requires?",
             verify_with="geometry",
+            measure={
+                "kind": "eye_line",
+                "entities": [_text(person.get("id")) for person in standing_people(spec)],
+            },
         )
     focus = _text(camera.get("focus_on"))
     if focus:
@@ -2700,6 +2759,12 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             f"{ratio['a_to_b_apparent_height']} times the frame height of "
             f"{_entity_name(spec, ratio['b'])}, as their distances require?",
             verify_with="geometry",
+            measure={
+                "kind": "height_ratio",
+                "a": ratio["a"],
+                "b": ratio["b"],
+                "expected": ratio["a_to_b_apparent_height"],
+            },
         )
 
     lighting = spec.get("lighting", {}) if isinstance(spec.get("lighting"), dict) else {}
@@ -2773,6 +2838,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                     f"Is {name} seen from below, so that the undersides of the chin, arms "
                     "and feet show and the body narrows toward the head?",
                     verify_with="geometry",
+                    measure={"kind": "viewpoint", "entity": crossing["id"], "expected": "from_below"},
                 )
             elif crossing["above_head"]:
                 add(
@@ -2781,6 +2847,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                     f"Is {name} seen from above, so that the tops of the shoulders and head "
                     "show and the feet are the furthest part away?",
                     verify_with="geometry",
+                    measure={"kind": "viewpoint", "entity": crossing["id"], "expected": "from_above"},
                 )
             continue
         if crossing.get("below_feet"):
@@ -2791,6 +2858,12 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 f"feet, as standing {crossing['stands_on_m']:g} m above the camera's floor "
                 "requires?",
                 verify_with="geometry",
+                measure={
+                    "kind": "horizon_fraction",
+                    "entity": crossing["id"],
+                    "relation": "below_feet",
+                    "expected": crossing["fraction_of_height_from_feet"],
+                },
             )
         elif crossing["above_head"]:
             add(
@@ -2799,6 +2872,12 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 f"Does the horizon pass above the head of {name}, as a camera higher than "
                 "they are tall requires?",
                 verify_with="geometry",
+                measure={
+                    "kind": "horizon_fraction",
+                    "entity": crossing["id"],
+                    "relation": "above_head",
+                    "expected": crossing["fraction_of_height_from_feet"],
+                },
             )
         else:
             percent = round(crossing["fraction_of_height_from_feet"] * 100)
@@ -2808,6 +2887,12 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 f"Does the horizon cross {name} about {percent} per cent of the way up "
                 "from the feet, measured on the image?",
                 verify_with="geometry",
+                measure={
+                    "kind": "horizon_fraction",
+                    "entity": crossing["id"],
+                    "relation": "crosses",
+                    "expected": crossing["fraction_of_height_from_feet"],
+                },
             )
 
     composition = spec.get("composition", {}) if isinstance(spec.get("composition"), dict) else {}
@@ -2859,6 +2944,11 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         "Is the frame free of people and key objects beyond the ones the spec names, "
         "with no extra figures in the background and no added props?",
         verify_with="count",
+        measure={
+            "kind": "undeclared",
+            "expected_people": people_count(spec),
+            "declared": [_text(entity.get("id")) for _, entity in _entities(spec)],
+        },
     )
     # Four misses: pseudo-lettering passed as "nothing readable". Text that is
     # illegible is still text, and half-formed glyphs are the most recognisable
@@ -2869,6 +2959,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         "Is the image free of malformed or invented glyphs, the half-formed marks that "
         "read as lettering at a glance without being any real script?",
         verify_with="ocr",
+        measure={"kind": "glyphs", "expected": "none"},
     )
     add(
         "q_no_text",
@@ -2876,6 +2967,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         "Is the image free of any legible text, numbers, logos or watermarks the spec did "
         "not ask for?",
         verify_with="ocr",
+        measure={"kind": "text", "expected": _text(spec.get("text_in_image") or "none")},
     )
     return questions
 
@@ -2950,7 +3042,6 @@ def blank_spec(
                 "ground_height_m": 0,
                 "distance_m": 3.0 if photographic else None,
                 "plane": "midground",
-                "interacts_with": [],
             }
         )
     spec: dict[str, Any] = {
@@ -3000,7 +3091,6 @@ def blank_spec(
                 "position": "<where in the frame>",
                 "distance_m": 3.0 if photographic else None,
                 "plane": "midground",
-                "interacts_with": [],
             }
         ],
         "spatial_layout": {

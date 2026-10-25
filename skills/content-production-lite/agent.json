@@ -38,7 +38,7 @@
         "A passed review needs every rubric check and every spec question answered with evidence naming what was seen and in which crop, and crops_reviewed at least zoom_grid squared. Reprocessing invalidates every previous approval.",
         "A seated or kneeling figure still has an eye line, and in an interview or desk scene it is the only one. Give the lens a height that explains it: above a seated eye line the camera is a high angle, not eye level, and with nobody standing the eye_level band is 0.15 m, not the 0.35 m standing spread.",
         "Lighting: a clouded sky covers the sun and becomes the largest soft source there is, so it cannot cast a crisp shadow. Keep location.weather and the key's quality consistent, and keep every fill weaker or softer than the key, because a fill with the key's power and hardness is a second key and two of those are two suns.",
-        "A face too close to the lens renders the nose larger than the ears, and the floor depends on the lens: at least 1.2 m on 20 mm, 1.0 m on 28 mm, 0.9 m on 35 mm, 0.7 m on 50 mm and 0.6 m on 85 mm. Closer than that is refused, so move back or use a longer lens."
+        "Perspective is set by distance alone, so a face closer than 0.9 m on any lens renders the nose too large against the ears, and the two widest lenses need more room for their stretch toward the frame edges: 1.2 m up to 20 mm and 1.0 m up to 28 mm. Closer than that is refused, so move back; a longer lens keeps the framing."
       ],
       "commands": {
         "spec_template": "python {PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py spec-template --medium photograph --people <n>",

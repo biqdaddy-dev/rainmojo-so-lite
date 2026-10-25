@@ -143,8 +143,10 @@ python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compi
      one is in frame, or no check runs. An anchor about width or length, such as
      "as wide as her shoulders", is left alone, and so is anything that hangs or is
      mounted, whose `height_m` is its own length. When the anchor puts the object
-     in a hand, its height is compared with the tallest person in the frame: above
-     three tenths of that height it is a warning, above six tenths it is refused.
+     in a hand, its height is compared with the person holding it, the one named
+     in `support.by`, or failing that the person the anchor names, or failing both
+     the tallest person in the frame: above three tenths of that height it is a
+     warning, above six tenths it is refused.
 
    Set `images.spec.target_model` to the generator in use. `image-model-registry.json`
    then decides where exclusions go and what prompt length is worth sending. Most

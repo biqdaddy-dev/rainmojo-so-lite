@@ -109,6 +109,18 @@ the eye-line gate are pinned by assertions for the first time. Contract test **2
 assertions**, passing here unchanged. On the real briefs the warning now fires on the two
 that would paint people the brief does not want, and no longer on the writing desk.
 
+Then `569a7ae` and `050ea4e`. An object said to be held in a hand is now measured against
+the person holding it, the one `support.by` names, rather than against the tallest person in
+the frame, so an object half a child's height in her palm is refused even when an adult
+stands beside her. The face-distance floor follows the physics: perspective is set by
+distance alone, so a face closer than 0.9 m is refused on any lens, with more room on the
+two widest, 1.2 m up to 20 mm and 1.0 m up to 28 mm; lenses above 85 mm had no floor before.
+The error now states the distortion, for example the nose at 1.18 times the scale of the
+ears. `interacts_with` leaves the blank template, since nothing reads it and `support.by`
+already carries contact; it is still accepted. The contract doc gains a table of every rule
+`validate_spec` refuses, its trigger and its reason. Every question a tool can measure now
+carries a structured `measure`. Contract test **277 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

@@ -238,6 +238,30 @@ refusal, so the cost is noise; the cheap remedy reported upstream is for the war
 quote the word that fired, which it does not today, so an author sees "serving" beside
 "serving tray" and dismisses it.
 
+NINTH PORT, `569a7ae` and `050ea4e`, same version. The two code questions this edition raised
+are fixed upstream: the hand-held rule measures against the holder, and the face floor is one
+0.9 m perspective floor on every lens with more room on the two widest. `interacts_with`
+leaves the blank template; the contract doc gains the table of what `validate_spec` refuses;
+routed questions carry a structured `measure`. `image_spec.py`, the contract test and the
+contract doc byte-identical, 277 assertions passing unchanged, review example unchanged. On
+the eighteen real briefs nothing moved. The face floor tightened at 50 mm and 85 mm and gained
+a floor above 85 mm, which is where real briefs would be newly refused, so the reach was
+checked rather than assumed: the nearest face in any of them is 0.9 m on 35 mm, exactly on a
+floor that did not move, and every 50 mm face is 1.5 m or more. Again, real work does not
+reach the changed path.
+
+T4 DID ITS JOB, AND HAD A HOLE. It failed on the two face floors that moved, as it should.
+But it stayed green on the hand-held change, although `SKILL.md` said the rule compared
+against "the tallest person in the frame" and the code now measures the holder. Its check of
+that sentence was for presence only, which proves a sentence was not deleted and nothing
+about whether it is true; the 0.35 m standing band was the same. Both are now tested by
+behaviour, in a scene where the doc's claim and its opposite give different answers: a 0.70 m
+object in a 1.02 m child's palm with a 1.68 m adult beside her, refused only if the holder is
+measured, and a lens 0.34 m and then 0.36 m from the standing eye line. The face floors are
+pinned on both sides at 20, 28, 50 and 135 mm. T4 was hardened before the docs were changed,
+and failed against them on the claim it had missed, which is the proof it now covers it; it
+passes at 32 checks, up from 21, and every claim in it is pinned to a constant or a behaviour.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New
