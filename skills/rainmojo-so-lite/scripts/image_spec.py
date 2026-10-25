@@ -410,7 +410,9 @@ SIMILE_EXEMPT = ("lifelike", "life-like", "true-to-life", "businesslike", "liken
 PERSON_IMPLIED_RE = re.compile(
     r"\b(handed|hands? over|handover|meet(?:s|ing)?|greet\w*|customers?|visitors?|"
     r"guests?|patients?|staff|people|someone|anyone|crowd|audience|teaching|"
-    r"explain\w*|serv(?:e|es|ing)|welcom\w*|consult\w*)\b",
+    # Verb forms only: explain\w* matched "a technical explainer" and consult\w*
+    # "the consultant's empty office", nouns that put nobody in the frame.
+    r"explain(?:s|ed|ing)?|serv(?:e|es|ing)|welcom(?:e|es|ed)|consult(?:s|ed|ing)?)\b",
     re.I,
 )
 LOOKS_LIKE_RE = re.compile(

@@ -218,6 +218,26 @@ height only warns because an adult is also in frame; and the face-distance table
 most nose-to-ear distortion on the longest lens, 1.167 at 85 mm against 1.083 at 20 mm,
 although its own comment names a perspective effect that depends on distance alone.
 
+EIGHTH PORT, `0eb7919`, same version: the people-implied warning bounded to verb forms for
+explain, consult and welcome, and C36 pinning the six sweep behaviours and the eye-line gate,
+24 assertions that did not exist before. `image_spec.py` and the contract test byte-identical;
+the contract doc did not change. 258 assertions passing here unchanged, regression 4 of 4,
+and T4 passing, which is the first time it has been tested by a real upstream change: this
+port moved none of the numbers the lite docs quote, and T4 says so rather than leaving it
+assumed. On the corpus the warning fires on drivehub and rotkubkhao, the two true positives,
+and no longer on papayiw.
+
+The bounding fixes words whose noun has its own suffix, explainer, consultation, welcoming.
+It cannot fix words spelled the same as noun and verb, and five remain that warn on scenes
+with nobody in them: "the meeting room before the day starts", "a serving tray of iced
+drinks", "teaching materials on an empty desk", "a greeting card by the till", "the staff
+room after closing". "A serving tray" and "a waiter serving drinks" are the same token, so no
+word list separates them. None of these occurs in the sixteen real briefs, so the rule's
+behaviour on them is untested on real work rather than measured. It is a warning, not a
+refusal, so the cost is noise; the cheap remedy reported upstream is for the warning to
+quote the word that fired, which it does not today, so an author sees "serving" beside
+"serving tray" and dismisses it.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

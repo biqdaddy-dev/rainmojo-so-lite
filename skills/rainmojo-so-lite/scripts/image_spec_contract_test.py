@@ -1472,6 +1472,124 @@ check(
     inline[inline.find("Constraints"):][:160],
 )
 
+print("C36 the sweep's template fixes are pinned, not just counted")
+# c2761f5 and cfbdba3 changed six behaviours and C30 only saw the question count
+# move. Raised by the lite session after C32 had encoded a bug as correct: the
+# inverse risk is a change nothing encodes at all.
+import copy as _copy
+
+
+def _questions(spec):
+    return {q["id"]: q for q in image_spec.build_questions(spec, image_spec.derive(spec, WIDTH, HEIGHT))}
+
+
+def _prompt_text(spec):
+    derived = image_spec.derive(spec, WIDTH, HEIGHT)
+    policy = image_spec.policy_from_config(DEFAULTS)
+    return " ".join(c["text"] for c in image_spec.build_clauses(spec, derived, WIDTH, HEIGHT, policy))
+
+
+base_q = _questions(EXAMPLE)
+check(
+    "framing names the person it frames, in body terms",
+    "the pharmacist" in base_q["q_camera_framing"]["question"]
+    and "waist" in base_q["q_camera_framing"]["question"],
+    base_q["q_camera_framing"]["question"],
+)
+on_object = _copy.deepcopy(EXAMPLE)
+on_object["camera"]["focus_on"] = "counter"
+object_framing = _questions(on_object)["q_camera_framing"]["question"]
+check(
+    "framing an object asks about the shot, never a body fraction",
+    "counter" in object_framing and "waist" not in object_framing and "figure" not in object_framing,
+    object_framing,
+)
+soft = [q["question"] for qid, q in base_q.items() if qid.startswith("q_soft_")]
+check(
+    "depth of field asks how soft, not whether softer",
+    soft and all("clearly out of focus" in q and "unreadable" in q and "softer than" not in q for q in soft),
+    soft[:1],
+)
+derived = image_spec.derive(EXAMPLE, WIDTH, HEIGHT)
+check(
+    "every ratio asked is one a person can read off an image",
+    all(
+        1 / image_spec.MAX_MEASURABLE_RATIO <= r["a_to_b_apparent_height"] <= image_spec.MAX_MEASURABLE_RATIO
+        for r in derived["apparent_ratios"]
+        if f"q_ratio_{r['a']}_{r['b']}" in base_q
+    ),
+    str([qid for qid in base_q if qid.startswith("q_ratio_")]),
+)
+far = _copy.deepcopy(derived)
+far["apparent_ratios"] = [{"a": "shelving", "b": "medicine_box", "a_to_b_apparent_height": 40.0}]
+check(
+    "a 40:1 ratio is not asked",
+    not any(q["id"].startswith("q_ratio_") for q in image_spec.build_questions(EXAMPLE, far)),
+)
+check(
+    "the light question names the declared fill, so it is not counted as a second key",
+    "fill is declared" in base_q["q_light"]["question"]
+    and EXAMPLE["lighting"]["fill"][0] in base_q["q_light"]["question"],
+    base_q["q_light"]["question"][-200:],
+)
+no_fill = _copy.deepcopy(EXAMPLE)
+no_fill["lighting"]["fill"] = []
+check(
+    "and says nothing of a fill when none is declared",
+    "fill" not in _questions(no_fill)["q_light"]["question"],
+)
+check(
+    "something undeclared in the frame is asked, and counted",
+    base_q.get("q_undeclared", {}).get("verify_with") == "count",
+)
+check(
+    "pseudo-lettering is asked, and read as text",
+    base_q.get("q_malformed_glyphs", {}).get("verify_with") == "ocr",
+)
+for purpose, implied in (
+    ("the moment a rental car is handed over", True),
+    ("the truck as its customers meet it", True),
+    ("a clinic where the doctor consults on a first visit", True),
+    ("the desk a long technical explainer gets written at", False),
+    ("the consultant's empty office before nine", False),
+    ("the consultation room before the first appointment", False),
+    ("a welcoming lobby with a stone floor", False),
+    ("a self-service kiosk by the door", False),
+):
+    check(
+        f"{purpose!r} {'implies' if implied else 'does not imply'} a person",
+        bool(image_spec.PERSON_IMPLIED_RE.search(purpose)) == implied,
+    )
+empty = _copy.deepcopy(EXAMPLE)
+empty["subjects"] = []
+empty["purpose"] = "the moment a rental car is handed over"
+_, empty_warnings = image_spec.validate_spec(empty, WIDTH, HEIGHT, DEFAULTS)
+check(
+    "a purpose that implies a person warns when nobody is declared",
+    any("declares no people" in w for w in empty_warnings),
+    str(empty_warnings)[:200],
+)
+_, base_warnings = image_spec.validate_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)
+check("and says nothing when people are declared", not any("declares no people" in w for w in base_warnings))
+check(
+    "a visible horizon and standing people: the eye line is asked and described",
+    "q_eye_line" in base_q and "horizon line crosses their eyes" in _prompt_text(EXAMPLE),
+)
+seated = _copy.deepcopy(EXAMPLE)
+for subject in seated["subjects"]:
+    subject["posture"] = "seated"
+check(
+    "everyone seated: no question about the standing people",
+    "q_eye_line" not in _questions(seated) and "the standing people" not in _prompt_text(seated),
+)
+for horizon in ("not_visible", "above_frame", "below_frame"):
+    hidden = _copy.deepcopy(EXAMPLE)
+    hidden["camera"]["horizon"] = horizon
+    check(
+        f"horizon {horizon}: no question about a line that is not in the picture",
+        "q_eye_line" not in _questions(hidden) and "horizon line crosses their eyes" not in _prompt_text(hidden),
+    )
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

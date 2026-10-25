@@ -102,6 +102,13 @@ person in the frame; and refuses a face closer than a per-lens floor. The instru
 say so, and a new test checks every number they quote against the code, so they cannot drift
 silently again. Regression is 4 of 4.
 
+Then `0eb7919`. The warning about a purpose that describes people now takes verbs only for
+explain, consult and welcome, so "a technical explainer", "the consultation room" and "a
+welcoming lobby" no longer trigger it, and the six template behaviours from the sweep plus
+the eye-line gate are pinned by assertions for the first time. Contract test **258
+assertions**, passing here unchanged. On the real briefs the warning now fires on the two
+that would paint people the brief does not want, and no longer on the writing desk.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
