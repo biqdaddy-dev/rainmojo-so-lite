@@ -470,6 +470,33 @@ also does; the line is ported as written, byte-identical as asked. The matched-p
 from the eighteenth port touches the library: `F-copied-repeats` lists "matched" as a
 prevention, and the prefix match drops a described difference.
 
+TWENTIETH PORT, `fce4562`, same version: a level camera does not look down, and locale facts
+come early. The looks-down sentence now needs a downward tilt, a high angle or the lens more
+than 0.5 m above a head, recorded per crossing as `above_head_by_m`, and never sits beside an
+eye-level angle; otherwise the prompt says the camera is level and a little above their eyes.
+The locale group moves to just after the opening. Three files byte-identical, 611 assertions
+passing unchanged, the review example regenerates unchanged at 80. Regression 4 of 4, T4
+green. The lite docs describe neither prompt order nor the looks-down sentence; the one
+eye-line sentence, above a seated eye line the camera is a high angle with the 0.15 m band
+for nobody standing, still holds and is already pinned by D4.
+
+On the client briefs validation is unchanged. Fifteen prompts change: twelve are reordered
+only, ten client briefs and the two shipped examples, and three replace the looks-down
+sentence, bangmod, doctorjay and pulseth, the three named upstream. The new sentence is true
+on all three: the lens is 0.03 to 0.13 m above the nearest head, 3 to 7 degrees down to the
+eyes. Battery and corpus identical to a clean export of `fce4562`, 16 of 19 clean.
+
+Three findings, reported upstream. A valid spec still compiles two contradictions of the kind
+this commit fixes: eye-level, tilted down, horizon above the frame, all seated, lens 0.10 to
+0.14 m above their eyes, inside the 0.15 m band. The prompt says "the camera is level ... the
+horizon passes just above their heads" and, a sentence later, "held down", with the horizon
+declared above the frame. The level sentence checks the angle but not the tilt. The contract's
+new paragraph says the locale follows the opening, and the paragraph after it still says groups
+come out "subject and action first", as does the comment over `GROUP_ORDER`. And, older: in an
+indoor scene declared `horizon: not_visible`, the prompt names a horizon three times; the
+looks-down sentence used to as well, so this is not new, but "eye line" would not invite a
+window or a skyline.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

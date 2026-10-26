@@ -193,6 +193,13 @@ is closed only when all three exist and the prevention has not been shown to fai
 test **606 assertions**, passing here unchanged; the shipped review example is now 80
 questions.
 
+Then `fce4562`: a camera held level a little above seated people is no longer described as
+looking down on the tops of their heads, which contradicted the eye-level angle beside it; it
+now says their faces are seen straight on. Facts about the place, its dress, signs and how its
+shops are laid out, now come straight after the opening of the prompt, where a generator is
+least likely to replace them with a generic image. Contract test **611 assertions**, passing
+here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

@@ -317,6 +317,21 @@ kneeling figure, because the seat and not the stature sets it.
 
 ## Prompt compilation
 
+Order matters, because a model weights the opening of a prompt most and drops what comes
+late. The opening says the medium, the purpose and the viewpoint; the locale follows it
+directly. Locale facts are the ones a common-world prior overrides: an independent audit
+of rangsarn's 20 pictures found a Bangkok floating market drawn with Vietnamese conical
+hats, a Thai pharmacy as a generic stock shop and figs as crabapples, all from facts that
+sat late in the prompt. A person's distinguishing traits follow their identity in the same
+sentence, before wardrobe and pose.
+
+The viewpoint is said in pictures, and only where it is true. A camera that looks down
+shows the tops of heads, so that wording needs a downward tilt, a high angle or the lens
+more than 0.5 m above a head, and never sits beside an eye-level angle. A level camera a
+little above seated eyes is said as what it is: the horizon passes just above their heads
+while their faces are seen straight on. The audit found the contradiction in rangsarn's
+river market; it was in three of our own client prompts too.
+
 Every clause carries a group and a priority tier. Groups come out in a fixed order, subject
 and action first because every model weights the opening of a prompt most heavily, and the
 physics line last so a length limit never cuts it.

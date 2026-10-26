@@ -1108,6 +1108,8 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
                     "above_head": fraction > 1.0,
                     "below_feet": fraction < 0.0,
                     "stands_on_m": round(feet, 2),
+                    # How far the lens is above the top of the visible figure.
+                    "above_head_by_m": round(cam_height - feet - visible, 3),
                 }
             )
     derived["horizon_crossings"] = crossings
@@ -2299,8 +2301,15 @@ DEFAULT_AVOID = [
 # Output order of the clause groups. The picture's subject and action come first
 # because every model weights the opening of a prompt most heavily; the physics
 # closing line comes last so it is never the clause a length limit cuts.
+# The locale follows the opening: facts a common-world prior would override,
+# garments, hats, species marks, how a shop is organised, lost to that prior when
+# they came late (rangsarn's independent audit of 20 pictures).
+# Above this much clearance over a head, a camera sees the top of it.
+LOOKS_DOWN_CLEARANCE_M = 0.5
+
 GROUP_ORDER = (
     "opening",
+    "locale",
     "subject",
     "object",
     "layout",
@@ -2309,7 +2318,6 @@ GROUP_ORDER = (
     "light",
     "composition",
     "style",
-    "locale",
     "invariant",
     "realism",
     "constraint",
@@ -2415,13 +2423,32 @@ def build_clauses(
             "whatever they stand on is seen from beneath its edge",
         )
     elif lowered:
-        names = _and_list([_entity_name(spec, crossing["id"]) for crossing in lowered[:3]])
-        add(
-            "opening",
-            1,
-            f"The camera is higher than {names} and looks down: the tops of the head and "
-            "shoulders are visible and the ground is seen spreading away behind them",
-        )
+        camera = spec.get("camera", {}) if isinstance(spec.get("camera"), dict) else {}
+        tilted_down = _text(camera.get("tilt")) in {"down", "straight_down"}
+        eye_level = _text(camera.get("angle")) == "eye_level"
+        # A level camera a little above a seated head sees the face, not the top
+        # of the head: the looks-down picture needs a tilt or real height, and never
+        # sits beside an eye-level angle (rangsarn's audit, eval-t13).
+        far_above = [c for c in lowered if c.get("above_head_by_m", 0) > LOOKS_DOWN_CLEARANCE_M]
+        high_angle = _text(camera.get("angle")) in {"high_angle", "high", "birds_eye", "overhead", "top_down"}
+        if not eye_level and (tilted_down or high_angle or far_above):
+            names = _and_list(
+                [_entity_name(spec, c["id"]) for c in (lowered if tilted_down or high_angle else far_above)[:3]]
+            )
+            add(
+                "opening",
+                1,
+                f"The camera is higher than {names} and looks down: the tops of the head and "
+                "shoulders are visible and the ground is seen spreading away behind them",
+            )
+        else:
+            names = _and_list([_entity_name(spec, crossing["id"]) for crossing in lowered[:3]])
+            add(
+                "opening",
+                1,
+                f"The camera is level and a little above the eyes of {names}, so the horizon "
+                "passes just above their heads while their faces are seen straight on",
+            )
     scene = f"The scene is {_text(location.get('place'))} in {_text(location.get('locale'))}"
     if _text(location.get("time_of_day")):
         scene += f", {_text(location['time_of_day']).replace('_', ' ')}"

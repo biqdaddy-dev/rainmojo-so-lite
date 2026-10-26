@@ -2218,6 +2218,43 @@ for c in classes:
     for section in c["regression"]:
         check(f"{c['id']} regression {section} exists", f'print("{section} ' in TEST_SOURCE)
 
+print("C49 a level camera above seated heads does not look down; locale comes early")
+# Found by rangsarn's independent audit: an eye-level spec compiled to "looks
+# down: the tops of the head and shoulders are visible", beside "from an eye
+# level angle".
+def seated_scene(**camera):
+    spec = copy.deepcopy(EXAMPLE)
+    for subject in spec["subjects"]:
+        subject["posture"] = "seated"
+    spec["camera"].update(camera)
+    return spec
+
+
+level = seated_scene(angle="eye_level", tilt="level", height_m=1.5)
+level_prompt = " ".join(c["text"] for c in image_spec.build_clauses(
+    level, image_spec.derive(level, WIDTH, HEIGHT), WIDTH, HEIGHT, image_spec.policy_from_config(DEFAULTS)))
+check(
+    "an eye-level camera above seated heads never says it looks down",
+    "and looks down: the tops" not in level_prompt and "passes just above their heads" in level_prompt,
+    str([x for x in level_prompt.split(". ") if "camera" in x.lower()][:2]),
+)
+for camera, why in (({"angle": "high", "tilt": "down", "height_m": 1.5}, "a downward tilt"),
+                    ({"angle": "high", "tilt": "level", "height_m": 2.6}, "the lens far above their heads")):
+    spec = seated_scene(**camera)
+    text = " ".join(c["text"] for c in image_spec.build_clauses(
+        spec, image_spec.derive(spec, WIDTH, HEIGHT), WIDTH, HEIGHT, image_spec.policy_from_config(DEFAULTS)))
+    check(f"but {why} does", "and looks down: the tops" in text, str([x for x in text.split(". ") if "camera" in x.lower()][:2]))
+crossing49 = image_spec.derive(level, WIDTH, HEIGHT)["horizon_crossings"][0]
+check("the crossing records how far the lens is above the head", "above_head_by_m" in crossing49, str(crossing49))
+local = copy.deepcopy(EXAMPLE)
+local["location"]["locale_details"] = ["the pharmacist wears a white pharmacy coat with a name badge"]
+local_prompt = image_spec.compile_spec(local, WIDTH, HEIGHT, DEFAULTS)["prompt"]
+check(
+    "locale facts come before the people, where a common-world prior cannot overwrite them",
+    local_prompt.index("Local details that must be right") < local_prompt.index("One "),
+    local_prompt[:300],
+)
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(
