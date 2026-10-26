@@ -2810,6 +2810,52 @@ check("a scene that pours is asked where the liquid leaves", "q_pour" in ladle_q
 check("and told", image_spec.POUR_RULE in image_spec.compile_spec(ladle, WIDTH, HEIGHT, DEFAULTS)["prompt"])
 check("one that does not, is not", "q_pour" not in {q["id"] for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))})
 
+print("C65 an inventory of openings and practicals closes the scene's light")
+# Agreed with the rangsarn session: a second lit window appeared where one was allowed.
+def lit_room(**overrides):
+    spec = copy.deepcopy(EXAMPLE)
+    spec["openings"] = [
+        {"id": "shop_window", "kind": "window", "wall": "left", "state": "open", "lit": True, "light": "daylight"},
+        {"id": "back_door", "kind": "door", "wall": "back", "state": "closed", "lit": False},
+    ]
+    spec["practicals"] = [{"id": "ceiling_fluorescent", "kind": "ceiling tube", "lit": True, "position": "overhead"}]
+    spec.update(overrides)
+    return spec
+
+
+room = lit_room()
+room_errors, room_warnings = image_spec.validate_spec(room, WIDTH, HEIGHT, DEFAULTS)
+check("an inventory whose key and fill are lit entries is valid and unwarned",
+      not room_errors and not [w for w in room_warnings if "inventory" in w or "openings" in w],
+      str(room_errors[:1] + room_warnings[:2]))
+room_prompt = image_spec.compile_spec(room, WIDTH, HEIGHT, DEFAULTS)["prompt"]
+check(
+    "the prompt closes the scene's light",
+    "The only light comes from the window in the left wall and the ceiling tube overhead" in room_prompt
+    and "every other window and doorway is closed and dark" in room_prompt,
+    [x for x in room_prompt.split(". ") if "only light" in x][:1],
+)
+room_q = {q["id"]: q["question"] for q in image_spec.build_questions(room, image_spec.derive(room, WIDTH, HEIGHT))}
+check("the review asks which sources are lit", "q_light_sources" in room_q and "the window in the left wall" in room_q["q_light_sources"])
+check("and each stated opening's state", room_q.get("q_back_door_state", "").startswith("Is the door in the back wall closed, and dark"))
+dark_key = lit_room()
+dark_key["openings"][0]["lit"] = False
+refuses_text = image_spec.validate_spec(dark_key, WIDTH, HEIGHT, DEFAULTS)[0]
+check("a key light from no lit entry is refused", any("none of the lit openings" in e for e in refuses_text), str(refuses_text[:1]))
+unlisted = lit_room(practicals=[])
+check(
+    "a fill that is a source of its own and not listed is warned",
+    any("does not list" in w for w in image_spec.validate_spec(unlisted, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+facing_walls = lit_room()
+facing_walls["openings"].append({"id": "far_window", "kind": "window", "wall": "right", "state": "open", "lit": True})
+facing_walls["lighting"]["fill"] = []
+check(
+    "lit openings facing each other with one key and no fill are warned",
+    any("face each other" in w for w in image_spec.validate_spec(facing_walls, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+check("a spec without an inventory behaves as before", "q_light_sources" not in {q["id"] for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))})
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

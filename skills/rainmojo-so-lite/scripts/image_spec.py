@@ -2445,6 +2445,49 @@ def validate_spec(
                     "say where it is as well as what it is."
                 )
 
+    inv_openings, inv_practicals = light_inventory(spec)
+    if inv_openings or inv_practicals:
+        seen_ids: set[str] = set()
+        for where, entries in (("openings", inv_openings), ("practicals", inv_practicals)):
+            for index, entry in enumerate(entries):
+                eid = _text(entry.get("id"))
+                if not eid or not _text(entry.get("kind")):
+                    errors.append(f"spec.{where}[{index}] needs an id and a kind.")
+                if eid in seen_ids:
+                    errors.append(f"spec.{where}[{index}]: id {eid!r} is used twice.")
+                seen_ids.add(eid)
+                if where == "openings":
+                    for field, allowed in (("kind", OPENING_KINDS), ("wall", OPENING_WALLS), ("state", OPENING_STATES)):
+                        value = _text(entry.get(field))
+                        if value and value not in allowed:
+                            warnings.append(
+                                f"spec.openings[{index}].{field} {value!r} is not one of "
+                                + ", ".join(sorted(allowed)) + "."
+                            )
+        lighting_block = spec.get("lighting") if isinstance(spec.get("lighting"), dict) else {}
+        key_block = lighting_block.get("key") if isinstance(lighting_block.get("key"), dict) else {}
+        key_source = _text(key_block.get("source"))
+        if key_source and not _names_lit(key_source, spec):
+            errors.append(
+                f"spec.lighting.key.source {key_source!r} is none of the lit openings and "
+                "practicals the spec declares. With an inventory declared, the key light comes "
+                "from one of them: name it, or mark it lit."
+            )
+        for index, fill in enumerate(_list(lighting_block.get("fill"))):
+            text = _text(fill)
+            if text and not BOUNCE_RE.search(text) and not _names_lit(text, spec):
+                warnings.append(
+                    f"spec.lighting.fill[{index}] {text!r} reads as a light source of its own "
+                    "that the inventory does not list. List it as a lit practical or opening, "
+                    "or say what it bounces off."
+                )
+        lit_walls = {_text(o.get("wall")) for o in inv_openings if o.get("lit")}
+        if any(pair <= lit_walls for pair in OPPOSITE_WALLS) and not _list(lighting_block.get("fill")):
+            warnings.append(
+                "spec.openings: lit openings face each other across the room, but there is one "
+                "key and no fill for the second. Name the second as a fill, or close it."
+            )
+
     location_block = spec.get("location") if isinstance(spec.get("location"), dict) else {}
     for index, detail in enumerate(_list(location_block.get("locale_details"))):
         wording = LOCALE_WRITING_RE.search(_text(detail))
@@ -3221,6 +3264,21 @@ def build_clauses(
             f"Every shadow falls {shadow.replace('_', ' ')} from that one key light, and every "
             "person and object touching a surface has a soft contact shadow where they meet",
         )
+    inv_open, inv_prac = light_inventory(spec)
+    if inv_open or inv_prac:
+        # An inventory closes the scene's light: a second lit window appeared
+        # where one was allowed (agreed with the rangsarn session).
+        lit = [_entry_label(e) for e in inv_open + inv_prac if e.get("lit")]
+        dark = [o for o in inv_open if not o.get("lit")]
+        sentence = (
+            "The only light comes from " + _and_list(lit) if lit
+            else "Every window, doorway and lamp is dark, and the scene takes only its ambient light"
+        )
+        if dark:
+            sentence += "; every other window and doorway is " + _and_list(
+                sorted({_text(o.get("state")) or "closed" for o in dark})
+            ) + " and dark"
+        add("light", 1, sentence)
     for fill in _list(lighting.get("fill")):
         # A fill given as a colour pulls a monochrome drawing toward full colour.
         if _text(fill) and not monochrome:
@@ -3588,6 +3646,48 @@ def decolour(text: str) -> str:
     out = re.sub(r"\s+([,;.])", r"\1", out)
     out = re.sub(r"(?:^|(?<=[,;]))\s*,", "", out)
     return out.strip(" ,")
+
+
+# The light inventory: openings in the walls and practical lights in the scene.
+OPENING_KINDS = {"window", "door", "skylight", "gap", "archway"}
+OPENING_WALLS = {"left", "right", "back", "front", "ceiling"}
+OPENING_STATES = {"open", "closed", "shuttered", "broken", "curtained"}
+OPPOSITE_WALLS = ({"left", "right"}, {"front", "back"})
+BOUNCE_RE = re.compile(r"\b(?:bounce\w*|reflect\w*|off the|off a|spill(?:s|ing)? from)\b", re.I)
+
+
+def light_inventory(spec: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """The declared openings and practicals, each as a dict."""
+    openings = [o for o in _list(spec.get("openings")) if isinstance(o, dict)]
+    practicals = [o for o in _list(spec.get("practicals")) if isinstance(o, dict)]
+    return openings, practicals
+
+
+def _inventory_names(entry: dict[str, Any]) -> list[str]:
+    names = [_text(entry.get("id")).replace("_", " ").lower(), _text(entry.get("kind")).lower()]
+    return [n for n in names if n]
+
+
+def lit_entries(spec: dict[str, Any]) -> list[dict[str, Any]]:
+    openings, practicals = light_inventory(spec)
+    return [e for e in openings + practicals if e.get("lit")]
+
+
+def _names_lit(text: str, spec: dict[str, Any]) -> bool:
+    lowered = text.lower()
+    return any(name in lowered for entry in lit_entries(spec) for name in _inventory_names(entry))
+
+
+def _entry_label(entry: dict[str, Any]) -> str:
+    kind = _text(entry.get("kind")) or _text(entry.get("id")).replace("_", " ")
+    wall = _text(entry.get("wall"))
+    position = _text(entry.get("position"))
+    return (
+        f"the {kind} in the {wall} wall" if wall and wall != "ceiling"
+        else f"the {kind} in the ceiling" if wall == "ceiling"
+        else f"the {kind} {position}" if position
+        else f"the {kind}"
+    )
 
 
 # A scene that pours: broth fell from beneath a bowl in rangsarn's ladle scene.
@@ -4370,6 +4470,26 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
     # "Exactly two walkers?" answered yes while twenty more people stood in the
     # lane, because every count question asks about a declared entity and none
     # asks about the frame.
+    inv_open_q, inv_prac_q = light_inventory(spec)
+    if inv_open_q or inv_prac_q:
+        lit_labels = [_entry_label(e) for e in inv_open_q + inv_prac_q if e.get("lit")]
+        add(
+            "q_light_sources",
+            "light",
+            "Is every lit window, doorway, lamp or screen in the picture one of: "
+            + (_and_list(lit_labels) if lit_labels else "none at all")
+            + ", with every other opening dark?",
+        )
+        for opening in inv_open_q:
+            state = _text(opening.get("state"))
+            if state:
+                add(
+                    f"q_{_text(opening.get('id'))}_state",
+                    "light",
+                    f"Is {_entry_label(opening)} {state}"
+                    + (", with light coming through it" if opening.get("lit") else ", and dark")
+                    + "?",
+                )
     if pours(spec):
         add(
             "q_pour",

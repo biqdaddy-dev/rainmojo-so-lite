@@ -426,6 +426,25 @@
       ],
       "prevention_effective": "unmeasured",
       "status": "closed"
+    },
+    {
+      "id": "F-extra-light-source",
+      "symptom": "A window, door or lamp is lit that the brief did not allow: a second lit window, a lamp from nowhere.",
+      "cause": "Nothing listed which openings and lights exist, so the generator added its own.",
+      "found_by": "rangsarn (a second lit window where one was allowed)",
+      "prevention": [
+        "openings and practicals inventory; prompt sentence that closes the scene's light",
+        "key light refused unless it is a lit entry"
+      ],
+      "detection": [
+        "q_light_sources",
+        "q_<id>_state"
+      ],
+      "regression": [
+        "C65"
+      ],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
     }
   ]
 }

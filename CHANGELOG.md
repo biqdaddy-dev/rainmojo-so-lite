@@ -275,6 +275,11 @@ on the ground are now sized against the people through the horizon, street stool
 have their usual heights, and a scene where someone pours is checked for liquid that leaves
 its vessel the right way. Contract test **817 assertions**, passing here unchanged.
 
+Then `d0e241a`: a brief may list the room's windows, doors and lamps and say which are lit;
+the picture is then told those are its only light, and the review checks that no extra lit
+window or lamp appears. Briefs that do not list them behave as before. Contract test **837
+assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

@@ -916,6 +916,29 @@ liquid. And `decolour()` strips colour words that are part of a name: "green tea
 nouns break, "a can of Red Bull" to "a can of Bull", "the Blue Mosque" to "the Mosque". That
 touches only monochrome drawn styles, which no client brief uses.
 
+THIRTY-FIFTH PORT, `d0e241a`, same version: an inventory of openings and practicals closes the
+scene's light. A spec may declare `openings[]` and `practicals[]`; when it does, the key light
+must come from a lit entry or the spec is refused, a fill that is a source of its own is warned
+unless listed, lit openings on facing walls with no fill are warned, the prompt says at tier 1
+which entries are the only light, and `q_light_sources` and `q_<id>_state` are asked. Specs
+without the fields behave as before. The failure library has 25 classes. Four files
+byte-identical, the review example unchanged at 82. Regression 4 of 4, T4 green. Battery and
+corpus identical to a clean export of `d0e241a`, 16 of 19 clean, 21, 2, 4; on the client briefs
+nothing moves, no prompt, question, warning or error, and every probe output is unchanged.
+
+The contract test passes 837 checks, here and on the full edition's own export, not the 825
+quoted: C65 adds 8, and C48, which checks every failure class's fields, status, detections and
+regressions, grows by 12 with the 25th class.
+
+Two findings, reported upstream. `lit` is read by truthiness, so an entry authored `"lit":
+"false"` counts as lit: a closed back window written that way makes the prompt say "The only
+light comes from the window in the left wall and the window in the back wall", and the review
+ask "Is the window in the back wall closed, with light coming through it?". A non-boolean `lit`
+wants a warning or a refusal. And the key-source match is a substring of each entry's id and
+kind, so "flat outdoor daylight" names a lit door through "outdoor"; a false accept, harmless.
+A design point rather than a defect: "low afternoon sun from the left" is refused with a lit
+window in the left wall, physically right but not naming the entry, and the error says how.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New
