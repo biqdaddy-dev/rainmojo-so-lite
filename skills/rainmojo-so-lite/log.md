@@ -670,6 +670,41 @@ frame whose bottom is at 1.10 m, and the wholly-below warning does not fire, whe
 real head is well below that edge. ANSUR II is an adult survey; a seated eye height scaled by
 stature below adult height would close it.
 
+TWENTY-SIXTH PORT, `015d13b`, same version: seated eye height scales with stature, and test
+scenes must be valid. `posture_eye_m` keeps the absolute heights for a 1.65 m adult, scales
+the body's share with stature, keeps a 0.45 m chair seat fixed and leaves lying flat unscaled:
+a seated 1.02 m child's eyes come out at 0.93 m, a 1.85 m adult's at 1.33 m, a floor-seated
+child's at 0.48 m. The C50 teenager and both C53 child scenes take the midground plane and
+assert their validity first. Three files byte-identical, 701 assertions passing unchanged,
+the review example unchanged at 80. Regression 4 of 4. Battery and corpus identical to a clean
+export of `015d13b`, 16 of 19 clean, 21, 2, 4.
+
+The seated child, valid with the midground plane, is silent on `e92bb52` and warned wholly
+below here. No lite doc quotes 1.23 m, 0.78 m or "whatever the stature", so no claim became
+false. T4 passed, but D4 had been passing for a reason that no longer held: it put the lens
+0.14 and 0.16 m from `EYE_ABSOLUTE_M["sitting"]`, the 1.23 m constant, and with seated heights
+now scaled that constant is nobody's eye height. It landed on the band edge only because the
+example's two statures, 1.62 and 1.68 m, average exactly the 1.65 m reference. D4 now measures
+from the seated people's own mean eye height, as its standing half already did. With the
+example's statures changed to 1.45 and 1.50 m in a copy, the old D4 fails on a correct band and
+the new one passes; T4 green, 54 checks.
+
+On the client briefs validation is unchanged and two prompts move. biqdaddy's strategist is now
+crossed at the chin, as upstream says. doctorjay moves twice, not once: the patient, eyes at
+1.20 m, is the one named in "level and a little above the eyes", and the 1.73 m surgeon, eyes now
+at 1.27 m, goes from "passes above the head" to "crosses at about the eyes", which drops his
+`q_viewpoint_surgeon`.
+
+That dropped question exposes a finding, older than this commit and reported upstream. Indoors,
+with the horizon out of frame, `q_viewpoint_<id>` asks "seen from above, so that the tops of the
+shoulders and head show" of anyone whose head is below the lens, by any margin. That is the test
+`fce4562` replaced in the prompt with a downward tilt, a high angle or more than 0.5 m of
+clearance, never beside an eye-level angle, and the question was not changed with it. Two client
+briefs carry the contradiction now: bangmod and doctorjay both tell the generator the camera is
+level and the patient's face is seen straight on, and then ask the reviewer whether the top of
+her head shows. A correct picture answers no. The question wants the same predicate as the
+sentence.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

@@ -173,7 +173,13 @@ def eye_level_errors(mutate):
     return [e for e in errors_for(mutate) if "eye_level" in e or "eye level" in e]
 
 
-seated_eye = image_spec.EYE_ABSOLUTE_M["sitting"]
+# Measured from the seated people's own mean eye height, not the 1.23 m constant:
+# since 015d13b a seated eye height scales with stature, and the constant held
+# only because the example's two statures happen to average the 1.65 m adult.
+seated_scene = copy.deepcopy(EXAMPLE)
+seated(0.0)(seated_scene)
+seated_eyes = [image_spec.eye_height(s) for s in seated_scene["subjects"]]
+seated_eye = sum(seated_eyes) / len(seated_eyes)
 inside = eye_level_errors(seated(seated_eye + 0.14))
 outside = eye_level_errors(seated(seated_eye + 0.16))
 check("a lens 0.14 m above a seated eye line is still eye level", not inside, str(inside))

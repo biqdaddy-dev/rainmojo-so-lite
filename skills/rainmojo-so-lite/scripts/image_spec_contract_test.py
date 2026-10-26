@@ -1695,8 +1695,8 @@ print("C39 four correct briefs the rangsarn session wrote, no longer refused")
 floor = copy.deepcopy(EXAMPLE)
 floor["subjects"][1]["posture"] = "floor_seated"
 check(
-    "a person sitting on the floor has an eye line at about 0.78 m",
-    abs(image_spec.eye_height(floor["subjects"][1]) - 0.78) < 1e-9,
+    "a person sitting on the floor has an eye line at about 0.78 m, scaled by stature",
+    abs(image_spec.eye_height(floor["subjects"][1]) - 0.78 * floor["subjects"][1]["height_m"] / 1.65) < 1e-9,
     str(image_spec.eye_height(floor["subjects"][1])),
 )
 check(
@@ -2298,7 +2298,10 @@ low_head = copy.deepcopy(EXAMPLE)
 # 1.4 m keeps the mean eye height within the band, so the sentence is written,
 # while this person's own eyes sit 0.25 m below the lens.
 low_head["subjects"].append(dict(copy.deepcopy(EXAMPLE["subjects"][1]), id="child", short_name="child",
-                                 description="a teenager beside the counter", height_m=1.4, distance_m=2.3))
+                                 description="a teenager beside the counter", height_m=1.4, distance_m=2.3,
+                                 plane="midground"))
+check("the teenager scene is valid", not image_spec.validate_spec(low_head, WIDTH, HEIGHT, DEFAULTS)[0],
+      str(image_spec.validate_spec(low_head, WIDTH, HEIGHT, DEFAULTS)[0][:1]))
 check("the scene does put the camera at eye height", image_spec.derive(low_head, WIDTH, HEIGHT)["camera_at_eye_height"])
 eyes = [p["id"] for p in image_spec.eyes_on_horizon(low_head)]
 check(
@@ -2404,7 +2407,10 @@ check("a level camera with the horizon hidden has its frame centred on the lens"
 check("a tilted one does not", image_spec.horizon_band({"tilt": "up", "horizon": "not_visible"}) is None)
 outside53 = copy.deepcopy(EXAMPLE)
 outside53["subjects"].append(dict(copy.deepcopy(EXAMPLE["subjects"][1]), id="child", short_name="child",
-                                  description="a small child", height_m=1.02, distance_m=2.2))
+                                  description="a small child", height_m=1.02, distance_m=2.2,
+                                  plane="midground"))
+check("the out-of-frame scene is valid", not image_spec.validate_spec(outside53, WIDTH, HEIGHT, DEFAULTS)[0],
+      str(image_spec.validate_spec(outside53, WIDTH, HEIGHT, DEFAULTS)[0][:1]))
 check(
     "a declared person wholly below the frame is warned",
     any("lies wholly below it" in w and "child" in w for w in image_spec.validate_spec(outside53, WIDTH, HEIGHT, DEFAULTS)[1]),
@@ -2415,6 +2421,24 @@ inside53["subjects"][-1]["height_m"] = 1.6
 check(
     "the same person tall enough to reach into the frame is not",
     not any("lies wholly" in w for w in image_spec.validate_spec(inside53, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+
+print("C54 a seated child is not an adult's seated height")
+check("a 1.65 m adult seated on a chair keeps 1.23 m", abs(image_spec.posture_eye_m("seated", 1.65) - 1.23) < 1e-9)
+check("a taller adult sits a little higher, on the same seat", 1.23 < image_spec.posture_eye_m("seated", 1.85) < 1.35)
+check(
+    "a 1.02 m child seated scales with stature",
+    abs(image_spec.posture_eye_m("seated", 1.02) - (0.45 + 0.78 * 1.02 / 1.65)) < 1e-9,
+)
+check("lying flat does not scale", image_spec.posture_eye_m("lying", 1.02) == 0.25)
+seated_child = copy.deepcopy(outside53)
+seated_child["subjects"][-1]["posture"] = "seated"
+check("the seated-child scene is valid", not image_spec.validate_spec(seated_child, WIDTH, HEIGHT, DEFAULTS)[0],
+      str(image_spec.validate_spec(seated_child, WIDTH, HEIGHT, DEFAULTS)[0][:1]))
+check(
+    "a seated child wholly below the frame is warned",
+    any("lies wholly below it" in w and "child" in w for w in image_spec.validate_spec(seated_child, WIDTH, HEIGHT, DEFAULTS)[1]),
+    str([w for w in image_spec.validate_spec(seated_child, WIDTH, HEIGHT, DEFAULTS)[1] if "child" in w][:1]),
 )
 
 print("C15 a thin client config still has a gate")

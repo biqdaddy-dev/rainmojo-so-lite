@@ -228,6 +228,11 @@ Then `e92bb52`: the framing checks now also work indoors, where a wall hides the
 a brief that places a person where the picture cannot show them at all, wholly below or above
 the frame, is warned. Contract test **693 assertions**, passing here unchanged.
 
+Then `015d13b`: a seated, kneeling or floor-seated person's eye height now follows how tall
+they are, while a chair seat stays the same height, so a seated child is placed lower than a
+seated adult and a picture that cannot show them is warned. Contract test **701 assertions**,
+passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

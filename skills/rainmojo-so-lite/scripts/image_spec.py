@@ -771,6 +771,30 @@ def eyes_on_horizon(spec: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+# The absolute seated, kneeling and floor heights are for a 1.65 m adult (ANSUR
+# II). The body's share of them scales with stature; a chair seat does not, and
+# lying flat does not scale at all.
+ADULT_STATURE_M = 1.65
+SEAT_HEIGHT_M = {"sitting": 0.45, "seated": 0.45}
+UNSCALED_POSTURES = {"lying"}
+
+
+def posture_eye_m(posture: str, stature: float | None) -> float | None:
+    """Eye height above the floor for a posture with an absolute height.
+
+    A seated 1.02 m child took an adult's 1.23 m and was placed with a head
+    inside a frame that could not show her (the lite session's finding). The
+    seat stays 0.45 m; the body above it scales with stature.
+    """
+    base = EYE_ABSOLUTE_M.get(posture)
+    if base is None:
+        return None
+    if not stature or posture in UNSCALED_POSTURES:
+        return base
+    seat = SEAT_HEIGHT_M.get(posture, 0.0)
+    return seat + (base - seat) * stature / ADULT_STATURE_M
+
+
 def eye_height(subject: dict[str, Any]) -> float | None:
     """Eye height above the floor for a person, from stature and posture.
 
@@ -787,7 +811,7 @@ def eye_height(subject: dict[str, Any]) -> float | None:
         return None
     posture = _text(subject.get("posture") or "standing").lower()
     if posture in EYE_ABSOLUTE_M:
-        return EYE_ABSOLUTE_M[posture] + ground_height(subject)
+        return posture_eye_m(posture, stature) + ground_height(subject)
     fraction = EYE_FRACTION.get(posture)
     if fraction is None:
         return None
@@ -1166,7 +1190,7 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
             if posture in EYE_ABSOLUTE_M:
                 # A seated figure's visible height is not their stature: measure
                 # the crossing against the eye height the pose actually gives.
-                visible = EYE_ABSOLUTE_M[posture] / 0.93
+                visible = posture_eye_m(posture, stature) / 0.93
             else:
                 visible = stature
             fraction = (cam_height - feet) / visible
@@ -1771,7 +1795,9 @@ def validate_spec(
             bottom = cam_height - frame_h * band
             feet = ground_height(subject)
             pose_kind = _text(subject.get("posture") or "standing").lower()
-            head = feet + (EYE_ABSOLUTE_M[pose_kind] / 0.93 if pose_kind in EYE_ABSOLUTE_M else stature)
+            head = feet + (
+                posture_eye_m(pose_kind, stature) / 0.93 if pose_kind in EYE_ABSOLUTE_M else stature
+            )
             # A person the frame cannot hold at their distance: wholly below its
             # bottom edge or above its top. A child at 2.2 m sat entirely below a
             # frame whose bottom was at 1.13 m (the lite session's probe scene).
