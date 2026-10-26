@@ -2586,6 +2586,30 @@ check(
 )
 check("nor is a word used as a modifier", not doubled("a spoon rest and a fork holder at one end"))
 
+print("C58 an invariant is checked part by part, and a size comparison in real size")
+# rangsarn run 08: a serving spoon's invariant passed on its bowl alone while
+# the handle rested on another plate.
+inv58 = {q["id"]: q["question"] for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))}
+first = inv58["q_invariant_01"]
+check(
+    "every invariant is checked part by part, each part named in the evidence",
+    "Check each part on its own and answer yes only if every part holds" in first,
+    first[-160:],
+)
+sized58 = copy.deepcopy(EXAMPLE)
+sized58["physical_invariants"] = ["the serving spoon's bowl is about 1.5 times an eating spoon's bowl"]
+sized_q = {q["id"]: q["question"] for q in image_spec.build_questions(sized58, image_spec.derive(sized58, WIDTH, HEIGHT))}
+check(
+    "a size comparison in an invariant is judged in real size",
+    "Judge real sizes" in sized_q["q_invariant_01"],
+)
+check(
+    "one without a comparison is not told to",
+    not image_spec.SIZE_COMPARE_RE.search("the counter separates the two people"),
+)
+for phrase in ("twice as long as the fork", "larger than the plate", "as wide as the shoulders", "1.5 times an eating spoon"):
+    check(f"{phrase!r} is a size comparison", bool(image_spec.SIZE_COMPARE_RE.search(phrase)))
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

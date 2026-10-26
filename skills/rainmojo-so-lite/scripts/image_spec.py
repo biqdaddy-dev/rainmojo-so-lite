@@ -3305,6 +3305,16 @@ def detect_as(entity: dict[str, Any], person: bool = False) -> str:
     return head
 
 
+# A comparison of sizes in a sentence, which reads wrong across distances unless
+# the reviewer is told to judge real size (rangsarn run 08).
+SIZE_COMPARE_RE = re.compile(
+    r"\b\d+(?:\.\d+)?\s+times\b|\btwice\b|\bhalf (?:the size|as)\b"
+    r"|\b(?:larger|smaller|bigger|longer|shorter|taller|wider|narrower|higher|lower)\s+than\b"
+    r"|\bas (?:long|wide|tall|large|big|high|small) as\b",
+    re.I,
+)
+
+
 # Supports under which an object's height_m is its upright extent in the frame.
 UPRIGHT_SUPPORT = {"stands_on", "rests_on", "mounted_on", "fixed_in"}
 # A thing much wider than it is tall reads by its width, not its height: a
@@ -3976,7 +3986,18 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             f"{_text(fact)}?",
         )
     for index, inv in enumerate(_list(spec.get("physical_invariants")), start=1):
-        add("q_invariant_%02d" % index, "physics", f"Does the image respect this: {_text(inv)}?")
+        text = _text(inv)
+        add(
+            "q_invariant_%02d" % index,
+            "physics",
+            f"Does the image respect this: {text}? Check each part on its own and answer yes "
+            "only if every part holds; name each part and what you saw in the evidence."
+            + (
+                " Judge real sizes, not how large each looks at its distance."
+                if SIZE_COMPARE_RE.search(text)
+                else ""
+            ),
+        )
     for index, flaw in enumerate(_list((spec.get("realism") or {}).get("imperfections")), start=1):
         add(
             "q_imperfection_%02d" % index,

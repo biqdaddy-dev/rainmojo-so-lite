@@ -802,6 +802,31 @@ not be warned; cutting the phrase at its first preposition keeps the thing held.
 twenty-ninth port's finding is untouched: `facing()` still reads theklinique's practitioner,
 whose face the brief puts in frame, as facing away, and her prompt now says "her back".
 
+THIRTY-FIRST PORT, `d90b24e`, same version: an invariant is checked part by part, and a size
+comparison in real size, from rangsarn's run 08, where a serving spoon's invariant passed on
+its bowl while its handle rested on another plate. Every invariant question now says to check
+each part on its own, answer yes only if every part holds and name each part in the evidence,
+and one that matches `SIZE_COMPARE_RE` also gets the scale questions' real-size sentence. Four
+files byte-identical, the review example also regenerated here and byte-identical to the full
+edition's at 80 questions. 765 assertions passing unchanged, regression 4 of 4, T4 green.
+Battery and corpus identical to a clean export of `d90b24e`, 16 of 19 clean, 21, 2, 4; probe 2
+differs only in the two invariant questions it prints. On the 13 valid client briefs validation
+and prompts are unchanged, 65 invariant questions take the new wording and nothing else moves;
+the three refused briefs carry the rest of upstream's 80.
+
+Read rather than counted, both client invariants that get the real-size sentence need the
+opposite. inlingua's "the far page reads shorter than the near one" and papayiw's "the far edge
+of every rectangle on it reads shorter than the near edge" are foreshortening invariants: they
+ask the reviewer to check how sizes look across distance, and the added sentence tells the
+reviewer to judge real sizes, not how large each looks at its distance, which forbids the check
+they ask for. A reviewer who follows it answers that the real edges are equal. The one true hit
+is the shipped example's "stays smaller than the pharmacist's forearm". The pattern also fires
+on position and on events, "hangs higher than the shelf top", "sits lower than the jetty deck",
+"the bell has rung twice", where the sentence is noise, and on "the near cup reads larger than
+the far one", which is foreshortening again. Reported upstream: an apparent-size verb, reads,
+looks, appears, recedes, foreshortens, should keep the sentence off, "higher than" and "lower
+than" want a size word, and a bare "twice" wants "the size", "the length" or "as".
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

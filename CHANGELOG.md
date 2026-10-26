@@ -253,6 +253,10 @@ Then `381b628`: small wording fixes in the new hand and dish sentences, which no
 or "his" rather than "their" where the brief does. Contract test **758 assertions**,
 passing here unchanged.
 
+Then `d90b24e`: each review question about a physical rule of the scene now asks the reviewer
+to check every part of the rule on its own, so a rule that holds only halfway no longer
+passes. Contract test **765 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

@@ -477,27 +477,27 @@
     "q_invariant_01": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does the image respect this: the counter separates the two people: each keeps their arms on their own side of it?"
+      "_question": "Does the image respect this: the counter separates the two people: each keeps their arms on their own side of it? Check each part on its own and answer yes only if every part holds; name each part and what you saw in the evidence."
     },
     "q_invariant_02": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does the image respect this: the medicine box is small enough to sit in one hand and stays smaller than the pharmacist's forearm?"
+      "_question": "Does the image respect this: the medicine box is small enough to sit in one hand and stays smaller than the pharmacist's forearm? Check each part on its own and answer yes only if every part holds; name each part and what you saw in the evidence. Judge real sizes, not how large each looks at its distance."
     },
     "q_invariant_03": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does the image respect this: the customer stands nearer the camera, so he reads noticeably larger in the frame than the pharmacist although he is only 6 cm taller?"
+      "_question": "Does the image respect this: the customer stands nearer the camera, so he reads noticeably larger in the frame than the pharmacist although he is only 6 cm taller? Check each part on its own and answer yes only if every part holds; name each part and what you saw in the evidence."
     },
     "q_invariant_04": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does the image respect this: both people stand on the same floor, so their feet sit on one ground plane and their eye lines fall within a few centimetres of each other and of the horizon?"
+      "_question": "Does the image respect this: both people stand on the same floor, so their feet sit on one ground plane and their eye lines fall within a few centimetres of each other and of the horizon? Check each part on its own and answer yes only if every part holds; name each part and what you saw in the evidence."
     },
     "q_invariant_05": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does the image respect this: the shelving behind is parallel to the counter, so both recede to the same vanishing point?"
+      "_question": "Does the image respect this: the shelving behind is parallel to the counter, so both recede to the same vanishing point? Check each part on its own and answer yes only if every part holds; name each part and what you saw in the evidence."
     },
     "q_imperfection_01": {
       "answer": "yes",

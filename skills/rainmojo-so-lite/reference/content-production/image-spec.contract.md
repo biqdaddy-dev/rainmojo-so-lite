@@ -173,6 +173,12 @@ refuse the brief:
 - **Scale is judged in real size.** Every scale question says to judge real sizes, not
   how large each looks at its distance: run 04 compared a near buyer with far shutters
   as drawn.
+- **An invariant is checked part by part.** Most invariants read "cause, so effect and
+  effect", so each question says to check each part on its own, answer yes only if every
+  part holds, and name each part in the evidence; a comparison of sizes in one is judged
+  in real size. In rangsarn's run 08 a serving spoon's invariant passed on its bowl alone
+  while its handle rested on another plate. Writing one fact per invariant is better
+  still; a validator warning was not added because it would fire on 37 of 85 real ones.
 - **Hands are asked one at a time.** When a hands field names both sides ("a spoon in
   the right hand and a fork in the left"), each hand gets its own question from the
   person's own side, with the picture side stated when the spec says which way they
