@@ -621,6 +621,35 @@ def spec_required(item: dict[str, Any], config: dict[str, Any]) -> bool:
 # ---------------------------------------------------------------- derivation
 
 
+# Where the horizon sits in the frame, as a fraction of the frame height from
+# the bottom edge, for the bands that put it in the picture.
+HORIZON_FROM_BOTTOM = {"upper_third": 2 / 3, "middle": 0.5, "lower_third": 1 / 3}
+
+
+def _lowest_visible(
+    camera: dict[str, Any],
+    subject: dict[str, Any],
+    feet: float,
+    visible: float,
+    cam_height: float,
+    focal: float | None,
+    aspect: float,
+) -> float | None:
+    """The lowest part of a person the frame shows, as a fraction of their height.
+
+    The horizon row is at the lens height, so the frame's bottom edge at the
+    person's distance sits the horizon's share of the frame height below it.
+    None when the horizon is not in the frame or the distance is unknown.
+    """
+    band = HORIZON_FROM_BOTTOM.get(_text(camera.get("horizon")))
+    distance = _num(subject.get("distance_m"))
+    if band is None or not distance or not focal or not visible:
+        return None
+    _, frame_h = frame_at(distance, focal, aspect)
+    bottom = cam_height - frame_h * band
+    return round(max(0.0, (bottom - feet) / visible), 3)
+
+
 def frame_at(distance_m: float, focal_mm: float, aspect: float) -> tuple[float, float]:
     """Width and height in metres covered by the frame at a distance (pinhole)."""
     if aspect >= 1.0:
@@ -1135,6 +1164,11 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
                     "stands_on_m": round(feet, 2),
                     # How far the lens is above the top of the visible figure.
                     "above_head_by_m": round(cam_height - feet - visible, 3),
+                    # The lowest part of this person the frame shows, as a fraction
+                    # of their visible height: 0 when the feet are in.
+                    "lowest_visible_fraction": _lowest_visible(
+                        camera, subject, feet, visible, cam_height, focal, aspect
+                    ),
                 }
             )
     derived["horizon_crossings"] = crossings
@@ -1700,6 +1734,38 @@ def validate_spec(
                     errors.append(
                         f"spec.camera.subject_distance_m {distance} disagrees with {focus_on}.distance_m {d}."
                     )
+
+    # The frame's top and bottom on the focus person. A level camera puts the
+    # horizon row at the lens height, so where the horizon sits in the frame and
+    # the frame height at their distance fix what of them is in the picture. A
+    # 0.86 m lens at a medium shot with the horizon in the middle cuts off the
+    # head; only the frame's width was checked (found checking the lite session's
+    # low-angle case).
+    band = HORIZON_FROM_BOTTOM.get(horizon)
+    if (
+        photographic and focal and cam_height is not None and band is not None
+        and tilt in {"", "level"} and width and height
+    ):
+        for subject in people(spec):
+            if _text(subject.get("id")) != focus_on:
+                continue
+            d = _num(subject.get("distance_m"))
+            stature = _num(subject.get("height_m"))
+            if not d or not stature:
+                continue
+            _, frame_h = frame_at(d, focal, width / height)
+            top = cam_height + frame_h * (1 - band)
+            feet = ground_height(subject)
+            pose_kind = _text(subject.get("posture") or "standing").lower()
+            head = feet + (EYE_ABSOLUTE_M[pose_kind] / 0.93 if pose_kind in EYE_ABSOLUTE_M else stature)
+            if head > top + 0.05:
+                warnings.append(
+                    f"spec.camera: with the lens at {cam_height:g} m, the horizon across the "
+                    f"{horizon.replace('_', ' ')} and {focal:g} mm at {d:g} m, the frame's top "
+                    f"edge is {top:.2f} m above the floor, so the head of {_noun(subject)} "
+                    f"({head:.2f} m) is out of the picture. Raise the camera, move the "
+                    "horizon lower in the frame, tilt up, or widen the shot."
+                )
 
     # Shot type against the frame actually covered at the subject plane.
     if photographic and focal and distance and shot in SHOT_FRAME_WIDTH_M and width and height:
@@ -2654,7 +2720,7 @@ def build_clauses(
                     )
                 elif crossing["above_head"]:
                     add("camera", 2, f"{line} passes above the head of {name}")
-                else:
+                elif derived.get("fits_in_frame", {}).get(crossing["id"], True):
                     percent = round(crossing["fraction_of_height_from_feet"] * 100)
                     add(
                         "camera",
@@ -2662,6 +2728,10 @@ def build_clauses(
                         f"{line} crosses {name} about {percent} per cent of the "
                         "way up from the feet",
                     )
+                elif crossing_landmark(crossing):
+                    # The frame cuts this figure, so say where the line falls on
+                    # what is shown, as the question asks it.
+                    add("camera", 2, f"{line} crosses {name} at about the {crossing_landmark(crossing)}")
         soft = derived.get("outside_focus", [])
         focus_name = _entity_name(spec, _text(camera.get("focus_on")))
         if soft:
@@ -2927,17 +2997,37 @@ def _scope(spec: dict[str, Any], obj: dict[str, Any]) -> str:
 
 # Landmarks a reviewer can find on a figure the frame cuts, as fractions of
 # stature (Drillis and Contini; Winter fig. 4.1), and how far off one may be.
-CROSSING_LANDMARKS = (
-    ("eyes", 0.936), ("chin", 0.870), ("shoulders", 0.818), ("chest", 0.72),
-    ("waist", 0.600), ("hips", 0.530),
+CROSSING_LANDMARKS = tuple(
+    (label, BODY_LANDMARK_FRACTION[key])
+    for label, key in (
+        ("eyes", "eye"), ("chin", "chin"), ("shoulders", "shoulder"),
+        ("chest", "chest"), ("waist", "waist"), ("hips", "hip"),
+    )
 )
 LANDMARK_SNAP = 0.06
+# A landmark this close to the frame's lower edge cannot be found on the image.
+LANDMARK_MARGIN = 0.05
 
 
-def nearest_landmark(fraction: float) -> str:
-    """The body landmark a horizon crossing falls at, or "" if none is close."""
-    name, value = min(CROSSING_LANDMARKS, key=lambda item: abs(item[1] - fraction))
+def nearest_landmark(fraction: float, lowest_visible: float | None = 0.0) -> str:
+    """The body landmark a horizon crossing falls at, or "" if none is close.
+
+    Only a landmark the frame shows counts: the lite session found the shipped
+    example asking about hips below a waist-up frame.
+    """
+    floor = (lowest_visible or 0.0) + LANDMARK_MARGIN if lowest_visible else 0.0
+    shown = [item for item in CROSSING_LANDMARKS if item[1] >= floor]
+    if not shown:
+        return ""
+    name, value = min(shown, key=lambda item: abs(item[1] - fraction))
     return name if abs(value - fraction) <= LANDMARK_SNAP else ""
+
+
+def crossing_landmark(crossing: dict[str, Any]) -> str:
+    """The landmark a cut figure's crossing is asked and described at."""
+    return nearest_landmark(
+        crossing["fraction_of_height_from_feet"], crossing.get("lowest_visible_fraction")
+    )
 
 
 def detect_as(entity: dict[str, Any], person: bool = False) -> str:
@@ -3573,7 +3663,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 # The frame cuts this figure, so the feet a percentage is measured
                 # from are not in it (rangsarn run 04, both pharmacy people). Ask
                 # against the landmark the line falls at, or not at all.
-                landmark = nearest_landmark(fraction)
+                landmark = crossing_landmark(crossing)
                 if landmark:
                     add(
                         f"q_horizon_cut_{crossing['id']}",

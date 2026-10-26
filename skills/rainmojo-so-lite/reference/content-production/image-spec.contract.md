@@ -125,6 +125,7 @@ distance and the conditioning rights, and are vouched for by the contract test a
 | Raised or lowered floor | `ground_height_m` | Never refused. It is relative to the camera's own floor and added to eye height and to an object's top, so a fighter on a 1.2 m ring and a spectator at ringside cross the horizon at different points on their bodies; it is negative for someone below that floor, such as vendors in a boat under the landing the camera stands on. | Getting it wrong is how a picture ends up with a fighter whose eye line matches a spectator's. |
 | Eye level | `camera.angle`, `height_m`, people's posture | `angle: eye_level` with the lens more than 0.35 m from the mean eye height of the people in frame, or 0.15 m when nobody in frame is standing. Seated eye height is 1.23 m on a chair and 0.78 m on the floor (`floor_seated`, `cross_legged`), whatever the stature (ANSUR II sitting eye height). A posture the geometry does not know is warned, because that person's eye line is then not checked. | Eye level is a height, and a seated eye line is the only one in a desk or restaurant scene. |
 | Hard light in diffuse weather | `lighting.key.quality`, `location.weather` | A hard key with overcast, rain, fog, mist, haze or snow in the weather, unless the weather also says the sky is clear or sunny ("a clear sunny morning, a light haze in the distant canopy" is hard sun). | An overcast sky is the light source, and it is the size of the sky. |
+| Head out of frame | `camera.height_m`, `horizon`, `focal_length_mm`, the focus person's `distance_m` | Warns when, with a level camera, the frame's top edge at the focus person's distance falls below the top of their head. | A level camera puts the horizon row at the lens height, so the horizon band and the frame height there fix what of the person is shown; a 0.86 m lens at a medium shot with the horizon in the middle cuts off the head while the shot type says waist up. |
 | Face distance | `camera.focal_length_mm`, nearest person's `distance_m` | The nearest person is closer than 0.9 m on any lens, or 1.0 m at 28 mm and 1.2 m at 20 mm. | The nose renders `(d + 0.10) / d` times the scale of the ears, set by distance alone; a long lens up close only crops into it, and a wide lens adds its own stretch toward the edges. |
 | Located imperfection | `realism.imperfections[]` | A photograph with fewer than two (the client's `min_imperfections`); an entry under four words is warned as too short to place. | An unplaced flaw is decoration. A placed one ("a scuff on the counter edge by the till") is what reads as a photograph rather than a render. |
 | Forbidding what is shown | `must_not_show[]` against every declared name | An entry that reduces to a declared thing's name and nothing else ("a counter", "counters"). Any state, attribute, place, quantity or coordination ("a cluttered counter", "a second counter", "pills on the counter") is a constraint and is accepted. | The model would be given the thing twice, once as content and once as a prohibition. |
@@ -164,7 +165,10 @@ refuse the brief:
   scope the count.
 - **A crossing on a figure the frame cuts is asked at a landmark.** "At about the eyes"
   rather than "96 per cent of the way up from the feet" when the feet are out of frame;
-  a crossing that falls between landmarks is not asked.
+  a crossing that falls between landmarks is not asked, and neither is one at a landmark
+  the frame does not show. Each crossing records the lowest part of that person in the
+  picture, from their distance, the frame height there, the lens height and where the
+  horizon sits in the frame. The prompt describes a cut figure's crossing the same way.
 - **Scale is judged in real size.** Every scale question says to judge real sizes, not
   how large each looks at its distance: run 04 compared a near buyer with far shutters
   as drawn.

@@ -596,6 +596,46 @@ prompt, bangmod's dentist, both biqdaddy figures and inlingua's teacher and near
 The two landmark tables agree value for value, `CROSSING_LANDMARKS` restating
 `BODY_LANDMARK_FRACTION`.
 
+TWENTY-FOURTH PORT, `457f9cc`, same version: a crossing landmark must be in the picture, and
+the head must be. Each horizon crossing records `lowest_visible_fraction`, the lowest part of
+that person the frame shows, from their distance, the frame height there, the lens height and
+where the horizon sits in the frame; a landmark must sit `LANDMARK_MARGIN`, 0.05 of stature,
+above it, or the crossing is not asked. The prompt now describes a cut figure's crossing at
+the same landmark as its question, or says nothing. A level camera whose frame top falls
+below the focus person's head is warned. `CROSSING_LANDMARKS` is built from
+`BODY_LANDMARK_FRACTION`. Three files byte-identical, 688 assertions passing unchanged, the
+review example unchanged at 80. Regression 4 of 4, T4 green.
+
+A correction to the twenty-third port's finding, made upstream and confirmed here: the
+low-angle case did not ask about hips below the frame. At a 0.86 m lens with the horizon in
+the middle the frame at the pharmacist's 2.2 m is 0.83 m tall, 0.44 to 1.28 m, so her hips at
+0.86 m are in it and her head at 1.62 m is not. The finding read "framed from the waist up" as
+where the frame cuts, and the shot type was what the geometry contradicted.
+
+On the client briefs validation is unchanged and only the five cut figures move, at the
+landmarks upstream names: bangmod's dentist at the chin, biqdaddy's strategist and client at
+the eyes, inlingua's teacher at the chest and nearer learner at the eyes. All five landmarks
+lie inside the frame a level camera gives at each person's distance. Battery and corpus
+identical to a clean export of `457f9cc`, 16 of 19 clean.
+
+The battery broke on its own needle, not on a defect: `realism_probe2.py` looked for "per
+cent of the way up" for the adult, whom the frame cuts at the waist, and the prompt now says
+"crosses the pharmacist at about the eyes". The probe accepts either wording and passes on
+`5e87963`, `457f9cc` and this edition; with the landmark sentence removed from a copy of the
+compiler it reports MISSING and exits 1.
+
+Two findings, reported upstream. Both new frame checks run only for a horizon in the frame,
+and skip `not_visible`, but a level camera puts the horizon through the frame centre whether
+or not a wall hides it, as the validator itself says when it refuses upper or lower third
+with a level tilt. So the frame's vertical extent is known for every level indoor scene, the
+cut figures are mostly indoors, and the shipped example at a 0.86 m lens with the horizon
+`not_visible` is valid with no head warning. And the probe's scene was impossible all along:
+a 1.02 m child at 2.2 m, placed "lower right of the frame", sits wholly below a frame whose
+bottom edge is at 1.13 m, `lowest_visible_fraction` 1.08. The spec raises no error or warning,
+and the review asks whether the horizon passes above the head of a child who cannot be in the
+picture. The new field makes that a one-line rule: a declared person with a lowest visible
+fraction of 1 or more is not in the frame.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

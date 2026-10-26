@@ -219,6 +219,11 @@ that are out of the picture; size questions say to judge real size, not how larg
 looks; and a reviewer skips a question only when the thing it belongs to is missing. The list
 of known fault kinds grows to 21. Contract test **681 assertions**, passing here unchanged.
 
+Then `457f9cc`: where the horizon crosses a person the picture cuts, the prompt and the review
+now both name the same visible part of the body, and only one the frame actually shows. A
+brief whose camera is so low that the main person's head falls outside the picture is now
+warned. Contract test **688 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

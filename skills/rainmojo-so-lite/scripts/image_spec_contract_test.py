@@ -2359,6 +2359,39 @@ check(
     "still answer every question below it" in image_spec.review_template(item51, DEFAULTS)["_instructions"],
 )
 
+print("C52 a landmark must be in the picture, and the frame must hold the head")
+# Found by the lite session porting ab09d23, and checking its low-angle case.
+check("a landmark below the frame's lower edge is never used", image_spec.nearest_landmark(0.53, 0.7) == "")
+check("one above it is", image_spec.nearest_landmark(0.95, 0.7) == "eyes")
+check(
+    "the landmark table is built from the body table, not repeated",
+    dict(image_spec.CROSSING_LANDMARKS)["hips"] == image_spec.BODY_LANDMARK_FRACTION["hip"],
+)
+low52 = copy.deepcopy(EXAMPLE)
+low52["camera"].update({"height_m": 0.86, "angle": "low"})
+d52 = image_spec.derive(low52, WIDTH, HEIGHT)
+c52 = [c for c in d52["horizon_crossings"] if c["id"] == "pharmacist"][0]
+check("each crossing records the lowest part the frame shows", c52.get("lowest_visible_fraction") is not None, str(c52))
+low_text52 = " ".join(c["text"] for c in image_spec.build_clauses(low52, d52, WIDTH, HEIGHT, image_spec.policy_from_config(DEFAULTS)))
+low_q52 = {q["id"]: q for q in image_spec.build_questions(low52, d52)}["q_horizon_cut_pharmacist"]["question"]
+landmark52 = image_spec.crossing_landmark(c52)
+check(
+    "the prompt and the question describe a cut figure's crossing the same way",
+    bool(landmark52) and f"at about the {landmark52}" in low_text52 and f"at about the {landmark52}" in low_q52
+    and "crosses the pharmacist about" not in low_text52,
+    str([x for x in low_text52.split(". ") if "crosses the pharmacist" in x]),
+)
+_, low_warn52 = image_spec.validate_spec(low52, WIDTH, HEIGHT, DEFAULTS)
+check(
+    "a lens so low that the frame cuts the focus person's head is warned",
+    any("is out of the picture" in w for w in low_warn52),
+    str(low_warn52)[:200],
+)
+check(
+    "and the shipped framing is not",
+    not any("is out of the picture" in w for w in image_spec.validate_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(
