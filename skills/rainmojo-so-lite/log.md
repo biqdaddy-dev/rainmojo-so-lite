@@ -705,6 +705,30 @@ level and the patient's face is seen straight on, and then ask the reviewer whet
 her head shows. A correct picture answers no. The question wants the same predicate as the
 sentence.
 
+TWENTY-SEVENTH PORT, `86cf0d1`, same version: one looks-down test for the prompt and the
+viewpoint question. `camera_looks_down` decides both, a downward tilt, a high angle or the lens
+more than 0.5 m above the head, never an eye-level angle, with `HIGH_ANGLES` a constant; a level
+camera a little above someone's eyes is asked whether their face is seen nearly straight on.
+Two files byte-identical, the contract doc unchanged; 705 assertions passing unchanged, the
+review example unchanged at 80. Regression 4 of 4, T4 green. The prompt side is a refactor
+that keeps every branch: the names it lists and the sentence it chooses are the same as before
+in each case. C55's valid indoor scene asks `from_above` of both people on `015d13b` and
+`straight_on` here. On the client briefs validation and prompts are byte-identical and exactly
+the two patient questions change, bangmod's and doctorjay's, and no other. Battery and corpus
+identical to a clean export of `86cf0d1`, 16 of 19 clean, 21, 2, 4, every probe output
+unchanged since the last port.
+
+One finding, reported upstream, in the prompt since `fce4562` and now in the question too:
+"never an eye-level angle" applies the angle to everyone, but eye level is measured on the
+standing people on the camera's floor. A valid scene: the shipped example at 35 mm, medium-wide,
+horizon not visible, with a floor-seated vendor in frame at 3.0 m beside the two standing
+people. The lens is at 1.55 m, her eyes at 0.76 m, her head 0.74 m below the lens, about fifteen
+degrees down to her eyes. The prompt says the camera is "level and a little above the eyes of
+the vendor", and the review asks whether her face is seen nearly straight on with the top of
+her head barely visible. Both are false for that picture, and it is a common one, vendors on
+the floor or in a boat with buyers standing. The eye-level veto would hold if it applied only
+within the clearance, so that more than 0.5 m above a head looks down whatever the angle says.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

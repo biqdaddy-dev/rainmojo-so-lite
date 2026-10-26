@@ -2441,6 +2441,40 @@ check(
     str([w for w in image_spec.validate_spec(seated_child, WIDTH, HEIGHT, DEFAULTS)[1] if "child" in w][:1]),
 )
 
+print("C55 the viewpoint question and the prompt use one looks-down test")
+# Found by the lite session: an indoor eye-level scene told the generator the
+# face is seen straight on, then asked whether the top of the head shows.
+def _viewpoint(spec):
+    d = image_spec.derive(spec, WIDTH, HEIGHT)
+    text = " ".join(c["text"] for c in image_spec.build_clauses(spec, d, WIDTH, HEIGHT, image_spec.policy_from_config(DEFAULTS)))
+    q = {x["id"]: x for x in image_spec.build_questions(spec, d)}
+    return text, q
+
+
+indoor55 = seated_scene(angle="eye_level", tilt="level", height_m=1.36, horizon="not_visible")
+check("the indoor eye-level scene is valid", not image_spec.validate_spec(indoor55, WIDTH, HEIGHT, DEFAULTS)[0],
+      str(image_spec.validate_spec(indoor55, WIDTH, HEIGHT, DEFAULTS)[0][:1]))
+text55, q55 = _viewpoint(indoor55)
+views = {k: v["measure"]["expected"] for k, v in q55.items() if k.startswith("q_viewpoint_")}
+check(
+    "a level camera a little above seated eyes asks for the face straight on, never the top of the head",
+    views and all(v == "straight_on" for v in views.values()) and "and looks down: the tops" not in text55,
+    str(views),
+)
+tipped55 = seated_scene(angle="high", tilt="down", height_m=1.6, horizon="not_visible")
+text_t, q_t = _viewpoint(tipped55)
+views_t = {k: v["measure"]["expected"] for k, v in q_t.items() if k.startswith("q_viewpoint_")}
+check(
+    "a camera tilted down asks from above, and the prompt says it looks down",
+    views_t and all(v == "from_above" for v in views_t.values()) and "and looks down: the tops" in text_t,
+    str(views_t),
+)
+check(
+    "one function decides both",
+    image_spec.camera_looks_down({"angle": "eye_level", "tilt": "down"}, {"above_head": True, "above_head_by_m": 2.0}) is False
+    and image_spec.camera_looks_down({"angle": "high", "tilt": "level"}, {"above_head": True, "above_head_by_m": 0.1}) is True,
+)
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

@@ -2451,6 +2451,26 @@ DEFAULT_AVOID = [
 
 # Above this much clearance over a head, a camera sees the top of it.
 LOOKS_DOWN_CLEARANCE_M = 0.5
+HIGH_ANGLES = {"high_angle", "high", "birds_eye", "overhead", "top_down"}
+
+
+def camera_looks_down(camera: dict[str, Any], crossing: dict[str, Any]) -> bool:
+    """Whether the camera sees the top of this person's head.
+
+    One test for the prompt and the question: a downward tilt, a high angle or
+    the lens more than 0.5 m above the head, and never an eye-level angle. The
+    prompt had it from fce4562; the question did not, and asked a correct
+    picture whether the top of a head showed (the lite session's finding).
+    """
+    if not crossing.get("above_head"):
+        return False
+    if _text(camera.get("angle")) == "eye_level":
+        return False
+    return (
+        _text(camera.get("tilt")) in {"down", "straight_down"}
+        or _text(camera.get("angle")) in HIGH_ANGLES
+        or crossing.get("above_head_by_m", 0) > LOOKS_DOWN_CLEARANCE_M
+    )
 
 # Output order of the clause groups. The opening (medium, purpose, viewpoint,
 # scene) comes first because every model weights the start of a prompt most; the
@@ -2576,16 +2596,12 @@ def build_clauses(
     elif lowered:
         camera = spec.get("camera", {}) if isinstance(spec.get("camera"), dict) else {}
         tilted_down = _text(camera.get("tilt")) in {"down", "straight_down"}
-        eye_level = _text(camera.get("angle")) == "eye_level"
         # A level camera a little above a seated head sees the face, not the top
         # of the head: the looks-down picture needs a tilt or real height, and never
         # sits beside an eye-level angle (rangsarn's audit, eval-t13).
-        far_above = [c for c in lowered if c.get("above_head_by_m", 0) > LOOKS_DOWN_CLEARANCE_M]
-        high_angle = _text(camera.get("angle")) in {"high_angle", "high", "birds_eye", "overhead", "top_down"}
-        if not eye_level and (tilted_down or high_angle or far_above):
-            names = _and_list(
-                [_entity_name(spec, c["id"]) for c in (lowered if tilted_down or high_angle else far_above)[:3]]
-            )
+        looking_down = [c for c in lowered if camera_looks_down(camera, c)]
+        if looking_down:
+            names = _and_list([_entity_name(spec, c["id"]) for c in looking_down[:3]])
             add(
                 "opening",
                 1,
@@ -3657,7 +3673,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                     verify_with="geometry",
                     measure={"kind": "viewpoint", "entity": crossing["id"], "expected": "from_below"},
                 )
-            elif crossing["above_head"]:
+            elif crossing["above_head"] and camera_looks_down(camera, crossing):
                 add(
                     f"q_viewpoint_{crossing['id']}",
                     "geometry",
@@ -3665,6 +3681,17 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                     "show and the feet are the furthest part away?",
                     verify_with="geometry",
                     measure={"kind": "viewpoint", "entity": crossing["id"], "expected": "from_above"},
+                )
+            elif crossing["above_head"]:
+                # Level and a little above the eyes: the face is seen straight on,
+                # as the prompt says, and that is what can be checked.
+                add(
+                    f"q_viewpoint_{crossing['id']}",
+                    "geometry",
+                    f"Is the face of {name} seen nearly straight on, from just above eye "
+                    "level, with the top of the head barely visible?",
+                    verify_with="geometry",
+                    measure={"kind": "viewpoint", "entity": crossing["id"], "expected": "straight_on"},
                 )
             continue
         if crossing.get("below_feet"):

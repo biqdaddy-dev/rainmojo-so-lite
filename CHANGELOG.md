@@ -233,6 +233,11 @@ they are, while a chair seat stays the same height, so a seated child is placed 
 seated adult and a picture that cannot show them is warned. Contract test **701 assertions**,
 passing here unchanged.
 
+Then `86cf0d1`: the review no longer asks whether the top of a seated person's head shows
+when the prompt said the camera is level with their face seen straight on; it asks whether
+the face is seen nearly straight on, as the prompt does. Contract test **705 assertions**,
+passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
