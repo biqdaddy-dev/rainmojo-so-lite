@@ -1362,7 +1362,7 @@ def review_template_file(
         "negative_prompt": result["negative_prompt"],
         "spec_compiled": image_spec.compile_record(spec, result, content_pipeline.now_iso()),
     }
-    template = image_spec.review_template(item, config)
+    template = {"image_id": item["id"], **image_spec.review_template(item, config)}
     if image_path:
         template["image_sha256"] = sha256_file(Path(image_path))
     return template

@@ -24,7 +24,7 @@ and packaging, docs, infrastructure.
 
 ## [2026-10-26] chore - v2.7.0 re-port from f632e00 (DP-016)
 
-Closed with PR #6 (biqdaddy-dev/rainmojo-so-lite#6), shipping in v2.7.0. หมวด: image pipeline. Started 2026-10-25 (the v2.5.0 row), finished when PR #6 merges, which is the owner's call. Planned 5 hours across its three rows (3, 1 and 1); actual 7.8 hours of active work and 5300k tokens, measured from this session's transcript as the PR description states: gaps of ten minutes or less between events, and input, output and cache writes, a lower bound by one compaction call.
+Closed with PR #6 (biqdaddy-dev/rainmojo-so-lite#6), shipping in v2.7.0. หมวด: image pipeline. Started 2026-10-25 (the v2.5.0 row), finished when PR #6 merges, which is the owner's call. Planned 5 hours across its three rows (3, 1 and 1); actual 8.0 hours of active work and 5440k tokens, measured from this session's transcript as the PR description states: gaps of ten minutes or less between events, and input, output and cache writes, a lower bound by two compaction calls.
 
 The review loop ran twice: this edition ported `ad2e1ad`, proved parity, and reported six
 findings against it; the full edition fixed all six and this edition ported `f632e00` and
@@ -1273,6 +1273,13 @@ hood states the shipped state. In this log, DP-016's v2.5.0 and v2.6.0 rows sat 
 above their own detail entries instead of in Contents; they are moved there in date order, and
 the DP-015 and DP-016 detail entries now open with their closing record: category, start date,
 planned and actual hours, tokens, the PR and the version.
+
+FIFTIETH PORT, `3fa9275`, same version: the `--image-id` finding above, fixed upstream. Mirrored
+by hand: `review_template_file()` now opens the review with `image_id`, the option's value or
+the spec file's name, so `review-template-file --image-id` writes what it documents. The
+selftest checks the default id is `image-spec.example` and that `image_id="cover-01"` comes back,
+and fails on the old `image_production.py` with KeyError 'image_id'. `image_spec.py` is untouched
+and byte-identical; the contract test stays at 977 assertions, regression 4 of 4, T4 green.
 
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones

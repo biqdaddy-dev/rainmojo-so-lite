@@ -546,6 +546,11 @@ def check_compile_spec_file() -> None:
             "questions differ from the compile"
         )
         assert review["image_sha256"] == crops["image_sha256"]
+        assert review["image_id"] == "image-spec.example", review["image_id"]
+        named = image_production.review_template_file(
+            example, 1200, 630, "openai-gpt-image", image_id="cover-01"
+        )
+        assert named["image_id"] == "cover-01", named["image_id"]
 
 
 def main() -> None:
