@@ -508,6 +508,33 @@ check(
     str(listed),
 )
 
+print("D13 a restrictive palette warns on a field asking for colours it does not hold")
+# SKILL.md says the compiler warns when a field still asks for colours a
+# restrictive palette does not hold (the full edition's 096e3d2 and 1c5db92).
+check(
+    "the docs say the compiler warns on an off-palette field",
+    said("The compiler warns when a field still asks for colours the palette does not hold"),
+)
+
+
+def palette_warnings(palette: str, wardrobe: str) -> list[str]:
+    spec = copy.deepcopy(EXAMPLE)
+    spec["style"]["color_palette"] = palette
+    spec["subjects"][0]["wardrobe"] = wardrobe
+    return [w for w in image_spec.validate_spec(spec, WIDTH, HEIGHT, CONFIG)[1] if "limits the colours" in w]
+
+
+check(
+    "a palette that says only, with a navy polo, is warned",
+    bool(palette_warnings("warm neutrals only: sand, cream, walnut", "a navy polo")),
+    "no warning",
+)
+check(
+    "a palette that describes rather than restricts is not",
+    not palette_warnings("sand, cream and walnut, with a navy accent", "a navy polo"),
+    str(palette_warnings("sand, cream and walnut, with a navy accent", "a navy polo"))[:160],
+)
+
 print("D6 the claims this edition once made and the code does not honour stay gone")
 for stale in (
     "both bands are read and intersected",

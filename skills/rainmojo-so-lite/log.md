@@ -1201,6 +1201,31 @@ full edition's export. Regression 4 of 4, T4 green at 70. Battery and corpus ide
 export of `1c5db92`, 17 of 20 clean, the findings reproducer at 0 of 14; the corpus output is
 unchanged since the last port.
 
+FORTY-SEVENTH PORT, `1c5db92` to `93fd723`, same version, one commit on `d8792a4`. `09641f3`:
+a figure must be whole in the frame, by position as well as size, to be measured from its feet,
+so `whole_in_frame` replaces `fits_in_frame` at the per-cent crossing in the prompt and its
+question, the stature question, ratios and object crossings. `93fd723`: `camera.pitch_deg`
+derives through a tilted pinhole, with `fraction_in_image` for per-cent crossings on a tilted
+camera. The image-spec files are byte-identical to `93fd723`, the review example regenerated
+here and unchanged at 82; 977 assertions passing, as on the full edition's export. T4 and the
+selftest were unaffected.
+
+`e19d324`'s guidance, that a restrictive palette needs a recoloured swatch and each thing
+coloured inside it, is written into SKILL.md beside the style-reference paragraph, in lite's
+words. Its last sentence, that the compiler warns when a field still asks for colours the palette
+does not hold, is a behaviour, so T4 gains D13: the sentence is there, a palette that says only
+warns on a navy polo, and one that describes rather than restricts does not. The warning has
+existed since `096e3d2`, so D13 fails on the module before it and guards the claim from here on.
+T4 is at 73 checks.
+
+Regression 4 of 4. Battery and corpus identical to a clean export of `93fd723`, 17 of 20 clean,
+21, 2, 4, the findings reproducer at 0 of 14; the only probe change is the new
+`fraction_in_image` field in printed output. On the client briefs validation and warnings are
+unchanged; five briefs lose per-cent crossings and ratios of things the frame cuts at the bottom,
+bangla, biqdaddy, drivehub, inlingua and tnp, five and not the six upstream quoted. Checked on
+drivehub: at the car's 3.4 m the frame spans 0.18 to 2.02 m, so the 1.63 m car fits by height but
+its bottom 18 cm, the base its per-cent crossing is measured from, is out of the picture.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

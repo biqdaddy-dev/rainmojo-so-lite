@@ -1876,9 +1876,11 @@ check(
     "q_pharmacist_height" not in base41 and "q_customer_height" not in base41,
 )
 full = copy.deepcopy(EXAMPLE)
-full["camera"].update({"shot_type": "wide", "focal_length_mm": 24})
+# 12 mm, not 24: at 24 mm and 2.2 m a level lens at 1.55 m puts the frame's bottom
+# 0.69 m up, so her feet are cut (rangsarn's synthetic check of derive).
+full["camera"].update({"shot_type": "wide", "focal_length_mm": 12})
 full_q = _q(full)
-fits = image_spec.derive(full, WIDTH, HEIGHT)["fits_in_frame"]
+fits = image_spec.derive(full, WIDTH, HEIGHT)["whole_in_frame"]
 check(
     "and is asked of a standing person whose whole height fits",
     fits.get("pharmacist") and "q_pharmacist_height" in full_q,
@@ -2043,7 +2045,9 @@ def _ids(spec):
 base44 = _ids(EXAMPLE)
 wide44 = copy.deepcopy(EXAMPLE)
 wide44["camera"].update({"shot_type": "wide", "focal_length_mm": 24})
-ratio_ids = [q for q in _ids(wide44) if q.startswith("q_ratio")]
+_whole44 = copy.deepcopy(wide44)
+_whole44["camera"].update({"focal_length_mm": 12})
+ratio_ids = [q for q in _ids(_whole44) if q.startswith("q_ratio")]
 check(
     "a standing person whose whole height fits is compared",
     any("pharmacist" in q for q in ratio_ids),
@@ -2386,7 +2390,7 @@ check(
     cut["question"],
 )
 whole = copy.deepcopy(EXAMPLE)
-whole["camera"].update({"shot_type": "wide", "focal_length_mm": 24})
+whole["camera"].update({"shot_type": "wide", "focal_length_mm": 12})
 whole_q = {q["id"]: q for q in image_spec.build_questions(whole, image_spec.derive(whole, WIDTH, HEIGHT))}
 check(
     "a whole figure is still measured from the feet",
@@ -3341,6 +3345,60 @@ _dish = copy.deepcopy(_narrow)
 _dish["location"]["locale_details"][-1] = "a small glass of iced green tea beside a can of Red Bull"
 check("a dish or a name is not a colour", not any(c.startswith(_last) for c in image_spec.palette_conflicts(_dish)), str(image_spec.palette_conflicts(_dish)))
 check("a palette that describes restricts nothing", not image_spec.restrictive_palette(EXAMPLE) and not image_spec.palette_conflicts(EXAMPLE))
+
+print("C77 a figure that fits by size can still be cut by position")
+# rangsarn's synthetic check of derive against true pixels: 32 of 179 figures fit
+# by size while the frame cut their feet from a high or low camera.
+_high = copy.deepcopy(EXAMPLE)
+_high["camera"].update(height_m=2.6, angle="high", tilt="level", horizon="middle", shot_type="wide", focal_length_mm=12)
+_high_d = image_spec.derive(_high, WIDTH, HEIGHT)
+_cut = [sid for sid, ok in _high_d["fits_in_frame"].items() if ok and not _high_d["whole_in_frame"].get(sid, True)]
+check("a high level lens cuts the feet of a figure that fits by size", bool(_cut), str({k: (_high_d["fits_in_frame"][k], _high_d["whole_in_frame"][k]) for k in _high_d["fits_in_frame"]}))
+check("and the example's own figures are whole where they fit", all(
+    image_spec.derive(EXAMPLE, WIDTH, HEIGHT)["whole_in_frame"].get(k, v) == v
+    for k, v in image_spec.derive(EXAMPLE, WIDTH, HEIGHT)["fits_in_frame"].items()
+))
+
+print("C78 a pitched camera: derive projects through a tilted pinhole")
+# rangsarn's synthetic check: up to 17% off on apparent height and 0.19 of a
+# figure on crossings at -12 and +8 deg, with no pitch term.
+import math as _math
+
+
+def _rot_up_mm(y, z, f, pitch):
+    # An independent route: rotate the point into the camera frame, then project.
+    yc = y * _math.cos(-pitch) + z * _math.sin(-pitch)
+    zc = -y * _math.sin(-pitch) + z * _math.cos(-pitch)
+    return f * yc / zc
+
+
+_p = copy.deepcopy(_high)
+_p["camera"].update(pitch_deg=-12.0, tilt="down")
+_pd = image_spec.derive(_p, WIDTH, HEIGHT)
+_ph = next(e for e in _pd["apparent_heights"] if e["id"] == "pharmacist")["apparent_height_fraction"]
+_f = _p["camera"]["focal_length_mm"]
+_sh = image_spec.sensor_height_mm(WIDTH / HEIGHT)
+_cam = _p["camera"]["height_m"]
+_d = _p["subjects"][0]["distance_m"]
+_h = _p["subjects"][0]["height_m"]
+_truth = (_rot_up_mm(_h - _cam, _d, _f, _math.radians(-12)) - _rot_up_mm(-_cam, _d, _f, _math.radians(-12))) / _sh
+check("apparent height on a pitched camera matches an independent rotation", abs(_ph - _truth) < 1e-3, f"{_ph} vs {_truth:.4f}")
+_level = copy.deepcopy(_high)
+_level["camera"]["pitch_deg"] = 0
+check("pitch 0 derives exactly as a level camera", image_spec.derive(_level, WIDTH, HEIGHT) == image_spec.derive(_high, WIDTH, HEIGHT))
+_pc = next(c for c in _pd["horizon_crossings"] if c["id"] == "pharmacist")
+_lc = next(c for c in image_spec.derive(_high, WIDTH, HEIGHT)["horizon_crossings"] if c["id"] == "pharmacist")
+check("the horizon still meets the same body point under pitch", _pc["fraction_of_height_from_feet"] == _lc["fraction_of_height_from_feet"])
+check("but its place in image rows moves with the converging verticals", _pc["fraction_in_image"] != _pc["fraction_of_height_from_feet"], str(_pc))
+refuses("a pitch beyond 60 degrees is refused", "pitch_deg must be a number", lambda sp: sp["camera"].update(pitch_deg=75))
+_sign = copy.deepcopy(EXAMPLE)
+_sign["camera"]["pitch_deg"] = -10
+check("a pitch that looks down with a level tilt is warned", any("looks down, but tilt" in w for w in image_spec.validate_spec(_sign, WIDTH, HEIGHT, DEFAULTS)[1]))
+_band = copy.deepcopy(EXAMPLE)
+_band["camera"].update(pitch_deg=-20, tilt="down")
+check("a pitch that moves the horizon away from the stated band is warned", any("puts the horizon" in w for w in image_spec.validate_spec(_band, WIDTH, HEIGHT, DEFAULTS)[1]))
+check("a lens point at its own height lies on the horizon row at any pitch",
+      abs(image_spec.project_up_mm(0.0, 7.0, 35.0, _math.radians(8)) + 35.0 * _math.tan(_math.radians(8))) < 1e-9)
 
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}

@@ -140,6 +140,15 @@ python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compi
    its empty wash. Keep frames and borders out of the crop unless the picture wants
    them, and say in `style.reference.origin` what it was cut from.
 
+   A restrictive palette needs two things, and words are neither. "One amber wash
+   only" lost every time until both were done: recolour the subject-free crop to
+   the spec's palette (a duotone of the approved art), which sets the overall
+   tint, and give each named thing its own colour inside the palette ("cloth spines
+   in brown, ochre and cream", "an undyed amber wool blanket"), which removes the
+   other colours the things still showed under the tint. Together they left no
+   off-palette colour in 3 of 3 pictures. The compiler warns when a field still
+   asks for colours the palette does not hold.
+
    A viewpoint that must hold is written as something the camera sees, not as an
    instruction. An angle stated as an instruction failed 4 of 4 times; a near
    thing only that viewpoint can show held 2 of 2 (for a low lens, the underside

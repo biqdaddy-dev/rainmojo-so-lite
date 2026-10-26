@@ -337,6 +337,12 @@ style reference should be a crop of plain approved art, since the subject of a f
 leaks into new ones. A dish or a brand name, such as green tea, is not read as a colour there.
 Contract test **967 assertions**, passing here unchanged.
 
+Then `e19d324`, `09641f3` and `93fd723`: something the frame cuts at the bottom is no longer
+measured from its base, since the base is not in the picture; a camera tilted up or down is
+now worked out through a tilted lens; and the guide explains that a limited palette needs a
+recoloured style swatch and each thing coloured inside it. Contract test **977 assertions**,
+passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

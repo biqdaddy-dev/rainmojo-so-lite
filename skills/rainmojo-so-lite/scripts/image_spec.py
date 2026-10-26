@@ -768,6 +768,54 @@ def horizon_band(camera: dict[str, Any]) -> float | None:
     return band
 
 
+def pitch_rad(camera: dict[str, Any]) -> float | None:
+    """camera.pitch_deg in radians, or None for a level camera or none given.
+
+    Negative looks down. Zero is treated as absent, so a level spec derives
+    exactly as before.
+    """
+    pitch = _num(camera.get("pitch_deg"))
+    return math.radians(pitch) if pitch else None
+
+
+def sensor_height_mm(aspect: float) -> float:
+    """The sensor height frame_at uses for this aspect."""
+    return SENSOR_W_MM / aspect if aspect >= 1.0 else SENSOR_W_MM
+
+
+def project_up_mm(rel_y: float, depth: float, focal: float, pitch: float) -> float | None:
+    """Image height of a point above the frame centre, in sensor mm, for a pitched pinhole.
+
+    rel_y is the point's height above the lens, depth its horizontal distance.
+    None when the point is behind the camera.
+    """
+    c, s_ = math.cos(pitch), math.sin(pitch)
+    den = depth * c + rel_y * s_
+    if den <= 0:
+        return None
+    return focal * (rel_y * c - depth * s_) / den
+
+
+def pitched_horizon_band(camera: dict[str, Any], aspect: float) -> float | None:
+    """Where a pitched camera puts the horizon, from the bottom of the frame."""
+    pitch = pitch_rad(camera)
+    focal = _num(camera.get("focal_length_mm"))
+    if pitch is None or not focal:
+        return None
+    return 0.5 - focal * math.tan(pitch) / sensor_height_mm(aspect)
+
+
+def _placed(spec: dict[str, Any], entity: dict[str, Any]) -> bool:
+    """Whether an entity's feet height is known: a person, or a thing on the camera's floor."""
+    support = entity.get("support") if isinstance(entity.get("support"), dict) else {}
+    if _text(entity.get("kind") or "person") == "person" and "support" not in entity:
+        return True
+    return (
+        _text(support.get("kind")) in GROUNDED_SUPPORT
+        and _text(support.get("by")) not in {_text(e.get("id")) for _, e in _entities(spec)}
+    )
+
+
 def _lowest_visible(
     camera: dict[str, Any],
     subject: dict[str, Any],
@@ -783,8 +831,18 @@ def _lowest_visible(
     person's distance sits the horizon's share of the frame height below it.
     None when the horizon is not in the frame or the distance is unknown.
     """
-    band = horizon_band(camera)
     distance = _num(subject.get("distance_m"))
+    pitch = pitch_rad(camera)
+    if pitch is not None and distance and focal and visible:
+        # The ray through the frame's bottom edge, met at the person's depth.
+        b = -sensor_height_mm(aspect) / 2
+        c, s_ = math.cos(pitch), math.sin(pitch)
+        den = focal * c - b * s_
+        if den <= 0:
+            return None
+        bottom = cam_height + distance * (b * c + focal * s_) / den
+        return round(max(0.0, (bottom - feet) / visible), 3)
+    band = horizon_band(camera)
     if band is None or not distance or not focal or not visible:
         return None
     _, frame_h = frame_at(distance, focal, aspect)
@@ -1745,6 +1803,7 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
             "far": "infinity" if math.isinf(far) else round(far, 2),
         }
     scale: list[dict[str, Any]] = []
+    pitched_rows: dict[str, tuple[float, float]] = {}
     sized = []
     for kind, entity in _entities(spec):
         h = _num(entity.get("height_m"))
@@ -1755,8 +1814,19 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
         sensor_h = SENSOR_H_MM if aspect >= 1.0 else SENSOR_W_MM
         if aspect >= 1.0:
             sensor_h = SENSOR_W_MM / aspect
+        pitch = pitch_rad(camera)
+        lens_h = _num(camera.get("height_m"))
         for entity, h, d in sized:
             fraction = (h * focal / 1000.0) / d / (sensor_h / 1000.0)
+            if pitch is not None and lens_h is not None and _placed(spec, entity):
+                # A tilted camera: verticals converge, so measure feet to top on
+                # the image (rangsarn's check: up to 17% off without this).
+                feet = ground_height(entity)
+                ut = project_up_mm(feet + h - lens_h, d, focal, pitch)
+                uf = project_up_mm(feet - lens_h, d, focal, pitch)
+                if ut is not None and uf is not None:
+                    fraction = (ut - uf) / sensor_h
+                    pitched_rows[_text(entity.get("id"))] = (uf, ut)
             scale.append(
                 {
                     "id": _text(entity.get("id")),
@@ -1772,6 +1842,9 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
             if abs(da - db) < 0.01:
                 continue
             ratio = (ha / da) / (hb / db)
+            ra, rb = pitched_rows.get(_text(a.get("id"))), pitched_rows.get(_text(b.get("id")))
+            if ra and rb and (rb[1] - rb[0]) > 0:
+                ratio = (ra[1] - ra[0]) / (rb[1] - rb[0])
             ratios.append(
                 {
                     "a": _text(a.get("id")),
@@ -1784,11 +1857,39 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
     # An entity taller than the frame at its own distance has no measurable frame
     # height, so a ratio against it cannot be answered by looking at the picture.
     fits: dict[str, bool] = {}
+    whole: dict[str, bool] = {}
+    band = horizon_band(camera)
+    cam_h = _num(camera.get("height_m"))
     if focal:
         for entity, h, d in sized:
             _, frame_h = frame_at(d, focal, aspect)
-            fits[_text(entity.get("id"))] = h <= frame_h * 0.98
+            eid = _text(entity.get("id"))
+            fits[eid] = h <= frame_h * 0.98
+            # Position as well as size: a figure that fits can still have its feet
+            # below the bottom edge from a high or low camera (rangsarn's synthetic
+            # check, 32 of 179). Unknown horizon place: size alone, as before.
+            # Only where the feet's height is known: a person, or a thing standing on
+            # the camera's floor. A held or mounted thing's height above the floor is not.
+            support = entity.get("support") if isinstance(entity.get("support"), dict) else {}
+            placed = (
+                _text(entity.get("kind") or "person") == "person" and "support" not in entity
+            ) or (
+                _text(support.get("kind")) in GROUNDED_SUPPORT
+                and _text(support.get("by")) not in {_text(e.get("id")) for _, e in _entities(spec)}
+            )
+            if fits[eid] and eid in pitched_rows:
+                uf, ut = pitched_rows[eid]
+                half = sensor_height_mm(aspect) / 2
+                whole[eid] = uf >= -half - 0.05 and ut <= half + 0.05
+                continue
+            if fits[eid] and placed and band is not None and cam_h is not None:
+                bottom = cam_h - frame_h * band
+                feet = ground_height(entity)
+                whole[eid] = feet >= bottom - 0.01 and feet + h <= bottom + frame_h + 0.01
+            else:
+                whole[eid] = fits[eid]
     derived["fits_in_frame"] = fits
+    derived["whole_in_frame"] = whole
 
     # Which entities fall outside the depth of field, so the prompt can name them
     # as soft instead of quoting metres an image model cannot use.
@@ -1852,10 +1953,23 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
             else:
                 visible = stature
             fraction = (cam_height - feet) / visible
+            # The horizon crosses the figure at the body point at lens height under
+            # any pitch, so the landmark ("at the eyes") is the same. Measured in
+            # image rows it is not: verticals converge on a tilted camera, so the
+            # per-cent sentence and question read it on the image.
+            image_fraction = fraction
+            person_pitch = pitch_rad(camera)
+            person_d = _num(subject.get("distance_m"))
+            if person_pitch is not None and focal and person_d:
+                ut = project_up_mm(feet + visible - cam_height, person_d, focal, person_pitch)
+                uf = project_up_mm(feet - cam_height, person_d, focal, person_pitch)
+                if ut is not None and uf is not None and ut > uf:
+                    image_fraction = (-focal * math.tan(person_pitch) - uf) / (ut - uf)
             crossings.append(
                 {
                     "id": _text(subject.get("id")),
                     "fraction_of_height_from_feet": round(max(min(fraction, 2.0), -2.0), 3),
+                    "fraction_in_image": round(max(min(image_fraction, 2.0), -2.0), 3),
                     "above_head": fraction > 1.0,
                     "below_feet": fraction < 0.0,
                     "stands_on_m": round(feet, 2),
@@ -1894,9 +2008,18 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
             ):
                 continue
             fraction = cam_height / height
+            image_fraction = fraction
+            obj_pitch = pitch_rad(camera)
+            obj_d = _num(obj.get("distance_m"))
+            if obj_pitch is not None and focal and obj_d:
+                ut = project_up_mm(height - cam_height, obj_d, focal, obj_pitch)
+                uf = project_up_mm(-cam_height, obj_d, focal, obj_pitch)
+                if ut is not None and uf is not None and ut > uf:
+                    image_fraction = (-focal * math.tan(obj_pitch) - uf) / (ut - uf)
             object_crossings.append(
                 {
                     "id": _text(obj.get("id")),
+                    "fraction_in_image": round(min(image_fraction, 3.0), 3),
                     "fraction_of_height_from_base": round(min(fraction, 3.0), 3),
                     "above_top": fraction > 1.0,
                     "height_m": height,
@@ -2273,6 +2396,26 @@ def validate_spec(
         errors.append("spec.camera.tilt must be one of " + ", ".join(sorted(TILTS)) + ".")
     if horizon and horizon not in HORIZON:
         errors.append("spec.camera.horizon must be one of " + ", ".join(sorted(HORIZON)) + ".")
+    if "pitch_deg" in camera:
+        pitch_deg = _num(camera.get("pitch_deg"))
+        if pitch_deg is None or not -60 <= pitch_deg <= 60:
+            errors.append("spec.camera.pitch_deg must be a number of degrees from -60 to 60 (negative looks down).")
+        else:
+            if pitch_deg < -1 and tilt not in {"down", "straight_down"}:
+                warnings.append(f"spec.camera.pitch_deg {pitch_deg:g} looks down, but tilt is {tilt!r}.")
+            if pitch_deg > 1 and tilt != "up":
+                warnings.append(f"spec.camera.pitch_deg {pitch_deg:g} looks up, but tilt is {tilt!r}.")
+            implied = pitched_horizon_band(camera, width / height if width and height else 1.5)
+            stated = HORIZON_FROM_BOTTOM.get(horizon)
+            if implied is not None and stated is not None and abs(implied - stated) > 0.15:
+                where = (
+                    "above the frame" if implied > 1 else "below the frame" if implied < 0
+                    else f"{implied:.2f} of the way up the frame"
+                )
+                warnings.append(
+                    f"spec.camera.pitch_deg {pitch_deg:g} puts the horizon {where}, but horizon is "
+                    f"{horizon!r}. Change one: the geometry follows the pitch."
+                )
     if photographic:
         if focal is None or not 8 <= focal <= 800:
             errors.append("spec.camera.focal_length_mm (full-frame equivalent, 8-800) is required for photographic media.")
@@ -3790,8 +3933,8 @@ def build_clauses(
                     )
                 elif crossing["above_head"]:
                     add("camera", 2, f"{line} passes above the head of {name}")
-                elif derived.get("fits_in_frame", {}).get(crossing["id"], True):
-                    percent = round(crossing["fraction_of_height_from_feet"] * 100)
+                elif derived.get("whole_in_frame", {}).get(crossing["id"], True):
+                    percent = round(crossing.get("fraction_in_image", crossing["fraction_of_height_from_feet"]) * 100)
                     add(
                         "camera",
                         2,
@@ -3807,14 +3950,14 @@ def build_clauses(
             # cent of a height the picture does not show cannot be drawn (the lite session).
             tall = [
                 c for c in derived.get("object_horizon_crossings", [])
-                if c["height_m"] >= 1.0 and derived.get("fits_in_frame", {}).get(c["id"], True)
+                if c["height_m"] >= 1.0 and derived.get("whole_in_frame", {}).get(c["id"], True)
             ][:2]
             for crossing in tall:
                 name = _entity_name(spec, crossing["id"])
                 if crossing["above_top"]:
                     add("camera", 2, f"That horizon line passes just above the top of {name}")
                 else:
-                    percent = round(crossing["fraction_of_height_from_base"] * 100)
+                    percent = round(crossing.get("fraction_in_image", crossing["fraction_of_height_from_base"]) * 100)
                     add("camera", 2, f"That horizon line crosses {name} about {percent} per cent of the way up")
         soft = derived.get("outside_focus", [])
         focus_name = _entity_name(spec, _text(camera.get("focus_on")))
@@ -4843,7 +4986,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         # cropped people.
         whole_figure = (
             _text(subject.get("posture") or "standing").lower() in STATURE_POSTURES
-            and derived.get("fits_in_frame", {}).get(sid, False)
+            and derived.get("whole_in_frame", {}).get(sid, False)
         )
         if height and whole_figure:
             add(
@@ -5072,7 +5215,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             "any fine detail or lettering on it unreadable, as its distance from the "
             "focus plane requires?",
         )
-    fits = derived.get("fits_in_frame", {})
+    fits = derived.get("whole_in_frame", {})
     measurable = [
         ratio
         for ratio in derived.get("apparent_ratios", [])
@@ -5246,8 +5389,8 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 },
             )
         else:
-            fraction = crossing["fraction_of_height_from_feet"]
-            if derived.get("fits_in_frame", {}).get(crossing["id"], True):
+            fraction = crossing.get("fraction_in_image", crossing["fraction_of_height_from_feet"])
+            if derived.get("whole_in_frame", {}).get(crossing["id"], True):
                 percent = round(fraction * 100)
                 add(
                     f"q_horizon_cut_{crossing['id']}",
@@ -5284,7 +5427,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                     )
 
     if horizon_in_frame:
-        fits_objects = derived.get("fits_in_frame", {})
+        fits_objects = derived.get("whole_in_frame", {})
         for crossing in derived.get("object_horizon_crossings", [])[:4]:
             if not fits_objects.get(crossing["id"], True):
                 continue
@@ -5293,7 +5436,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 text = f"Does the horizon pass above the top of {name}, as a camera higher than it requires?"
                 relation = "above_top"
             else:
-                percent = round(crossing["fraction_of_height_from_base"] * 100)
+                percent = round(crossing.get("fraction_in_image", crossing["fraction_of_height_from_base"]) * 100)
                 text = (
                     f"Does the horizon cross {name} about {percent} per cent of the way up from "
                     "its base, measured on the image?"
@@ -5308,7 +5451,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                     "kind": "horizon_fraction",
                     "entity": crossing["id"],
                     "relation": relation,
-                    "expected": crossing["fraction_of_height_from_base"],
+                    "expected": crossing.get("fraction_in_image", crossing["fraction_of_height_from_base"]),
                 },
             )
 
