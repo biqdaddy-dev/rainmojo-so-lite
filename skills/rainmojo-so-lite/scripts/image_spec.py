@@ -2910,6 +2910,36 @@ _IRREGULAR_PLURALS = {
 }
 
 
+def _scope(spec: dict[str, Any], obj: dict[str, Any]) -> str:
+    """Where a count is counted: on, in or by the declared thing that supports it.
+
+    "Exactly 3 baskets" meant the near sampan's, and the far boat carried a
+    fourth (rangsarn run 04). A support that is a declared entity scopes the
+    count; a surface named only in words ("the tiled floor") does not.
+    """
+    support = obj.get("support", {}) if isinstance(obj.get("support"), dict) else {}
+    by = _text(support.get("by"))
+    if by not in {_text(entity.get("id")) for _, entity in _entities(spec)}:
+        return ""
+    kind = _text(support.get("kind"))
+    return f" {SUPPORT_PARTICIPLE.get(kind, kind.replace('_', ' '))} {_entity_name(spec, by)}"
+
+
+# Landmarks a reviewer can find on a figure the frame cuts, as fractions of
+# stature (Drillis and Contini; Winter fig. 4.1), and how far off one may be.
+CROSSING_LANDMARKS = (
+    ("eyes", 0.936), ("chin", 0.870), ("shoulders", 0.818), ("chest", 0.72),
+    ("waist", 0.600), ("hips", 0.530),
+)
+LANDMARK_SNAP = 0.06
+
+
+def nearest_landmark(fraction: float) -> str:
+    """The body landmark a horizon crossing falls at, or "" if none is close."""
+    name, value = min(CROSSING_LANDMARKS, key=lambda item: abs(item[1] - fraction))
+    return name if abs(value - fraction) <= LANDMARK_SNAP else ""
+
+
 def detect_as(entity: dict[str, Any], person: bool = False) -> str:
     """A plain class noun a detector can be queried with.
 
@@ -3181,7 +3211,9 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         add(
             base,
             "entity",
-            f"Does the image show exactly {count} {head if contents else _text(obj.get('name'))}?",
+            f"Does the image show exactly {count} {head if contents else _text(obj.get('name'))}"
+            + _scope(spec, obj)
+            + "?",
             verify_with="count",
             measure={
                 "kind": "count",
@@ -3222,7 +3254,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 "scale",
                 f"Is {noun} the right size: {_text(obj.get('size'))}"
                 + (f", so that {_text(obj['scale_anchor'])}" if _text(obj.get("scale_anchor")) else "")
-                + "?",
+                + "? Judge real sizes, not how large each looks at its distance.",
                 base,
             )
         support = obj.get("support", {}) if isinstance(obj.get("support"), dict) else {}
@@ -3521,20 +3553,42 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 },
             )
         else:
-            percent = round(crossing["fraction_of_height_from_feet"] * 100)
-            add(
-                f"q_horizon_cut_{crossing['id']}",
-                "geometry",
-                f"Does the horizon cross {name} about {percent} per cent of the way up "
-                "from the feet, measured on the image?",
-                verify_with="geometry",
-                measure={
-                    "kind": "horizon_fraction",
-                    "entity": crossing["id"],
-                    "relation": "crosses",
-                    "expected": crossing["fraction_of_height_from_feet"],
-                },
-            )
+            fraction = crossing["fraction_of_height_from_feet"]
+            if derived.get("fits_in_frame", {}).get(crossing["id"], True):
+                percent = round(fraction * 100)
+                add(
+                    f"q_horizon_cut_{crossing['id']}",
+                    "geometry",
+                    f"Does the horizon cross {name} about {percent} per cent of the way up "
+                    "from the feet, measured on the image?",
+                    verify_with="geometry",
+                    measure={
+                        "kind": "horizon_fraction",
+                        "entity": crossing["id"],
+                        "relation": "crosses",
+                        "expected": fraction,
+                    },
+                )
+            else:
+                # The frame cuts this figure, so the feet a percentage is measured
+                # from are not in it (rangsarn run 04, both pharmacy people). Ask
+                # against the landmark the line falls at, or not at all.
+                landmark = nearest_landmark(fraction)
+                if landmark:
+                    add(
+                        f"q_horizon_cut_{crossing['id']}",
+                        "geometry",
+                        f"Does the horizon cross {name} at about the {landmark}, measured "
+                        "on the image?",
+                        verify_with="geometry",
+                        measure={
+                            "kind": "horizon_fraction",
+                            "entity": crossing["id"],
+                            "relation": "at_landmark",
+                            "landmark": landmark,
+                            "expected": fraction,
+                        },
+                    )
 
     composition = spec.get("composition", {}) if isinstance(spec.get("composition"), dict) else {}
     if _text(composition.get("negative_space")):
@@ -3909,6 +3963,8 @@ def review_template(item: dict[str, Any], config: dict[str, Any]) -> dict[str, A
         "_instructions": (
             "status is passed, failed or not_applicable; answer is yes or no. Every entry "
             "needs evidence naming the zone or crop you looked at and what you saw. "
+            "Skip a question whose parent thing is absent from the image; when the parent "
+            "fails on count or kind, still answer every question below it. "
             f"Review the full image, then all {int(plaus.get('zoom_grid', 3)) ** 2} crops from review-crops."
         ),
     }

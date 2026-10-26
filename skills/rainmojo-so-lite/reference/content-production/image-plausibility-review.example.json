@@ -292,7 +292,7 @@
     "q_counter_scale": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the counter the right size: 0.9 m high, 2.4 m long, 0.6 m deep, so that its top meets the pharmacist just above the hip, a little below her waist?"
+      "_question": "Is the counter the right size: 0.9 m high, 2.4 m long, 0.6 m deep, so that its top meets the pharmacist just above the hip, a little below her waist? Judge real sizes, not how large each looks at its distance."
     },
     "q_counter_support": {
       "answer": "yes",
@@ -317,12 +317,12 @@
     "q_medicine_box": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does the image show exactly 1 small white medicine carton with a blank label panel?"
+      "_question": "Does the image show exactly 1 small white medicine carton with a blank label panel held by the pharmacist?"
     },
     "q_medicine_box_scale": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the medicine box the right size: about 9 cm tall, 5 cm wide, so that it fits inside the pharmacist's hand with her fingers wrapping most of its width?"
+      "_question": "Is the medicine box the right size: about 9 cm tall, 5 cm wide, so that it fits inside the pharmacist's hand with her fingers wrapping most of its width? Judge real sizes, not how large each looks at its distance."
     },
     "q_medicine_box_support": {
       "answer": "yes",
@@ -352,7 +352,7 @@
     "q_shelving_scale": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is the shelving wall the right size: 2.2 m high, 3 m wide, so that its top shelf sits well above the pharmacist's head, about a third taller than she is?"
+      "_question": "Is the shelving wall the right size: 2.2 m high, 3 m wide, so that its top shelf sits well above the pharmacist's head, about a third taller than she is? Judge real sizes, not how large each looks at its distance."
     },
     "q_shelving_support": {
       "answer": "yes",
@@ -437,12 +437,12 @@
     "q_horizon_cut_pharmacist": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does the horizon cross the pharmacist about 96 per cent of the way up from the feet, measured on the image?"
+      "_question": "Does the horizon cross the pharmacist at about the eyes, measured on the image?"
     },
     "q_horizon_cut_customer": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does the horizon cross the older customer about 92 per cent of the way up from the feet, measured on the image?"
+      "_question": "Does the horizon cross the older customer at about the eyes, measured on the image?"
     },
     "q_negative_space": {
       "answer": "yes",
@@ -565,5 +565,5 @@
       "_question": "Is the image free of any legible text, numbers, logos or watermarks the spec did not ask for?"
     }
   },
-  "_instructions": "status is passed, failed or not_applicable; answer is yes or no. Every entry needs evidence naming the zone or crop you looked at and what you saw. Review the full image, then all 9 crops from review-crops."
+  "_instructions": "status is passed, failed or not_applicable; answer is yes or no. Every entry needs evidence naming the zone or crop you looked at and what you saw. Skip a question whose parent thing is absent from the image; when the parent fails on count or kind, still answer every question below it. Review the full image, then all 9 crops from review-crops."
 }

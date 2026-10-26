@@ -1683,7 +1683,7 @@ check(
     "a horizon crossing carries the fraction the prompt states",
     crossing["measure"]["kind"] == "horizon_fraction"
     and 0 < crossing["measure"]["expected"] < 1.2
-    and crossing["measure"]["relation"] in {"crosses", "above_head", "below_feet"},
+    and crossing["measure"]["relation"] in {"crosses", "above_head", "below_feet", "at_landmark"},
     str(crossing.get("measure")),
 )
 check(
@@ -2108,7 +2108,8 @@ baskets["objects"][1].update(
 b_q = {q["id"]: q for q in image_spec.build_questions(baskets, image_spec.derive(baskets, WIDTH, HEIGHT))}
 check(
     "the count counts the baskets, not the fruit",
-    b_q["q_medicine_box"]["question"] == "Does the image show exactly 3 round woven bamboo baskets?",
+    b_q["q_medicine_box"]["question"].startswith("Does the image show exactly 3 round woven bamboo baskets")
+    and "mangoes" not in b_q["q_medicine_box"]["question"],
     b_q["q_medicine_box"]["question"],
 )
 check(
@@ -2317,6 +2318,45 @@ check(
     "a level camera at the floor people's eye height is not refused because someone stands on a platform",
     not [e for e in image_spec.validate_spec(platform, WIDTH, HEIGHT, DEFAULTS)[0] if "angle eye_level" in e],
     str(image_spec.validate_spec(platform, WIDTH, HEIGHT, DEFAULTS)[0][:2]),
+)
+
+print("C51 run 04: counts scoped to their container, crossings on cropped figures, real sizes")
+q51 = {q["id"]: q for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))}
+check(
+    "a thing held by a declared person is counted there",
+    q51["q_medicine_box"]["question"].endswith("held by the pharmacist?"),
+    q51["q_medicine_box"]["question"],
+)
+check(
+    "a thing on a surface named only in words is counted in the whole frame",
+    q51["q_counter"]["question"].endswith("counter?") and "standing on" not in q51["q_counter"]["question"],
+    q51["q_counter"]["question"],
+)
+cut = q51["q_horizon_cut_pharmacist"]
+check(
+    "a figure the frame cuts is measured against a landmark, never from hidden feet",
+    "at about the eyes" in cut["question"] and "from the feet" not in cut["question"]
+    and cut["measure"]["relation"] == "at_landmark",
+    cut["question"],
+)
+whole = copy.deepcopy(EXAMPLE)
+whole["camera"].update({"shot_type": "wide", "focal_length_mm": 24})
+whole_q = {q["id"]: q for q in image_spec.build_questions(whole, image_spec.derive(whole, WIDTH, HEIGHT))}
+check(
+    "a whole figure is still measured from the feet",
+    "from the feet" in whole_q["q_horizon_cut_pharmacist"]["question"],
+    whole_q["q_horizon_cut_pharmacist"]["question"],
+)
+check("a crossing between landmarks is not forced onto one", image_spec.nearest_landmark(0.45) == "")
+check("eye level snaps to the eyes", image_spec.nearest_landmark(0.957) == "eyes")
+check(
+    "scale is judged in real size, not as drawn",
+    "Judge real sizes, not how large each looks at its distance" in q51["q_counter_scale"]["question"],
+)
+item51 = {"id": "x", "spec_compiled": {"questions": []}}
+check(
+    "the reviewer is told a child is skipped only when its parent thing is absent",
+    "still answer every question below it" in image_spec.review_template(item51, DEFAULTS)["_instructions"],
 )
 
 print("C15 a thin client config still has a gate")

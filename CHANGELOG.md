@@ -212,6 +212,13 @@ that the horizon passes above them and that it crosses their eyes. A person stan
 platform no longer makes a level camera at the floor people's eye height count as wrong.
 Contract test **620 assertions**, passing here unchanged.
 
+Then `ab09d23`: a review counts a held or carried thing where it is, "held by the
+pharmacist", rather than across the whole picture; it checks the horizon on a person the frame
+cuts against a part of the body that shows, such as the eyes, instead of measuring from feet
+that are out of the picture; size questions say to judge real size, not how large something
+looks; and a reviewer skips a question only when the thing it belongs to is missing. The list
+of known fault kinds grows to 21. Contract test **681 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

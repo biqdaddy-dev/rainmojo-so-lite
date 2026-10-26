@@ -158,6 +158,19 @@ refuse the brief:
   person fails, and it is measured: position and crop-safety questions route to
   `geometry` and are answered in fractions of the frame. In rangsarn's run 02 all four
   remaining misses were in-frame position and scale, judged by eye.
+- **A count is counted where the thing is.** Something supported by another declared
+  entity is counted there: "exactly 3 baskets resting on the near sampan", because in
+  rangsarn's run 04 a far boat carried a fourth. A surface named only in words does not
+  scope the count.
+- **A crossing on a figure the frame cuts is asked at a landmark.** "At about the eyes"
+  rather than "96 per cent of the way up from the feet" when the feet are out of frame;
+  a crossing that falls between landmarks is not asked.
+- **Scale is judged in real size.** Every scale question says to judge real sizes, not
+  how large each looks at its distance: run 04 compared a near buyer with far shutters
+  as drawn.
+- **A child question is skipped only when its parent thing is absent.** When the parent
+  fails on count or kind, every question below it is still answered: run 04 skipped the
+  missing steam and serving spoons because the dish was on a plate, not in a bowl.
 - **A stature is asked only where it shows**: of a person standing, walking or leaning
   whose whole height fits the frame. Seated and cropped people gave 8 honest
   `cannot_tell` answers in run 02.
@@ -584,10 +597,12 @@ the set growing from what is actually found:
   prevention (a spec rule or prompt clause), detection (a question or rubric check) and
   regression (the contract-test section that keeps catching it). A class is closed only
   with all three and a prevention not measured to fail; C48 holds the file to that rule
-  and checks every detection id against the compiler. Six classes are open today:
-  pseudo-text, unwanted text, everything drawn sharp and scale drift, whose preventions
-  were measured not to work, and tiled stock and the meta class of uncovered faults, which have no prevention
-  yet. A true answer to `q_anomalies` becomes a new class. rangsarn keeps its own copy of
+  and checks every detection id against the compiler. Classes stay open while their
+  prevention is measured not to work (pseudo-text, unwanted text, everything drawn sharp,
+  scale drift, locale lost to the common prior, a dropped secondary action, framing one
+  step wide) or while they have no prevention or regression yet (tiled stock, sitting
+  cross-legged by default, gaze at the wrong target, and the meta class of uncovered
+  faults); the file says which, class by class. A true answer to `q_anomalies` becomes a new class. rangsarn keeps its own copy of
   the file, in step, as it does of this module.
 
 ## Limits

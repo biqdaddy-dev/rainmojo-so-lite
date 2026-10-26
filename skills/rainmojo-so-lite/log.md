@@ -566,6 +566,36 @@ the customer's eyes is accepted as eye level, where the seated rule gives 0.15 m
 accepted before this commit too, through the old mean, so it is not a regression; the band
 would follow the mean if it asked whether anyone stands on the camera's floor.
 
+TWENTY-THIRD PORT, `ab09d23`, same version: rangsarn's run 04. A count of a thing supported by
+a declared entity is counted there, "held by the pharmacist"; a horizon crossing on a figure
+the frame cuts is asked at the nearest body landmark within 0.06 of stature, or not at all;
+scale questions say to judge real sizes; the review instructions say a child question is
+skipped only when its parent thing is absent; and the failure library grows to 21 classes, 11
+open. Five files byte-identical, the review example regenerated here and byte-identical to the
+full edition's, 80 questions. 681 assertions passing unchanged, regression 4 of 4, T4 green.
+Lite's step 6 needs nothing: a review that skips a child because its parent is absent has
+already failed on the parent.
+
+On the client briefs validation and prompts are byte-identical. Questions: three counts are
+scoped, bangmod's aligner tray, doctorjay's hand mirror and theklinique's handpiece, plus the
+shipped example's carton, which makes the four upstream counts; and 61 scale questions gain
+the real-size sentence. The crossings do not move as upstream says. Of the fifteen crossings in
+the client briefs, ten are on figures the frame cuts, but every one of the ten is in a scene
+whose horizon is out of frame or above the head, and none had a crossing question before this
+commit or has one after. The only crossing questions that change are the two in the shipped
+example, which go from 96 and 92 per cent to "at about the eyes". Battery and corpus identical
+to a clean export of `ab09d23`, 16 of 19 clean.
+
+Two findings, reported upstream. A snapped landmark is not checked against the frame: the
+shipped example at a low angle, lens 0.86 m, is valid, framed from the waist up, and asks
+"Does the horizon cross the pharmacist at about the hips?", with the hips below the frame;
+the same question at the waist sits on its edge. And the prompt still tells the generator
+"about 53 per cent of the way up from the feet" for the same cut figures, so prompt and
+question disagree again; on the corpus five cut figures carry a per-cent sentence in the
+prompt, bangmod's dentist, both biqdaddy figures and inlingua's teacher and nearer learner.
+The two landmark tables agree value for value, `CROSSING_LANDMARKS` restating
+`BODY_LANDMARK_FRACTION`.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New
