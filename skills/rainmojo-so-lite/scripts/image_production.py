@@ -1273,6 +1273,57 @@ def write_review_crops(
     }
 
 
+def compile_spec_file(
+    spec_path: str | Path,
+    width: int,
+    height: int,
+    target_model: str | None = None,
+    target: str | None = None,
+    config_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Validate and compile one spec file, outside any article package.
+
+    For a client whose content runs through its own adapter: the plugin
+    defaults, an optional config file merged over them, and the generator named
+    from the model registry. The file may hold the spec itself or {"spec": ...}.
+    """
+    data = content_pipeline.load_json(Path(spec_path))
+    spec = data["spec"] if isinstance(data.get("spec"), dict) else data
+    config = content_pipeline.load_json(image_spec.DEFAULTS_PATH)
+    if config_path:
+        config = content_pipeline.deep_merge(config, content_pipeline.load_json(Path(config_path)))
+    if target_model:
+        config.setdefault("images", {}).setdefault("spec", {})["target_model"] = target_model
+    errors, warnings = image_spec.validate_spec(spec, width, height, config)
+    report: dict[str, Any] = {"spec": str(spec_path), "valid": not errors, "errors": errors, "warnings": warnings}
+    if errors:
+        return report
+    result = image_spec.compile_spec(spec, width, height, config, target or "")
+    report.update(
+        target=result["target"],
+        prompt=result["prompt"],
+        negative_prompt=result["negative_prompt"],
+        avoid=result["avoid"],
+        conditioning=image_spec.conditioning_references(spec),
+        warnings=result["warnings"],
+        questions=result["questions"],
+        derived=result["derived"],
+    )
+    return report
+
+
+def command_compile_spec_file(args: argparse.Namespace) -> int:
+    report = compile_spec_file(
+        args.spec, args.width, args.height, args.target_model, args.target, args.config
+    )
+    text = json.dumps(report, ensure_ascii=False, indent=2)
+    if args.out:
+        Path(args.out).write_text(text + "\n", encoding="utf-8")
+    else:
+        print(text)
+    return 0 if report["valid"] else 1
+
+
 def command_compile_spec(args: argparse.Namespace) -> int:
     report = compile_specs(args.client, args.slug, args.image_id, args.target)
     print(json.dumps(report, ensure_ascii=False, indent=2))
@@ -1388,10 +1439,27 @@ def build_parser() -> argparse.ArgumentParser:
     compile_spec.add_argument("--image-id")
     compile_spec.add_argument(
         "--target",
-        choices=["negative_prompt", "positive_only"],
-        help="Override images.spec.prompt_target for a model that ignores a negative prompt.",
+        choices=sorted(image_spec.PROMPT_TARGETS | set(image_spec.TARGET_ALIASES)),
+        help="Override where exclusions go; by default the registry entry for target_model decides.",
     )
     compile_spec.set_defaults(func=command_compile_spec)
+
+    spec_file = sub.add_parser(
+        "compile-spec-file",
+        help="Validate and compile one spec file, for a client whose content runs through its own adapter.",
+    )
+    spec_file.add_argument("--spec", required=True, help="A JSON file holding the spec, or {\"spec\": ...}.")
+    spec_file.add_argument("--width", type=int, required=True)
+    spec_file.add_argument("--height", type=int, required=True)
+    spec_file.add_argument("--target-model", help="A model name from image-model-registry.json, e.g. openai-gpt-image.")
+    spec_file.add_argument(
+        "--target",
+        choices=sorted(image_spec.PROMPT_TARGETS | set(image_spec.TARGET_ALIASES)),
+        help="Override where exclusions go; by default the registry entry for the target model decides.",
+    )
+    spec_file.add_argument("--config", help="A JSON config merged over the plugin defaults (its images section).")
+    spec_file.add_argument("--out", help="Write the report here instead of printing it.")
+    spec_file.set_defaults(func=command_compile_spec_file)
 
     review_template = sub.add_parser(
         "review-template",

@@ -109,6 +109,14 @@ python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" spec-
 python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compile-spec --client ./clients/<domain> --slug <slug>
 ```
 
+   A client whose content runs through its own adapter, with no article package,
+   compiles one spec file at a time instead, and gets the same report as JSON
+   (exit code 1 when the spec is refused):
+
+```bash
+python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compile-spec-file --spec <spec.json> --width <px> --height <px> --target-model openai-gpt-image --out <report.json>
+```
+
    A contradiction stops the compile and names it: a horizon that disagrees with
    the camera tilt, a shot type that disagrees with the lens and the distance,
    shadows that disagree with the key light, an object with no support, a standing
@@ -148,6 +156,13 @@ python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compi
    other colours the things still showed under the tint. Together they left no
    off-palette colour in 3 of 3 pictures. The compiler warns when a field still
    asks for colours the palette does not hold.
+
+   A line-art medium is the generator's, not the prompt's. With the same spec, a
+   generator that follows medium words drew black ink line on cream from the words
+   alone, while gpt-image painted the scene with or without a style reference, and
+   without the inline Constraints block too. For ink or line-art work, use a
+   generator that follows medium words; when gpt-image is the only one, attach the
+   recoloured style swatch, which moves it toward line but does not get there.
 
    A viewpoint that must hold is written as something the camera sees, not as an
    instruction. An angle stated as an instruction failed 4 of 4 times; a near

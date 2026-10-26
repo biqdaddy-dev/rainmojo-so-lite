@@ -535,6 +535,37 @@ check(
     str(palette_warnings("sand, cream and walnut, with a navy accent", "a navy polo"))[:160],
 )
 
+print("D14 compile-spec-file is the command the docs name, and it refuses as they say")
+# SKILL.md documents compile-spec-file for a client on its own adapter, with exit
+# code 1 when the spec is refused (the full edition's a8f4501). The selftest runs
+# the function; here the docs and the command line itself are held to each other.
+import subprocess
+import sys
+import tempfile
+
+check(
+    "the docs name compile-spec-file and its refusal exit code",
+    said("compile-spec-file --spec <spec.json>") and said("exit code 1 when the spec is refused"),
+)
+_production = str(Path(__file__).resolve().parent / "image_production.py")
+_example = str(ROOT / "reference" / "content-production" / "image-spec.example.json")
+_ok = subprocess.run(
+    [sys.executable, _production, "compile-spec-file", "--spec", _example, "--width", str(WIDTH),
+     "--height", str(HEIGHT), "--target-model", "openai-gpt-image"],
+    capture_output=True, text=True, encoding="utf-8",
+)
+check("the shipped example compiles through the command, exit 0", _ok.returncode == 0 and '"valid": true' in _ok.stdout, _ok.stderr[-200:])
+with tempfile.TemporaryDirectory() as _tmp:
+    _bad = copy.deepcopy(EXAMPLE)
+    _bad["camera"]["tilt"] = "sideways"
+    _bad_path = Path(_tmp) / "bad.json"
+    _bad_path.write_text(json.dumps(_bad), encoding="utf-8")
+    _refused = subprocess.run(
+        [sys.executable, _production, "compile-spec-file", "--spec", str(_bad_path), "--width", str(WIDTH), "--height", str(HEIGHT)],
+        capture_output=True, text=True, encoding="utf-8",
+    )
+check("a refused spec exits 1 with its errors and no prompt", _refused.returncode == 1 and '"valid": false' in _refused.stdout and '"prompt"' not in _refused.stdout, f"exit {_refused.returncode}")
+
 print("D6 the claims this edition once made and the code does not honour stay gone")
 for stale in (
     "both bands are read and intersected",

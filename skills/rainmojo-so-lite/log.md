@@ -1226,6 +1226,29 @@ bangla, biqdaddy, drivehub, inlingua and tnp, five and not the six upstream quot
 drivehub: at the car's 3.4 m the frame spans 0.18 to 2.02 m, so the 1.63 m car fits by height but
 its bottom 18 cm, the base its per-cent crossing is measured from, is out of the picture.
 
+FORTY-EIGHTH PORT, `93fd723` to `9ac142c`, same version, one commit on `a0b8de5`. The shared
+files change only in the contract doc: `dcf28d7` (a line-art medium is the generator's, not the
+prompt's), `67d01f4` (`pitch_deg` checked against pixels, roll not modelled), `2d68119` and
+`9ac142c` (a disagreement between instruments becomes a pointed question, never a finding). The
+contract doc is byte-identical to `9ac142c`; `image_spec.py` and its test are unchanged, 977
+assertions.
+
+Mirrored by hand in this edition's own files, `a8f4501`: `image_production` gains
+`compile_spec_file()` and a `compile-spec-file` command for a client whose content runs through
+its own adapter, which prints one JSON report and exits 1 on a refused spec; `compile-spec`'s
+`--target` choices, stale at negative_prompt and positive_only, now list every target; and the
+selftest gains `check_compile_spec_file()`, covering the example compiled inline for gpt-image, a
+real place whose reference returns in its conditioning list, and a refused spec, which fails on
+the old `image_production.py`. Run by hand, the shipped example exits 0 inline with 82 questions
+and a refused spec exits 1. SKILL.md documents the command in its compile step, and gains
+`dcf28d7`'s line-art paragraph after the palette paragraph, as observed guidance. T4 gains D14:
+the docs name the command and its refusal exit code, and the command line itself compiles the
+example with exit 0 and refuses a broken spec with exit 1 and no prompt; on the old file the
+command does not exist and both fail. T4 is at 76 checks.
+
+Regression 4 of 4. Battery and corpus identical to a clean export of `9ac142c`, 17 of 20 clean,
+21, 2, 4, the findings reproducer at 0 of 14; the corpus output is unchanged since the last port.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

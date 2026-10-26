@@ -505,7 +505,36 @@ def run(image_format: str = "WEBP") -> None:
         print(f"  {image_format}: spec compiled, three refusals held, publish_ready")
 
 
+def check_compile_spec_file() -> None:
+    """compile-spec-file serves a client whose content runs through its own adapter."""
+    reference = image_spec.REFERENCE_DIR
+    example = reference / "image-spec.example.json"
+    report = image_production.compile_spec_file(example, 1200, 630, "openai-gpt-image")
+    assert report["valid"] and report["target"] == "inline_constraints", report.get("target")
+    assert "Constraints: no " in report["prompt"] and not report["negative_prompt"], report["prompt"][-80:]
+    assert report["questions"] and "conditioning" in report, list(report)
+    with tempfile.TemporaryDirectory() as tmp:
+        place = json.loads((reference / "image-spec.real-place.example.json").read_text(encoding="utf-8"))
+        place = place.get("spec", place)
+        sources = place["location"]["reference"]["sources"]
+        ref_path = sources[0].get("path") or sources[0].get("url")
+        place["location"]["reference"]["conditioning_images"] = [ref_path]
+        wrapped = Path(tmp) / "hkt-style.json"
+        wrapped.write_text(json.dumps({"spec": place}), encoding="utf-8")
+        placed = image_production.compile_spec_file(wrapped, 1200, 630, "openai-gpt-image")
+        assert placed["valid"], placed["errors"][:2]
+        expected = {"role": "place", "path": ref_path, "rights": sources[0].get("rights", "")}
+        assert expected in placed["conditioning"], placed["conditioning"]
+        broken = dict(place)
+        broken["camera"] = dict(place["camera"], tilt="sideways")
+        bad = Path(tmp) / "broken.json"
+        bad.write_text(json.dumps(broken), encoding="utf-8")
+        refused = image_production.compile_spec_file(bad, 1200, 630)
+        assert not refused["valid"] and refused["errors"] and "prompt" not in refused, refused
+
+
 def main() -> None:
+    check_compile_spec_file()
     for image_format in ("WEBP", "AVIF"):
         run(image_format)
     print("CONTENT_PRODUCTION_SELFTEST_OK")

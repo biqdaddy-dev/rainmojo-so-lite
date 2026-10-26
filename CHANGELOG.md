@@ -343,6 +343,12 @@ now worked out through a tilted lens; and the guide explains that a limited pale
 recoloured style swatch and each thing coloured inside it. Contract test **977 assertions**,
 passing here unchanged.
 
+Then `dcf28d7` to `9ac142c`: a new `compile-spec-file` command checks and compiles one image
+brief on its own, for a client whose articles run through their own pipeline, and reports the
+prompt, the reference images to attach and the review questions. The guide adds that line-art
+and ink styles depend on the image model more than on the wording. Contract test **977
+assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
