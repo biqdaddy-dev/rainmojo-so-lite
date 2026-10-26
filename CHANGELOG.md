@@ -185,6 +185,14 @@ perspective, not about differences. The warning for a repeated thing with no var
 offers "matched" instead of asking for different sizes and angles. People cannot be a matched
 set. Contract test **418 assertions**, passing here unchanged.
 
+Then `27c0015`: every review now asks an open question, after the specific ones, whether
+the picture has anything else a careful viewer would find wrong, and lists each fault found.
+A new reference file, `image-failure-classes.json`, names the 16 kinds of fault found so far,
+each with how it is prevented, how a review catches it and which test keeps it caught; a kind
+is closed only when all three exist and the prevention has not been shown to fail. Contract
+test **606 assertions**, passing here unchanged; the shipped review example is now 80
+questions.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

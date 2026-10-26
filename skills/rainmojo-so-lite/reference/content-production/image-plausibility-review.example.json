@@ -554,6 +554,11 @@
       "evidence": "<what you saw and in which crop>",
       "_question": "Is the image free of malformed or invented glyphs, the half-formed marks that read as lettering at a glance without being any real script?"
     },
+    "q_anomalies": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Apart from everything asked above, is the image free of anything a careful viewer would find wrong or implausible, such as two people with one face, stock tiled in identical rows, lettering that is not a real script, a shadow with no source or an object that could not stand? If not, answer no and list each thing in the evidence."
+    },
     "q_no_text": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",

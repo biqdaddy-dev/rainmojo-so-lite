@@ -442,6 +442,34 @@ counted name that is itself a collective, "pair of moulded tiger sculptures" at 
 framed photovoltaic panels" at count 5, compiles to "2 pair of" and "5 row of" in the prompt and
 the questions, which reads as four sculptures and five rows.
 
+NINETEENTH PORT, `27c0015`, same version: an open anomaly question and a failure library.
+`q_anomalies` asks, after everything else, whether the image is free of anything a careful
+viewer would find wrong, with each fault listed in the evidence on a no.
+`image-failure-classes.json` is new here: 16 named fault classes, each with symptom, cause,
+prevention, detection and regression, closed only with all three and a prevention not
+measured to fail. C47 and C48 come with it, and C48 reads the contract test's own source, so
+it holds only while that file is identical. Five files byte-identical, the new one included;
+the review example regenerates byte-identical at 80 questions. 606 assertions passing
+unchanged, regression 4 of 4, T4 green. The lite docs need nothing: step 6 already asks
+every spec question `yes` with evidence and treats a `no` as a failed image, which is right
+for this question too, and nothing in lite reads the library at run time.
+
+On the client briefs nothing else moves: no error, no warning, no prompt changes, and each of
+the fifteen clean briefs gains exactly one question, this one. Battery and corpus identical to
+a clean export of 27c0015, 16 of 19 clean, the same three refused.
+
+Read rather than counted, three findings, reported upstream. `q_anomalies` is said to end
+every review, and C47 is titled so, but it is second to last: `q_no_text` follows it, and C47
+checks only that it is present. C48 checks that each cited regression section exists, not that
+it tests the class: `F-unwanted-text` cites C9c, which tests the plain-language words for focal
+length, aperture, colour temperature and shot size and never mentions text; C8, C20 and C36 are
+the sections that do. Two other citations, C41 for the wrong floor and C37 for face distortion,
+test the prevention rather than the detection, which is a fair reading of a regression. And the
+library's own `about` says rainmojo-so and rangsarn each keep a copy, which this edition now
+also does; the line is ported as written, byte-identical as asked. The matched-prefix finding
+from the eighteenth port touches the library: `F-copied-repeats` lists "matched" as a
+prevention, and the prefix match drops a described difference.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

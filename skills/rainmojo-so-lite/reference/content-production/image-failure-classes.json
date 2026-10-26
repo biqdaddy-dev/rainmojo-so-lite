@@ -1,0 +1,189 @@
+{
+  "version": 1,
+  "about": "Every fault a reader, an owner or an audit found in a generated picture, as a named class. A class is closed only when it has a prevention (a spec rule or prompt clause), a detection (a question or rubric check) and a regression (a contract-test section that keeps catching it), and its prevention has not been measured to fail. Proposed by the rangsarn session; rainmojo-so and rangsarn each keep their own copy, in step, and run apart.",
+  "status_rule": "closed when prevention, detection and regression are all non-empty and prevention_effective is not false; otherwise open",
+  "classes": [
+    {
+      "id": "F-clone-faces",
+      "symptom": "Two or more people in one scene share a face, hair, skin and pose.",
+      "cause": "Near-identical appearance text, the generator's one canonical face for a demographic, attribute leakage between adjacent subjects.",
+      "found_by": "owner, rangsarn run 03 (river market)",
+      "prevention": ["validate_spec look-alike warning (LOOKALIKE_OVERLAP)", "prompt clause: every person has a face, a build and an age of their own", "variation on a subject with count > 1"],
+      "detection": ["q_distinct_faces", "q_<id>_distinct"],
+      "regression": ["C45"],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
+    },
+    {
+      "id": "F-copied-repeats",
+      "symptom": "Repeated objects are one image pasted: baskets, fruit, tents, shelf stock.",
+      "cause": "One description for a count above one draws that many copies.",
+      "found_by": "owner, rangsarn run 03; rainmojo-so sweep scene 10 (tents)",
+      "prevention": ["variation field and its warning", "matched for a set alike by design"],
+      "detection": ["q_<id>_distinct"],
+      "regression": ["C45", "C46"],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
+    },
+    {
+      "id": "F-contents-in-count",
+      "symptom": "Containers hold the wrong contents while their count is right.",
+      "cause": "Contents named in the object's name rode along in the count question.",
+      "found_by": "owner, rangsarn run 03 (bananas, pomelos, bananas)",
+      "prevention": ["listed_contents splits the name across a count above one"],
+      "detection": ["q_<id>_holds_NN"],
+      "regression": ["C45"],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
+    },
+    {
+      "id": "F-pseudo-text",
+      "symptom": "Lettering-like marks that are no real script, on packaging, signs, pages and diagrams.",
+      "cause": "text_in_image none makes the model fill text-bearing surfaces with half-formed glyphs.",
+      "found_by": "rainmojo-so sweep (4 images), rangsarn run 01 (carton)",
+      "prevention": ["text_in_image none"],
+      "detection": ["q_malformed_glyphs"],
+      "regression": ["C36"],
+      "prevention_effective": false,
+      "note": "The prevention does not prevent: generate the label area plain and composite real text, as headlines are, is the open fix.",
+      "status": "open"
+    },
+    {
+      "id": "F-unwanted-text",
+      "symptom": "Legible text, numbers or logos the brief did not ask for.",
+      "cause": "Text-bearing surfaces invite lettering; digits are what the model draws best.",
+      "found_by": "rainmojo-so sweep (10 of 16 images)",
+      "prevention": ["text_in_image none", "prompt clause that lettering sits small and soft"],
+      "detection": ["q_no_text"],
+      "regression": ["C9c"],
+      "prevention_effective": false,
+      "note": "10 of 16 images carried text despite the clause.",
+      "status": "open"
+    },
+    {
+      "id": "F-extra-people",
+      "symptom": "More people than declared, or people in a scene declared empty.",
+      "cause": "A purpose sentence describing a human action outweighs an empty subject list; counts only ever asked about declared entities.",
+      "found_by": "rainmojo-so sweep (scene 5, 10, 11, E)",
+      "prevention": ["PERSON_IMPLIED_RE warning, quoting the word that fired", "max_people"],
+      "detection": ["q_undeclared", "q_<id>"],
+      "regression": ["C36"],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
+    },
+    {
+      "id": "F-all-sharp",
+      "symptom": "Things outside the depth of field are drawn sharp.",
+      "cause": "Image models draw everything sharp whatever the aperture says.",
+      "found_by": "rainmojo-so sweep (5 misses), rangsarn runs 01 to 03",
+      "prevention": ["prompt names what lies outside the focus"],
+      "detection": ["q_soft_<id>"],
+      "regression": ["C36", "C40"],
+      "prevention_effective": false,
+      "note": "Open on the generation side: a blur from a depth map after generation.",
+      "status": "open"
+    },
+    {
+      "id": "F-fill-as-second-key",
+      "symptom": "A second visible light source, or a reviewer counting the declared fill as one.",
+      "cause": "The light question did not know about the declared fill.",
+      "found_by": "rainmojo-so sweep (4 false alarms)",
+      "prevention": ["lighting.fill[]"],
+      "detection": ["q_light"],
+      "regression": ["C36"],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
+    },
+    {
+      "id": "F-scale-drift",
+      "symptom": "Apparent sizes do not follow distance: two fighters 1.22 apart drawn 1.05 apart.",
+      "cause": "A model cannot act on a ratio; it draws its own prior.",
+      "found_by": "rainmojo-so sweep (ringside)",
+      "prevention": ["prompt states which is nearer and larger, in words", "scale_anchor against a body landmark"],
+      "detection": ["q_ratio_<a>_<b>", "q_<id>_scale"],
+      "regression": ["C27", "C44"],
+      "prevention_effective": false,
+      "note": "Delivered ratios were measured wrong in both ringside images.",
+      "status": "open"
+    },
+    {
+      "id": "F-floating-object",
+      "symptom": "An object with no visible support.",
+      "cause": "Nothing in the brief said what holds it.",
+      "found_by": "literature (CHI 2025 prevalence) and module design",
+      "prevention": ["support{kind,by} required", "support.by must bear weight"],
+      "detection": ["q_<id>_support"],
+      "regression": ["C31"],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
+    },
+    {
+      "id": "F-hands",
+      "symptom": "Extra, missing or fused fingers, or fingers bending the wrong way.",
+      "cause": "Anatomy the generator gets wrong most often.",
+      "found_by": "rainmojo-so sweep; rangsarn run 01 (question defect on grips)",
+      "prevention": ["hands field, atomic and separate from the action"],
+      "detection": ["q_<id>_hands_count"],
+      "regression": ["C40"],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
+    },
+    {
+      "id": "F-wrong-floor",
+      "symptom": "People and things on different surfaces drawn on one floor, or one floor drawn as several.",
+      "cause": "A raised landing, stage or ring left at the camera's floor in the brief.",
+      "found_by": "rangsarn runs 01 to 02 (landing, boat)",
+      "prevention": ["ground_height_m", "warning for a person on a raised declared thing at height 0"],
+      "detection": ["q_pair_ground_plane", "q_horizon_cut_<id>"],
+      "regression": ["C40", "C41"],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
+    },
+    {
+      "id": "F-face-distortion",
+      "symptom": "A nose rendered large against the ears, the close wide-angle portrait.",
+      "cause": "A face nearer the camera than perspective allows.",
+      "found_by": "module design, corrected by the lite session",
+      "prevention": ["face distance floor, 0.9 m on any lens, longer on 20 and 28 mm"],
+      "detection": ["q_camera_framing"],
+      "regression": ["C37"],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
+    },
+    {
+      "id": "F-position-and-crop",
+      "symptom": "A subject past the third line, or a crop that loses the key thing.",
+      "cause": "Placement judged by eye.",
+      "found_by": "rangsarn run 02 (all four remaining misses)",
+      "prevention": ["composition.crop_safety", "position on every entity"],
+      "detection": ["q_<id>_position", "q_crop_safety"],
+      "regression": ["C41"],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
+    },
+    {
+      "id": "F-tiled-stock",
+      "symptom": "A background filled with one repeated box in uniform rows, too many and too even for a real shop.",
+      "cause": "The brief says 'boxed stock' and nothing about how the real kind of place is organised.",
+      "found_by": "rangsarn (pharmacy)",
+      "prevention": [],
+      "detection": ["q_anomalies"],
+      "regression": [],
+      "prevention_effective": "unmeasured",
+      "note": "Open: an evidence brief on how the real kind of place is zoned, written into locale_details, is the proposed prevention.",
+      "status": "open"
+    },
+    {
+      "id": "F-uncovered",
+      "symptom": "Any fault no question above asks about.",
+      "cause": "A fixed question set only finds failures someone thought of.",
+      "found_by": "owner, rangsarn run 03",
+      "prevention": [],
+      "detection": ["q_anomalies"],
+      "regression": ["C47"],
+      "prevention_effective": "unmeasured",
+      "note": "A meta class. Every true answer to q_anomalies becomes a class of its own.",
+      "status": "open"
+    }
+  ]
+}

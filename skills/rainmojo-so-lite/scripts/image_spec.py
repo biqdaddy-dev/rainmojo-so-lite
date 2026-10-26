@@ -3544,6 +3544,17 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         verify_with="ocr",
         measure={"kind": "glyphs", "expected": "none"},
     )
+    # Last, the faults nobody wrote a question for. Clone faces in rangsarn's run
+    # 03 were found by the owner, not by any question; this is how they would
+    # have been found by the review. A true answer here becomes a failure class.
+    add(
+        "q_anomalies",
+        "logic",
+        "Apart from everything asked above, is the image free of anything a careful viewer "
+        "would find wrong or implausible, such as two people with one face, stock tiled in "
+        "identical rows, lettering that is not a real script, a shadow with no source or an "
+        "object that could not stand? If not, answer no and list each thing in the evidence.",
+    )
     add(
         "q_no_text",
         "constraint",

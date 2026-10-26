@@ -553,6 +553,26 @@ Three rules make the numbers mean something:
   that no real brief reaches has been tested by nothing: it is reported as untested, not
   as passing.
 
+## Learning from faults
+
+A fixed question set finds only the failures someone already thought of. Two things keep
+the set growing from what is actually found:
+
+- **`q_anomalies` ends every review.** "Apart from everything asked above, is the image
+  free of anything a careful viewer would find wrong or implausible?", with each thing
+  listed in the evidence when the answer is no. The owner found clone faces in rangsarn's
+  run 03 that no question asked about and every reader missed; this is the question that
+  would have found them.
+- **`image-failure-classes.json` names every fault class** with its symptom, cause,
+  prevention (a spec rule or prompt clause), detection (a question or rubric check) and
+  regression (the contract-test section that keeps catching it). A class is closed only
+  with all three and a prevention not measured to fail; C48 holds the file to that rule
+  and checks every detection id against the compiler. Six classes are open today:
+  pseudo-text, unwanted text, everything drawn sharp and scale drift, whose preventions
+  were measured not to work, and tiled stock and the meta class of uncovered faults, which have no prevention
+  yet. A true answer to `q_anomalies` becomes a new class. rangsarn keeps its own copy of
+  the file, in step, as it does of this module.
+
 ## Limits
 
 The physics here is first-order: a pinhole camera and a thin lens. It catches contradictions

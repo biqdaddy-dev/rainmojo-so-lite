@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 from pathlib import Path
 
 import image_spec
@@ -2173,6 +2174,49 @@ check(
     "people cannot be matched",
     any("people cannot be a matched set" in w for w in image_spec.validate_spec(crowd, WIDTH, HEIGHT, DEFAULTS)[1]),
 )
+
+print("C47 every review ends with an open question for what nothing else asks")
+for spec_name, spec in (("example", EXAMPLE), ("real place", REAL_PLACE)):
+    ids47 = [q["id"] for q in image_spec.build_questions(spec, image_spec.derive(spec, WIDTH, HEIGHT))]
+    check(f"{spec_name}: the anomaly question is asked", "q_anomalies" in ids47)
+q47 = {q["id"]: q for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))}
+check(
+    "it is judged, and its no carries the list in the evidence",
+    not q47["q_anomalies"].get("verify_with") and "list each thing in the evidence" in q47["q_anomalies"]["question"],
+)
+
+print("C48 the failure library holds itself to its own rule")
+# Proposed by the rangsarn session: every fault anyone finds becomes a named
+# class, closed only with a prevention, a detection and a regression.
+LIBRARY = json.loads(
+    (ROOT / "reference" / "content-production" / "image-failure-classes.json").read_text(encoding="utf-8")
+)
+classes = LIBRARY["classes"]
+check("class ids are unique", len({c["id"] for c in classes}) == len(classes))
+SOURCE = (ROOT / "scripts" / "image_spec.py").read_text(encoding="utf-8")
+TEST_SOURCE = (ROOT / "scripts" / "image_spec_contract_test.py").read_text(encoding="utf-8")
+for c in classes:
+    for field in ("id", "symptom", "cause", "found_by", "prevention", "detection", "regression", "status"):
+        check(f"{c['id']} has {field}", field in c)
+    should_close = bool(c["prevention"]) and bool(c["detection"]) and bool(c["regression"]) and c.get("prevention_effective") is not False
+    check(
+        f"{c['id']} is {'closed' if should_close else 'open'} by the rule",
+        c["status"] == ("closed" if should_close else "open"),
+        c["status"],
+    )
+    for question in c["detection"]:
+        # A literal id must appear quoted; a template's fixed suffix must appear,
+        # and q_<id> itself is the entity count every subject and object gets.
+        if "<" not in question:
+            found = f'"{question}"' in SOURCE
+        elif question == "q_<id>":
+            found = 'base = f"q_{' in SOURCE
+        else:
+            fixed = max((p.replace("_NN", "_") for p in re.split(r"<[^>]+>", question)), key=len)
+            found = len(fixed.strip("_")) > 1 and fixed in SOURCE
+        check(f"{c['id']} detection {question!r} is a question the compiler writes", found)
+    for section in c["regression"]:
+        check(f"{c['id']} regression {section} exists", f'print("{section} ' in TEST_SOURCE)
 
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
