@@ -553,7 +553,8 @@ def palette_conflicts(spec: dict[str, Any]) -> list[str]:
         many = MULTICOLOUR_RE.search(text)
         named = sorted({
             m.group(0).lower() for m in re.finditer(r"\b(?:" + _COLOURS + r")\b", text, re.I)
-            if m.group(0).lower() not in allowed
+            # "green tea" and "Red Bull" are a dish and a name, as decolour knows (the lite session).
+            if m.group(0).lower() not in allowed and not _keep_colour(m)
         })
         if many or named:
             found.append(f"{where}: " + (f"{many.group(0)!r}" if many else ", ".join(named)))

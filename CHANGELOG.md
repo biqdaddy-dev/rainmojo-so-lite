@@ -331,10 +331,11 @@ picture now takes only the drawing style from the reference and the colours from
 the brief is warned that the reference's own colours may still pull. Contract test **960
 assertions**, passing here unchanged.
 
-Then `a8b818c` and `096e3d2`: a brief that limits its colours, such as one ink and one wash,
+Then `a8b818c`, `096e3d2` and `1c5db92`: a brief that limits its colours, such as one ink and one wash,
 is warned when something in the scene asks for another colour, and the guide explains that a
 style reference should be a crop of plain approved art, since the subject of a full picture
-leaks into new ones. Contract test **966 assertions**, passing here unchanged.
+leaks into new ones. A dish or a brand name, such as green tea, is not read as a colour there.
+Contract test **967 assertions**, passing here unchanged.
 
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch

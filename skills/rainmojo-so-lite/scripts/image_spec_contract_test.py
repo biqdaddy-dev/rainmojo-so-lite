@@ -3337,6 +3337,9 @@ check("a colour inside the palette is not", not any(c.startswith(_last) for c in
 _charcoal = copy.deepcopy(EXAMPLE)
 _charcoal["style"]["color_palette"] = "warm oak desk, charcoal and off-white clothing"
 check("a photograph's charcoal suit is not a monochrome drawing", not image_spec.restrictive_palette(_charcoal))
+_dish = copy.deepcopy(_narrow)
+_dish["location"]["locale_details"][-1] = "a small glass of iced green tea beside a can of Red Bull"
+check("a dish or a name is not a colour", not any(c.startswith(_last) for c in image_spec.palette_conflicts(_dish)), str(image_spec.palette_conflicts(_dish)))
 check("a palette that describes restricts nothing", not image_spec.restrictive_palette(EXAMPLE) and not image_spec.palette_conflicts(EXAMPLE))
 
 print("C15 a thin client config still has a gate")

@@ -1192,6 +1192,15 @@ has. Regression 4 of 4, T4 green at 70, the selftest unchanged. Battery and corp
 clean export of `096e3d2`, 17 of 20 clean, 21, 2, 4, the findings reproducer at 0 of 14; the
 corpus does not move.
 
+FORTY-SIXTH PORT, `096e3d2` to `1c5db92`, same version, one commit on `8e53f35`, shared files
+only. The forty-fifth port's finding is fixed upstream: `palette_conflicts` now uses `decolour`'s
+`_keep_colour` exemption, so under "warm neutrals only: sand, cream, walnut" "small glass of iced
+green tea" and "can of Red Bull" are no longer flagged, while "bright green ceramic mug" still is.
+Two files byte-identical, the review example unchanged at 82; 967 assertions passing, as on the
+full edition's export. Regression 4 of 4, T4 green at 70. Battery and corpus identical to a clean
+export of `1c5db92`, 17 of 20 clean, the findings reproducer at 0 of 14; the corpus output is
+unchanged since the last port.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New
