@@ -962,6 +962,65 @@ and four plates set two per side on a 0.9 m table warn too; no client brief name
 by id, so the corpus could not show it. And a person "leaning on the counter with both elbows"
 is counted as a load standing on it.
 
+THIRTY-SEVENTH PORT, `2f24ae9`, `5893348` and `6f20657`, same version; `0e808af` changes only the
+full edition's content-pipeline contract test, which this edition does not carry. Seat-to-table
+heights are read off the seat by EN 1729-1, the fresh look is told the locale, and `6f20657`
+answers this edition's fourteen open findings. Five files byte-identical, the review example
+regenerated here and byte-identical at 82 questions. 882 assertions passing unchanged, as on the
+full edition's export; regression 4 of 4, T4 green. Battery and corpus identical to a clean
+export of `6f20657`, 16 of 19 clean, 21, 2, 4. On the client briefs validation and warnings are
+unchanged and the prompt moves only on bangla, pulseth, rotkubkhao and sustainmap, as upstream
+says.
+
+The reproducer, `open_findings.py`, was itself corrected twice this round. Its first run on
+`6f20657` stopped at D2, which now refuses people marked matched, so D1 to D3 were made to judge
+the outcome: D1 whether the named difference reaches the prompt, which it now does ("...a matched
+set ...; one with a cracked corner"), D2 a refusal as fixed. Then a regex written through a
+Python string lost its word boundary to a backspace byte, the trap logged at the twenty-first
+port, and A3 printed FIXED with "that holding a coffee cup?" in its own evidence; the byte was
+replaced and the file holds none. Read against its evidence it now reports 2 open of 14 at
+`6f20657` and 14 of 14 at `d11e9c4`.
+
+The two still open. D3 was not fixed but inverted. `counted_name` pluralises the collective, so
+the prompt now reads "2 pairs of moulded tiger sculptures", "3 rows of parked scooters" and "5
+rows of framed photovoltaic panels", and the count questions ask for "exactly 5 rows of framed
+photovoltaic panels". Each brief sizes one item: one tiger "about 1.6 m long", one scooter "each
+about 1.1 m tall at the mirrors", one panel "each panel 1.76 m by 1.13 m", the array 8.8 m wide,
+five panels in one row. The count is of items inside one collective; the old "2 pair of" was
+ambiguous and this states the wrong reading, on two valid client briefs, prompt and questions
+both. It wants "a pair of moulded tiger sculptures", "a row of 3 parked scooters", "a row of 5
+framed photovoltaic panels", and a count of the items. And A3 holds for prepositions but not
+participles: "that is in her lap?" now, but "...that holding a coffee cup?" and "...that
+resting on the table?" remain, since `VERBLESS_RE` lists no -ing word.
+
+THIRTY-EIGHTH PORT, up to the full edition's frozen `917a789` and its note `963e292`, same
+version, one commit on top of `0000fcc` as asked. It carries the thirty-seventh port's commits,
+whose own commit `196749d` was never pushed and is folded in here, plus `4aa1605`
+(`relative_size_clause`, off by default), `ef386cd` (`prevention_history` in the failure library,
+held by C48, and F-backlight-front-lit), `917a789` (seated landmarks for scale anchors,
+`landmark_height_m`, `anchor_posture_mismatch` and `usable_anchor`; a `style.reference` with its
+rights and `conditioning_references()`; the A1 sentence plural throughout) and `963e292` (the
+owner's backlight choice, a note). `0e808af` stays out: it changes only the full edition's
+content-pipeline contract test, which this edition does not carry. Five files byte-identical,
+the review example regenerated here and byte-identical at 82 questions. 922 assertions passing
+unchanged, as on the full edition's export; regression 4 of 4, T4 green. No lite doc mentions a
+style reference, a likeness or conditioning rights. Battery and corpus identical to a clean
+export of `963e292`, 21, 2, 4.
+
+The corpus itself moved during this port, outside version control: a seventeenth brief,
+sustainmap-rooftop-visible, and biqdaddy and doctorjay rewritten at 17:23 with seated anchors. So
+it reads 17 of 20 clean, the same three refused. Against `0000fcc`'s module on those same files:
+biqdaddy and doctorjay are refused by the old code only, since it measured a seated person's
+elbow at standing height, and s45 loses that same false error while staying refused for its
+real ones. Every prompt change is one of the fixes, on bangla, pulseth, rotkubkhao and the two
+sustainmap briefs.
+
+The reproducer reports 2 open of 14 at `963e292`, identically on both editions: D3, which now
+reaches a third brief, sustainmap-rooftop-visible's "4 rows of framed photovoltaic panels", and
+A3's participles, "...that holding a coffee cup?". The posture rule raised no false alarm on six
+phrasings, "an egg standing on end beside the pharmacist" and "stands upright by" among them; it
+misses "the pharmacist, seated, at the elbow" and "as she sits", so it errs silent.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

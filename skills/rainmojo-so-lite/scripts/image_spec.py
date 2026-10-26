@@ -190,6 +190,23 @@ BODY_LANDMARK_FRACTION = {
     "knees": 0.285,
     "ankle": 0.039,
 }
+# Where the landmarks of a seated adult fall above the seat, for a 1.65 m adult:
+# seated dimensions of the same order as Pheasant and Haslegrave, Bodyspace
+# (sitting shoulder height, elbow rest height, thigh thickness), rounded, with the
+# eye kept at the module's ANSUR value (1.23 m on a 0.45 m seat). The body's
+# share scales with stature and the seat does not, as for eye height. A knee is
+# measured from the floor. The sweep session's finding: with a standing-only
+# table, authors anchored to "the surgeon standing" while he sat.
+SEATED_LANDMARK_ABOVE_SEAT_M = {
+    "eye": 0.78, "eyes": 0.78, "chin": 0.67, "shoulder": 0.58, "shoulders": 0.58,
+    "chest": 0.43, "elbow": 0.23, "elbows": 0.23, "waist": 0.23, "lap": 0.15,
+    "thigh": 0.15, "thighs": 0.15,
+}
+SEATED_KNEE_FROM_FLOOR_M = 0.53
+CHAIR_SEATED = {"sitting", "seated"}
+FLOOR_SEATED = {"floor_seated", "sitting_on_floor", "cross_legged"}
+STANDING_WORD_RE = r"(?:standing|stood|upright|on (?:his|her|their) feet)"
+SEATED_WORD_RE = r"(?:seated|sitting|sat)"
 # How far from the landmark the object's own height may sit before the anchor is
 # describing a different object. Generous, because "just above the hip" is a
 # human sentence, not a measurement.
@@ -297,11 +314,35 @@ REFERENCE_HEIGHTS_M = {
     "motorcycle": (1.00, 1.30, "convention: step-through and street motorcycles"),
     "scooter": (1.00, 1.30, "convention: step-through scooters"),
 }
-# Which reference names are seats and which are tables, and how far above a
-# seat its table sits (convention: about 0.27 to 0.30 m).
+# Which reference names are seats and which are tables. A high chair, a bar
+# stool or a coffee table is deliberately none of these: each puts a seat and a
+# surface in a relation the table below does not describe.
 SEAT_KEYS = {"chair seat", "office chair", "plastic stool"}
 TABLE_KEYS = {"dining table", "folding table", "desk", "work surface", "floor table", "low table"}
-SEAT_TO_TABLE_M = (0.18, 0.38)
+# How far above a seat its table stands, read off the seat's own height: EN
+# 1729-1's eight size marks as (seat h8, table h1 minus seat), each height
+# within 10 mm (PN-EN 1729-1:2007). Furniture against furniture, not against the
+# sitter: at a family dinner a child sits at the adults' table (rangsarn).
+EN1729_SEAT_TO_TABLE = (
+    (0.21, 0.19), (0.26, 0.20), (0.31, 0.22), (0.35, 0.24),
+    (0.38, 0.26), (0.43, 0.28), (0.46, 0.30), (0.51, 0.31),
+)
+SEAT_TO_TABLE_TOLERANCE_M = 0.04
+
+
+def seat_to_table_m(seat_h: float) -> tuple[float, float]:
+    """The band a table top should sit above a seat of this height."""
+    rows = EN1729_SEAT_TO_TABLE
+    if seat_h <= rows[0][0]:
+        expected = rows[0][1]
+    elif seat_h >= rows[-1][0]:
+        expected = rows[-1][1]
+    else:
+        for (s0, d0), (s1, d1) in zip(rows, rows[1:]):
+            if s0 <= seat_h <= s1:
+                expected = d0 + (d1 - d0) * (seat_h - s0) / (s1 - s0)
+                break
+    return round(expected - SEAT_TO_TABLE_TOLERANCE_M, 3), round(expected + SEAT_TO_TABLE_TOLERANCE_M, 3)
 SUPPORT_KINDS = {"rests_on", "held_by", "mounted_on", "hangs_from", "worn_by", "stands_on", "floats_in", "fixed_in"}
 # A support that holds nothing is the floating-object failure written into the
 # brief. Scanned only for the kinds that bear weight: something may legitimately
@@ -460,6 +501,10 @@ LIST_ITEM_SPLIT_RE = re.compile(r"[,;|\n]|\.(?:\s|$)")
 
 # The identity of a person who comes with a reference image is carried by the
 # image, not by the text. Describing the face in words fights the reference.
+STYLE_LOCK = (
+    "Draw it in the style of the style reference image, taking only its line, texture, "
+    "palette and finish; the subject, layout and lettering all come from this description"
+)
 IDENTITY_LOCK = (
     "the face, bone structure, eye shape and colour, nose, mouth, jawline, skin "
     "tone and every identifying mark stay exactly as they are in the reference "
@@ -921,6 +966,58 @@ def collisions(spec: dict[str, Any]) -> list[tuple[str, str, str]]:
     return found
 
 
+def landmark_height_m(person: dict[str, Any], word: str) -> float | None:
+    """How high a named landmark of this person is above their floor, as posed."""
+    stature = _num(person.get("height_m"))
+    if not stature:
+        return None
+    posture = _text(person.get("posture") or "standing").lower()
+    if posture in CHAIR_SEATED or posture in FLOOR_SEATED:
+        seat = SEAT_HEIGHT_M.get(posture, 0.0) if posture in CHAIR_SEATED else 0.0
+        if word in {"knee", "knees"}:
+            return SEATED_KNEE_FROM_FLOOR_M * stature / ADULT_STATURE_M if posture in CHAIR_SEATED else None
+        above = SEATED_LANDMARK_ABOVE_SEAT_M.get(word)
+        return None if above is None else seat + above * stature / ADULT_STATURE_M
+    if posture in EYE_FRACTION:
+        fraction = BODY_LANDMARK_FRACTION.get(word)
+        return None if fraction is None else fraction * stature
+    return None
+
+
+def anchor_posture_mismatch(anchor: str, person: dict[str, Any] | None) -> str:
+    """The posture an anchor puts its person in when they are not in it, or "".
+
+    "the mid-thigh of the surgeon standing" for a seated surgeon names a pose
+    nobody can draw or check. The posture word must sit beside the person's
+    name, so "an egg standing on end" says nothing about anyone.
+    """
+    if person is None:
+        return ""
+    lowered = anchor.lower()
+    posture = _text(person.get("posture") or "standing").lower()
+    seated = posture in CHAIR_SEATED or posture in FLOOR_SEATED
+    names = [n for n in (_text(person.get("id")).replace("_", " ").lower(), _text(person.get("short_name")).lower()) if n]
+    for name in names:
+        n = re.escape(name)
+        for word_re, wrong in ((STANDING_WORD_RE, seated), (SEATED_WORD_RE, not seated)):
+            if not wrong:
+                continue
+            if re.search(r"\b" + n + r"(?:'s)?\s+(?:\w+\s+){0,1}?" + word_re + r"\b", lowered) or re.search(
+                r"\b" + word_re + r"\s+(?:\w+\s+){0,1}?" + n + r"\b", lowered
+            ):
+                return "standing" if seated else "seated"
+    return ""
+
+
+def usable_anchor(spec: dict[str, Any], obj: dict[str, Any]) -> str:
+    """The scale anchor, or "" when it puts its person in a pose they are not in."""
+    anchor = _text(obj.get("scale_anchor"))
+    people_in = [x for x in _list(spec.get("subjects")) if isinstance(x, dict)]
+    if anchor and anchor_posture_mismatch(anchor, anchor_person(anchor, people_in)):
+        return ""
+    return anchor
+
+
 def anchor_person(anchor: str, subjects: list[dict[str, Any]]) -> dict[str, Any] | None:
     """The person a scale anchor is about, or None when it does not say.
 
@@ -988,6 +1085,37 @@ def has_reference_image(subject: dict[str, Any]) -> bool:
     return bool(reference_image_path(subject))
 
 
+def style_reference(spec: dict[str, Any]) -> dict[str, Any]:
+    """The spec's style reference block, or an empty dict."""
+    style = spec.get("style") if isinstance(spec.get("style"), dict) else {}
+    block = style.get("reference")
+    return block if isinstance(block, dict) else {}
+
+
+def conditioning_references(spec: dict[str, Any]) -> list[dict[str, str]]:
+    """Every image the generator is fed, with its role and rights.
+
+    One list for the side that calls the generator: the real place's
+    conditioning images, each person's likeness and the style reference.
+    """
+    out: list[dict[str, str]] = []
+    location = spec.get("location") if isinstance(spec.get("location"), dict) else {}
+    reference = location.get("reference") if isinstance(location.get("reference"), dict) else {}
+    sources = {_text(r.get("path") or r.get("url")): r for r in _list(reference.get("sources")) if isinstance(r, dict)}
+    for path in [_text(v) for v in _list(reference.get("conditioning_images")) if _text(v)]:
+        out.append({"role": "place", "path": path, "rights": _text(sources.get(path, {}).get("rights"))})
+    for subject in _list(spec.get("subjects")):
+        if isinstance(subject, dict) and has_reference_image(subject):
+            own = subject_reference(subject)
+            path = reference_image_path(subject)
+            rights = _text(own.get("rights")) or _text(sources.get(path, {}).get("rights"))
+            out.append({"role": f"likeness:{_text(subject.get('id'))}", "path": path, "rights": rights})
+    block = style_reference(spec)
+    if _text(block.get("path")):
+        out.append({"role": "style", "path": _text(block["path"]), "rights": _text(block.get("rights"))})
+    return out
+
+
 def reference_block(spec: dict[str, Any]) -> dict[str, Any]:
     location = spec.get("location")
     if not isinstance(location, dict):
@@ -1039,6 +1167,33 @@ MATCHED_RE = re.compile(
 )
 
 
+COLLECTIVE_PLURAL = {
+    "pair": "pairs", "row": "rows", "set": "sets", "stack": "stacks", "group": "groups",
+    "line": "lines", "pile": "piles", "rack": "racks", "bunch": "bunches", "cluster": "clusters",
+    "string": "strings", "box": "boxes", "crate": "crates", "basket": "baskets", "tray": "trays",
+}
+
+
+def counted_name(count: int, name: str, one: bool = False) -> str:
+    """"2 pairs of moulded tigers", not "2 pair of" (the lite session).
+
+    A single thing is its bare name in the prompt, and "1 <name>" in a question
+    that asks for an exact count (one=True).
+    """
+    if count <= 1:
+        return f"{count} {name}" if one else name
+    head = re.match(r"(?P<word>[a-z]+)(?P<rest>\s+of\b.*)$", name, re.I | re.S)
+    if head and head.group("word").lower() in COLLECTIVE_PLURAL:
+        return f"{count} {COLLECTIVE_PLURAL[head.group('word').lower()]}{head.group('rest')}"
+    return f"{count} {name}"
+
+
+def matched_difference(entity: dict[str, Any]) -> str:
+    """What a matched set says differs: "identical model, one with a cracked corner"."""
+    rest = MATCHED_RE.sub("", _text(entity.get("variation"))).strip(" ,;:-")
+    return re.sub(r"^(?:model|design|make|kind|type|set)\b[\s,;:-]*", "", rest, flags=re.I)
+
+
 def is_matched(entity: dict[str, Any]) -> bool:
     """Whether a repeated thing is declared a matched set by design."""
     return bool(MATCHED_RE.match(_text(entity.get("variation"))))
@@ -1076,7 +1231,10 @@ FACING_AWAY_RE = re.compile(
     # they face (the lite session's finding on theklinique), so bare "from
     # behind" does not count.
     r"\b(?:backs? (?:three-quarters )?to the (?:lens|camera)|facing away|"
-    r"(?:seen|viewed|shot) from behind|backs? three-quarters|turned away)\b",
+    r"(?:seen|viewed|shot) from behind|backs? three-quarters|"
+    # "turned away from the shelves" faces the camera if anything; only a bare
+    # turn, or one away from the camera itself, is a back (the lite session).
+    r"turned away(?!\s+from\s+(?!the\s+(?:lens|camera|viewer)\b)))\b",
     re.I,
 )
 FACING_CAMERA_RE = re.compile(
@@ -1226,13 +1384,22 @@ def _hand_segments(hands: str) -> list[str]:
     return out
 
 
+VERBLESS_RE = re.compile(
+    r"^(?:in|on|at|over|under|beneath|by|beside|against|behind|across|around|near|inside|"
+    r"along|upon|between|flat|raised|open|empty|loose|still|out|up|down)\b",
+    re.I,
+)
+
+
 def hand_clause_parts(hands: str) -> list[dict[str, str]]:
     """Each side-named clause: side, what it does, whose hand, which pronoun."""
     parts: list[dict[str, str]] = []
     for segment in _hand_segments(hands):
         if not re.search(r"\b(?:left|right)\b", segment, re.I):
             continue
-        pronoun = re.search(r"\b(her|his|their)\b", segment, re.I)
+        # Whose hand: the pronoun before the side itself. "the left hand rests on
+        # her shoulder" names the shoulder's owner, not the hand's (the lite session).
+        pronoun = re.search(r"\b(her|his|their)\s+(?:own\s+)?(?:left|right)\b", segment, re.I)
         lead = _SIDE_LEAD.match(segment)
         if lead and not re.search(r"\s+in\s+(?:the |her |his |their )?(?:left|right)(?:\s+hand)?\s*$", segment, re.I):
             rest = lead.group("rest").strip()
@@ -1490,6 +1657,7 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
         )
     derived["scale_notes"] = notes[:3]
     derived["support_loads"] = support_loads(spec)
+    derived["relative_widths"] = relative_widths(spec)
     return derived
 
 
@@ -2131,10 +2299,21 @@ def validate_spec(
         # below her waist". Take the one it leads with: that is the claim.
         named = sorted(
             ((anchor.find(word), word, fraction)
-             for word, fraction in BODY_LANDMARK_FRACTION.items()
-             if word in anchor),
+             for word, fraction in {**BODY_LANDMARK_FRACTION, "lap": None}.items()
+             if re.search(r"\b" + re.escape(word) + r"\b", anchor)),
+            key=lambda item: item[0],
         )
         referent = anchor_person(anchor, subjects)
+        wrong_pose = anchor_posture_mismatch(anchor, referent)
+        if wrong_pose:
+            warnings.append(
+                f"object {_text(obj.get('id'))}: scale_anchor measures {_noun(referent)} "
+                f"{wrong_pose}, but they are {_text(referent.get('posture') or 'standing')}. "
+                "Nobody can draw or check that pose, so the anchor is left out of the prompt "
+                "and the review. Anchor to where it meets them as posed (seated: lap, elbow, "
+                "chest, shoulder, chin), or to a thing beside it."
+            )
+            named = []
         for _, word, fraction in named[:1]:
             if not floor_supported:
                 # height_m is the thing's own length, not a height above a floor.
@@ -2144,13 +2323,14 @@ def validate_spec(
             if referent is None:
                 break
             stature = _num(referent.get("height_m"))
-            if not stature:
+            expected = landmark_height_m(referent, word)
+            if not stature or expected is None:
                 break
-            expected = fraction * stature
             if abs((obj_height + ground) - expected) > LANDMARK_TOLERANCE_M:
                 errors.append(
                     f"object {_text(obj.get('id'))}: scale_anchor says it reaches the "
-                    f"{word} of {_noun(referent)}, who is {stature:g} m, so that is "
+                    f"{word} of {_noun(referent)}, who is {stature:g} m and "
+                    f"{_text(referent.get('posture') or 'standing')}, so that is "
                     f"{expected:.2f} m, but height_m is {obj_height:g}. Change the "
                     "height, the anchor, or the person it names."
                 )
@@ -2202,14 +2382,15 @@ def validate_spec(
         if _ref_key(_text(obj.get("name"))) in TABLE_KEYS and _num(obj.get("height_m"))
     ]
     if seats and tables:
-        low, high = SEAT_TO_TABLE_M
         for seat, seat_h in seats:
+            low, high = seat_to_table_m(seat_h)
             if not any(low <= table - seat_h <= high for table in tables):
                 warnings.append(
                     f"object {_text(seat.get('id'))}: a {seat_h:g} m seat has no table {low:g} "
                     f"to {high:g} m above it (tables at "
                     + ", ".join(f"{t:g} m" for t in tables)
-                    + "), so whoever sits at it is drawn too low or too high for the table."
+                    + "; EN 1729-1 pairs), so whoever sits at it is drawn too low or too high for "
+                    "the table."
                 )
 
     # Object heights against code and settled convention, so a 1.2 m kitchen
@@ -2232,6 +2413,24 @@ def validate_spec(
     location_sources = [
         r for r in _list((location_reference or {}).get("sources")) if isinstance(r, dict)
     ] if isinstance(location_reference, dict) else []
+    style_ref = style_reference(spec)
+    if style_ref:
+        # Approved brand art or a lock sheet, checked as a likeness is (owner,
+        # 2026-10-26, relayed by rangsarn).
+        if not _text(style_ref.get("path")):
+            errors.append("spec.style.reference.path is required.")
+        if not _text(style_ref.get("origin")):
+            errors.append(
+                "spec.style.reference.origin is required: say where this style comes from, "
+                "such as the approved channel brand art and its version."
+            )
+        style_rights = _text(style_ref.get("rights"))
+        if style_rights not in REFERENCE_RIGHTS:
+            errors.append(
+                "spec.style.reference.rights must be one of " + ", ".join(sorted(REFERENCE_RIGHTS)) + "."
+            )
+        elif style_rights == "reference_only":
+            warnings.append(f"spec.style.reference {_text(style_ref.get('path'))!r} {REFERENCE_ONLY_NOTE}")
     for subject in subjects:
         sid = _text(subject.get("id"))
         own = subject_reference(subject)
@@ -2318,7 +2517,11 @@ def validate_spec(
     if photographic and cam_height is not None and eye_heights:
         level_eyes = floor_eye_heights or eye_heights
         mean_eye = sum(level_eyes) / len(level_eyes)
-        eye_level_tolerance = 0.35 if standing_people(spec) else 0.15
+        # The wider band is for standing people on the camera's own floor; one
+        # standing on a platform does not widen it for the seated (the lite session).
+        eye_level_tolerance = 0.35 if [
+            e for e in standing_people(spec) if not (_num(e.get("ground_height_m")) or 0)
+        ] else 0.15
         if angle == "eye_level" and abs(cam_height - mean_eye) > eye_level_tolerance:
             errors.append(
                 f"spec.camera angle eye_level needs the lens near the eye height of the people "
@@ -2445,6 +2648,18 @@ def validate_spec(
                     f"spec.realism.imperfections[{index}] is too short to be located; "
                     "say where it is as well as what it is."
                 )
+
+    for subject in subjects:
+        if _text(subject.get("kind") or "person") == "person" and is_matched(subject):
+            # Owner rule: people in a scene never look alike. A uniform is wardrobe.
+            errors.append(
+                f"subject {_text(subject.get('id'))}: people are never a matched set. Put a "
+                "shared uniform in wardrobe, and give each person a face, build and age of "
+                "their own in variation."
+            )
+
+    if "relative_size_clause" in spec and not isinstance(spec.get("relative_size_clause"), bool):
+        errors.append("spec.relative_size_clause must be true or false.")
 
     for index, entry in enumerate(_list(spec.get("physical_checks"))):
         if not isinstance(entry, dict) or not _text(entry.get("check")):
@@ -3074,6 +3289,9 @@ def build_clauses(
                 add(
                     "subject",
                     1,
+                    f"{_cap(noun)} have their backs to the camera, so each one's own right "
+                    "hand is on the right of the picture and their own left hand on the left"
+                    if count > 1 else
                     f"{_cap(noun)} has {possessive(subject)} back to the camera, so "
                     f"{possessive(subject)} own right hand is on the right of the picture and "
                     f"{possessive(subject)} left hand on the left",
@@ -3097,7 +3315,7 @@ def build_clauses(
     # objects -----------------------------------------------------------------
     for obj in objects:
         count = int(_num(obj.get("count")) or 1)
-        line = (f"{count} " if count > 1 else "") + paint(_text(obj.get("name")))
+        line = counted_name(count, paint(_text(obj.get("name"))))
         if _text(obj.get("size")):
             line += f", {_text(obj['size'])}"
         if _text(obj.get("material")):
@@ -3123,11 +3341,13 @@ def build_clauses(
                 f"{_and_list(sources)}",
             )
         if count > 1 and is_matched(obj):
+            # "identical model, one with a cracked corner" keeps its difference.
+            difference = matched_difference(obj)
             add(
                 "object",
                 1,
                 f"The {count} are a matched set, alike by design, each in its own place with "
-                "its own light and shadow",
+                "its own light and shadow" + (f"; {difference}" if difference else ""),
             )
         elif count > 1 and _text(obj.get("variation")):
             add("object", 1, f"Each of the {count} differs: {_text(obj['variation'])}")
@@ -3146,8 +3366,8 @@ def build_clauses(
                 f"{_cap(_noun(obj))} runs past both edges of the frame and is cut by them, "
                 "so the frame holds a section of its length and both ends lie outside it",
             )
-        if _text(obj.get("scale_anchor")):
-            add("object", 2, f"For scale, {_text(obj['scale_anchor'])}")
+        if usable_anchor(spec, obj):
+            add("object", 2, f"For scale, {usable_anchor(spec, obj)}")
 
     layout = spec.get("spatial_layout", {}) if isinstance(spec.get("spatial_layout"), dict) else {}
     for plane in PLANES:
@@ -3238,7 +3458,12 @@ def build_clauses(
                     # what is shown, as the question asks it.
                     add("camera", 2, f"{line} crosses {name} at about the {crossing_landmark(crossing)}")
         if horizon in HORIZON_IN_FRAME:
-            tall = [c for c in derived.get("object_horizon_crossings", []) if c["height_m"] >= 1.0][:2]
+            # Not for a thing the frame cuts: its question is skipped, and a per
+            # cent of a height the picture does not show cannot be drawn (the lite session).
+            tall = [
+                c for c in derived.get("object_horizon_crossings", [])
+                if c["height_m"] >= 1.0 and derived.get("fits_in_frame", {}).get(c["id"], True)
+            ][:2]
             for crossing in tall:
                 name = _entity_name(spec, crossing["id"])
                 if crossing["above_top"]:
@@ -3270,6 +3495,17 @@ def build_clauses(
     # scale -------------------------------------------------------------------
     for pair in derived.get("scale_notes", []):
         add("scale", 2, pair)
+    if spec.get("relative_size_clause") is True:
+        # Off by default: rangsarn's experiment, prompt on against off.
+        for rel in derived.get("relative_widths", []):
+            obj = next(o for o in _list(spec.get("objects")) if isinstance(o, dict) and _text(o.get("id")) == rel["id"])
+            many = int(_num(obj.get("count")) or 1) > 1
+            thing = _text(obj.get("short_name")) or _noun(obj)
+            holder = _entity_name(spec, rel["supporter"])
+            amount = f"about as wide as {holder}" if rel["words"] == "as wide as" else f"about {rel['words']} as wide as {holder}"
+            plural = thing.endswith("s") and not thing.endswith("ss")
+            each = f"Each of the {thing} is " if plural else f"Each {thing} is "
+            add("scale", 2, (each if many else f"{_cap(_noun(obj))} is ") + amount)
 
     # light -------------------------------------------------------------------
     key = lighting["key"]
@@ -3325,6 +3561,8 @@ def build_clauses(
         add("composition", 3, f"Crop safety: {_text(composition['crop_safety'])}")
 
     # style, locale, invariants ----------------------------------------------
+    if _text(style_reference(spec).get("path")):
+        add("style", 1, STYLE_LOCK)
     for field in ("color_palette", "mood", "texture"):
         if _text(style.get(field)):
             add("style", 3, f"{field.replace('_', ' ').capitalize()}: {_text(style[field])}")
@@ -3671,9 +3909,28 @@ COLOUR_WORD_RE = re.compile(
 )
 
 
+# A colour word that is part of a name or a dish, not a colour: "green tea",
+# "brown rice", "red curry" (the lite session). Proper names are kept too.
+COLOUR_COMPOUND_RE = re.compile(
+    r"\s*(?:tea|rice|curry|sugar|onions?|peppers?|chill?ies|chill?i|beans?|papayas?|mangoe?s?|"
+    r"lentils?|card|belt|wine|grapes?|apples?)\b",
+    re.I,
+)
+
+
+def _keep_colour(match: re.Match[str]) -> bool:
+    text = match.string
+    after = text[match.end():]
+    word = match.group(0)
+    # "Red Bull", "the Blue Mosque": a capital on the colour and on the next word.
+    if word[:1].isupper() and re.match(r"\s+[A-Z]", after):
+        return True
+    return bool(COLOUR_COMPOUND_RE.match(after))
+
+
 def decolour(text: str) -> str:
     """The text with its colour words taken out, for a monochrome drawing."""
-    out = COLOUR_WORD_RE.sub("", text)
+    out = COLOUR_WORD_RE.sub(lambda m: m.group(0) if _keep_colour(m) else "", text)
     out = re.sub(r"\s{2,}", " ", out)
     out = re.sub(r"\s+([,;.])", r"\1", out)
     out = re.sub(r"(?:^|(?<=[,;]))\s*,", "", out)
@@ -3780,10 +4037,14 @@ def triggered_checks(spec: dict[str, Any]) -> list[dict[str, Any]]:
 def support_loads(spec: dict[str, Any]) -> dict[str, Any]:
     """What rests or stands on each declared supporter, side by side, in metres.
 
-    A thing counts its width_m times its count; a person 0.5 m standing and
-    0.6 m seated, found by "on the <supporter>" in their position. Coverage says
-    how much of what rests on something could be checked: a supporter named only
-    in words ("the road") has no width to check against.
+    Only what stands side by side across a supporter: people (0.5 m standing,
+    0.6 m seated, found by standing or sitting "on the <supporter>", or a position
+    that opens with it) and things that stand_on it, each its width_m times its
+    count. What rests on a surface is set out in two dimensions and on tiers,
+    plates on both sides of a table, cartons on five shelves, so a sum of widths
+    says nothing about it (the lite session). Leaning on a counter is not standing
+    on it. Coverage says how much of what stands on something could be checked:
+    a supporter named only in words ("the road") has no width to check against.
     """
     objects = [o for o in _list(spec.get("objects")) if isinstance(o, dict)]
     by_id = {_text(o.get("id")): o for o in objects if _text(o.get("id"))}
@@ -3791,7 +4052,7 @@ def support_loads(spec: dict[str, Any]) -> dict[str, Any]:
     resting = on_declared = 0
     for obj in objects:
         support = obj.get("support") if isinstance(obj.get("support"), dict) else {}
-        if _text(support.get("kind")) not in GROUNDED_SUPPORT:
+        if _text(support.get("kind")) != "stands_on":
             continue
         resting += 1
         on = _text(support.get("by"))
@@ -3810,9 +4071,11 @@ def support_loads(spec: dict[str, Any]) -> dict[str, Any]:
             if not _num(obj.get("width_m")):
                 continue
             names = {n for n in (_text(obj.get("short_name")).lower(), oid.replace("_", " ").lower()) if n}
-            if any(
-                re.search(r"\b(?:on|upon|atop|on top of)\s+(?:the\s+|a\s+)?" + re.escape(n) + r"\b", position)
-                for n in names
+            on_it = r"(?:on|upon|atop|on top of)\s+(?:the\s+|a\s+)?(?:" + "|".join(re.escape(n) for n in names) + r")\b"
+            if re.match(r"\s*" + on_it, position) or re.search(
+                r"\b(?:stand\w*|sit\w*|seated|perch\w*|kneel\w*|crouch\w*|squat\w*|walk\w*|balanc\w*)"
+                r"\s+(?:\w+\s+){0,3}?" + on_it,
+                position,
             ):
                 seated = _text(subject.get("posture") or "standing").lower() in EYE_ABSOLUTE_M
                 on_declared += 1
@@ -3827,6 +4090,38 @@ def support_loads(spec: dict[str, Any]) -> dict[str, Any]:
         for oid, rows in items.items()
     ]
     return {"loads": loads, "resting": resting, "on_declared_supporter": on_declared}
+
+
+# The fractions a width is said in: words a generator can act on, not metres.
+WIDTH_FRACTIONS = (
+    (1 / 10, "a tenth"), (1 / 8, "an eighth"), (1 / 6, "a sixth"), (1 / 5, "a fifth"),
+    (1 / 4, "a quarter"), (1 / 3, "a third"), (2 / 5, "two fifths"), (1 / 2, "half"),
+    (2 / 3, "two thirds"), (3 / 4, "three quarters"), (1.0, "as wide as"),
+)
+
+
+def relative_widths(spec: dict[str, Any]) -> list[dict[str, Any]]:
+    """Each thing resting or standing on a declared supporter, its width against the supporter's.
+
+    Only between 1/12 and 1: a ladle on a long market table is too small a share
+    to say, and a thing wider than what holds it is the capacity warning's.
+    """
+    objects = [o for o in _list(spec.get("objects")) if isinstance(o, dict)]
+    by_id = {_text(o.get("id")): o for o in objects if _text(o.get("id"))}
+    out = []
+    for obj in objects:
+        support = obj.get("support") if isinstance(obj.get("support"), dict) else {}
+        on = _text(support.get("by"))
+        if _text(support.get("kind")) not in GROUNDED_SUPPORT or on not in by_id:
+            continue
+        mine, theirs = _num(obj.get("width_m")), _num(by_id[on].get("width_m"))
+        if not mine or not theirs or not (1 / 12 <= mine / theirs <= 1.0):
+            continue
+        ratio = mine / theirs
+        value, words = min(WIDTH_FRACTIONS, key=lambda f: abs(f[0] - ratio))
+        out.append({"id": _text(obj.get("id")), "supporter": on, "ratio": round(ratio, 3),
+                    "said_as": round(value, 3), "words": words})
+    return out
 
 
 def failure_vocabulary() -> list[str]:
@@ -3851,7 +4146,16 @@ def failure_vocabulary() -> list[str]:
 
 
 # A scene that pours: broth fell from beneath a bowl in rangsarn's ladle scene.
-POUR_RE = re.compile(r"\b(?:pour\w*|ladl\w*|watering|sprinkl\w*|spills?|drips?|tipp(?:ed|ing))\b", re.I)
+# A liquid, not a solid or a cart: sprinkled salt falls as grains, and a cart
+# tipped forward pours nothing (the lite session).
+_VESSEL = r"(?:kettle|teapot|pot|jug|pitcher|bottle|cup|mug|glass|bucket|bowl|can|ladle|pan|wok|jar|carafe)"
+POUR_RE = re.compile(
+    r"\b(?:pour\w*|ladl\w*|spills?|spilling|drips?|dripping|"
+    r"water(?:s|ing|ed)?(?=\s+(?:the|a|an|her|his|their|some|each|every)\b)|"
+    r"(?:watering can)|"
+    r"(?:tips?|tipp(?:ed|ing))\s+(?:the |a |an |her |his |their )?(?:\w+\s+)?" + _VESSEL + r"s?)\b",
+    re.I,
+)
 POUR_RULE = (
     "Any liquid leaves its vessel at the lip or spout and falls in one continuous arc to "
     "where it lands"
@@ -3951,11 +4255,16 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
     # seven known faults, its evidence opening "apart from the issues identified
     # above" (rangsarn). A true answer here becomes a failure class.
     vocabulary = failure_vocabulary()
+    # Where and when, and nothing else of the brief: a hat from the wrong
+    # country is visible only to someone told the country (rangsarn).
+    location = spec.get("location") if isinstance(spec.get("location"), dict) else {}
+    where = _text(location.get("locale")).rstrip(".")
     add(
         "q_anomalies",
         "logic",
         "Before reading any other question, look at the whole image and every crop: is it "
         "free of anything a careful viewer would find wrong or implausible?"
+        + (f" The scene is in {where}." if where else "")
         + (" Look at " + ", ".join(vocabulary) + ", and at anything else." if vocabulary else "")
         + " If not, answer no and list each thing in the evidence, with where it is.",
     )
@@ -4064,7 +4373,12 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 else:
                     who = noun
                 pronoun = part["pronoun"] or possessive(subject)
-                verb = f"whose {part['doing']}" if part["whose"] else f"that {part['doing']}"
+                verb = (
+                    f"whose {part['doing']}" if part["whose"]
+                    # "her right hand in her lap" has no verb of its own.
+                    else f"that is {part['doing']}" if VERBLESS_RE.match(part["doing"])
+                    else f"that {part['doing']}"
+                )
                 seen[side] = seen.get(side, 0) + 1
                 qid = f"{base}_hand_{side}" + (f"_{seen[side]}" if seen[side] > 1 else "")
                 add(
@@ -4143,7 +4457,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         add(
             base,
             "entity",
-            f"Does the image show exactly {count} {head if contents else _text(obj.get('name'))}"
+            f"Does the image show exactly {counted_name(count, head if contents else _text(obj.get('name')), one=True)}"
             + _scope(spec, obj)
             + "?",
             verify_with="count",
@@ -4180,12 +4494,13 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 f"{base}_distinct",
                 "stylistic",
                 (
-                    f"Are the {count} {many_name} a matched set that each sits in its own place, "
-                    "with its own light, shadow and perspective, rather than one image repeated?"
+                    f"Are the {counted_name(count, many_name)} a matched set that each sits in its own "
+                    "place, with its own light, shadow and perspective, rather than one image repeated"
+                    + (f", and is this so: {matched_difference(obj)}?" if matched_difference(obj) else "?")
                 )
                 if is_matched(obj)
                 else (
-                    f"Do the {count} {many_name} each look like a real one of their own, with "
+                    f"Do the {counted_name(count, many_name)} each look like a real one of their own, with "
                     "small differences in wear, position or what sits on them, rather than "
                     "one image repeated?"
                 ),
@@ -4196,7 +4511,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 f"{base}_scale",
                 "scale",
                 f"Is {noun} the right size: {_text(obj.get('size'))}"
-                + (f", so that {_text(obj['scale_anchor'])}" if _text(obj.get("scale_anchor")) else "")
+                + (f", so that {usable_anchor(spec, obj)}" if usable_anchor(spec, obj) else "")
                 + "? Judge real sizes, not how large each looks at its distance.",
                 base,
             )

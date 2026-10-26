@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "about": "Every fault a reader, an owner or an audit found in a generated picture, as a named class. A class is closed only when it has a prevention (a spec rule or prompt clause), a detection (a question or rubric check) and a regression (a contract-test section that keeps catching it), and its prevention has not been measured to fail. Proposed by the rangsarn session; rainmojo-so and rangsarn each keep their own copy, in step, and run apart. family groups classes in the order of families; look_for, on a class a viewer can see without the brief, is the plain phrase q_anomalies names it by, under its family.",
-  "status_rule": "closed when prevention, detection and regression are all non-empty and prevention_effective is not false; otherwise open",
+  "about": "Every fault a reader, an owner or an audit found in a generated picture, as a named class. A class is closed only when it has a prevention (a spec rule or prompt clause), a detection (a question or rubric check) and a regression (a contract-test section that keeps catching it), and its prevention has not been measured to fail. Proposed by the rangsarn session; rainmojo-so and rangsarn each keep their own copy, in step, and run apart. family groups classes in the order of families; look_for, on a class a viewer can see without the brief, is the plain phrase q_anomalies names it by, under its family. prevention_history keeps every prevention tried for a case, newest last, as {case, kind: state|restructure, text, runs, effective}: a stated prevention measured to fail is kept, never replaced, and the restructure tried next follows it.",
+  "status_rule": "closed when prevention, detection and regression are all non-empty, prevention_effective is not false, and the newest prevention_history entry of every case is not false; otherwise open",
   "classes": [
     {
       "id": "F-clone-faces",
@@ -98,7 +98,9 @@
         "q_no_text"
       ],
       "regression": [
-        "C9c"
+        "C12",
+        "C20",
+        "C38"
       ],
       "prevention_effective": false,
       "note": "10 of 16 images carried text despite the clause.",
@@ -183,7 +185,23 @@
       ],
       "prevention_effective": false,
       "note": "Delivered ratios were measured wrong in both ringside images.",
-      "status": "open"
+      "status": "open",
+      "prevention_history": [
+        {
+          "case": "bund width",
+          "kind": "state",
+          "text": "the bund declared 2.0 m wide in width_m and said in the prompt",
+          "runs": 2,
+          "effective": false
+        },
+        {
+          "case": "bund width",
+          "kind": "restructure",
+          "text": "renamed so the noun carries the width: a two-metre earth farm track between the paddies, wide enough for a cart",
+          "runs": 0,
+          "effective": "unmeasured"
+        }
+      ]
     },
     {
       "id": "F-floating-object",
@@ -244,7 +262,23 @@
         "C41"
       ],
       "prevention_effective": "unmeasured",
-      "status": "closed"
+      "status": "closed",
+      "prevention_history": [
+        {
+          "case": "bowls on the hob",
+          "kind": "state",
+          "text": "the counter declared as an object, the prep bowls resting on it",
+          "runs": 2,
+          "effective": false
+        },
+        {
+          "case": "bowls on the hob",
+          "kind": "restructure",
+          "text": "no free surface left: a pot on the other burner, the bowls on a steel tray at the far end of the counter",
+          "runs": 0,
+          "effective": "unmeasured"
+        }
+      ]
     },
     {
       "id": "F-face-distortion",
@@ -321,6 +355,7 @@
       "id": "F-locale-prior",
       "family": "time and place",
       "symptom": "Locale facts lose to the commonest world image: Vietnamese conical hats at a Bangkok floating market, a tube sarong for a panung, a Thai pharmacy as a stock shop, figs as crabapples.",
+      "look_for": "a garment, tool, building or plant from the wrong country, century or season for that place",
       "cause": "Locale facts placed late in a long prompt, against a strong common-world prior.",
       "found_by": "rangsarn independent audit of 20 pictures; run 04 (panung)",
       "prevention": [
@@ -334,7 +369,37 @@
       ],
       "prevention_effective": false,
       "note": "Run 04 still drew a tube sarong. A locale line that describes the garment as it is worn (drawn up between the legs and tucked at the back) is the next prevention to measure.",
-      "status": "open"
+      "status": "open",
+      "prevention_history": [
+        {
+          "case": "vendor cap",
+          "kind": "state",
+          "text": "a soft cotton cap or sun visor, with a tall white chef's toque in must_not_show",
+          "runs": 2,
+          "effective": false
+        },
+        {
+          "case": "vendor cap",
+          "kind": "restructure",
+          "text": "no white-hat neighbour: hair tied back with a faded red cloth band",
+          "runs": 0,
+          "effective": "unmeasured"
+        },
+        {
+          "case": "kaffir lime leaf",
+          "kind": "state",
+          "text": "a winged stalk, two leaflets in a line",
+          "runs": 2,
+          "effective": false
+        },
+        {
+          "case": "kaffir lime leaf",
+          "kind": "restructure",
+          "text": "the visible shape named: two glossy lobes joined end to end with a narrow waist, an hourglass outline, the tree moved forward and larger in frame",
+          "runs": 0,
+          "effective": "unmeasured"
+        }
+      ]
     },
     {
       "id": "F-dropped-secondary-action",
@@ -481,6 +546,38 @@
       ],
       "prevention_effective": "unmeasured",
       "status": "closed"
+    },
+    {
+      "id": "F-backlight-front-lit",
+      "family": "light",
+      "symptom": "Faces and fronts are lit warm from the front while the only light is a low sun behind the people.",
+      "look_for": "faces lit from the front while the sun is behind them",
+      "cause": "The generator's prior for readable, lit faces wins over a stated backlight.",
+      "found_by": "rangsarn run 13 (village sunset)",
+      "prevention": [],
+      "detection": [
+        "q_light"
+      ],
+      "regression": [],
+      "prevention_effective": "unmeasured",
+      "status": "open",
+      "note": "The owner chose (2026-10-26): it should be as it is in reality. With the sun behind people, the silhouette wins over readable faces, so the restructure is the default, not a question.",
+      "prevention_history": [
+        {
+          "case": "sunset walkers",
+          "kind": "state",
+          "text": "with a low sun behind the walkers, their fronts are in soft shadow",
+          "runs": 2,
+          "effective": false
+        },
+        {
+          "case": "sunset walkers",
+          "kind": "restructure",
+          "text": "the look, not the light's geometry: dark shapes against a bright orange sky, a thin warm rim along hair and shoulders, exposed for the sky",
+          "runs": 0,
+          "effective": "unmeasured"
+        }
+      ]
     }
   ],
   "families": [

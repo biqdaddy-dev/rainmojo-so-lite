@@ -286,6 +286,18 @@ table or shelf narrower than they need are warned, and the review now starts wit
 for anything wrong, prompted by the kinds of fault found so far. Contract test **857
 assertions**, passing here unchanged.
 
+Then `2f24ae9`, `5893348` and `6f20657`: chairs and tables are paired by the European school
+furniture standard, the open look at each picture is told where the scene is, and fourteen
+problems this edition reported are fixed, among them groups seen from behind, the hand
+questions, a cut truck, dishes' names in black-and-white drawings and shelves of stock.
+Contract test **882 assertions**, passing here unchanged.
+
+Then `4aa1605`, `ef386cd`, `917a789` and `963e292`: a size compared against a seated person is
+now measured where they actually sit, so a desk that reaches a seated surgeon's elbow is no
+longer refused; a brief can give a style reference image with its rights recorded; and the list
+of known faults records what was tried against each one. Contract test **922 assertions**,
+passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

@@ -2200,13 +2200,34 @@ LIBRARY = json.loads(
     (ROOT / "reference" / "content-production" / "image-failure-classes.json").read_text(encoding="utf-8")
 )
 classes = LIBRARY["classes"]
+
+
+def _text_ok(value):
+    return isinstance(value, str) and bool(value.strip())
+
+
 check("class ids are unique", len({c["id"] for c in classes}) == len(classes))
 SOURCE = (ROOT / "scripts" / "image_spec.py").read_text(encoding="utf-8")
 TEST_SOURCE = (ROOT / "scripts" / "image_spec_contract_test.py").read_text(encoding="utf-8")
 for c in classes:
     for field in ("id", "symptom", "cause", "found_by", "prevention", "detection", "regression", "status"):
         check(f"{c['id']} has {field}", field in c)
-    should_close = bool(c["prevention"]) and bool(c["detection"]) and bool(c["regression"]) and c.get("prevention_effective") is not False
+    history = c.get("prevention_history", [])
+    for entry in history:
+        check(
+            f"{c['id']} history entry is well formed",
+            _text_ok(entry.get("case")) and entry.get("kind") in {"state", "restructure"} and _text_ok(entry.get("text"))
+            and isinstance(entry.get("runs"), int) and entry.get("effective") in {True, False, "unmeasured"},
+            str(entry),
+        )
+    newest = {}
+    for entry in history:
+        newest[entry.get("case")] = entry
+    should_close = (
+        bool(c["prevention"]) and bool(c["detection"]) and bool(c["regression"])
+        and c.get("prevention_effective") is not False
+        and all(entry.get("effective") is not False for entry in newest.values())
+    )
     check(
         f"{c['id']} is {'closed' if should_close else 'open'} by the rule",
         c["status"] == ("closed" if should_close else "open"),
@@ -2225,6 +2246,19 @@ for c in classes:
         check(f"{c['id']} detection {question!r} is a question the compiler writes", found)
     for section in c["regression"]:
         check(f"{c['id']} regression {section} exists", f'print("{section} ' in TEST_SOURCE)
+
+_closed = copy.deepcopy(next(c for c in classes if c["status"] == "closed"))
+_closed["prevention_history"] = [{"case": "x", "kind": "state", "text": "x", "runs": 2, "effective": False}]
+_newest = {e["case"]: e for e in _closed["prevention_history"]}
+check(
+    "a class whose newest prevention for a case failed cannot be closed",
+    not all(e.get("effective") is not False for e in _newest.values()),
+)
+check(
+    "a failed stated prevention is kept beside the restructure that follows it",
+    any(e["kind"] == "state" and e["effective"] is False for c in classes for e in c.get("prevention_history", []))
+    and any(e["kind"] == "restructure" for c in classes for e in c.get("prevention_history", [])),
+)
 
 print("C49 a level camera above seated heads does not look down; locale comes early")
 # Found by rangsarn's independent audit: an eye-level spec compiled to "looks
@@ -2810,6 +2844,10 @@ def seating(stool, table):
 
 check("a stool with no table at a usable height above it is warned", bool(seating(0.45, 0.33)))
 check("a stool with its folding table is not", not seating(0.45, 0.72))
+check("an adult stool at a child's table is warned (0.20 m above a 0.40 m seat)", bool(seating(0.40, 0.60)))
+check("and one too high above it (0.37 m above a 0.45 m seat)", bool(seating(0.45, 0.82)))
+check("a child's stool at its own table is not (EN size mark 2)", not seating(0.31, 0.53))
+check("the band follows EN 1729-1 at size mark 6", image_spec.seat_to_table_m(0.46) == (0.26, 0.34))
 ladle = copy.deepcopy(EXAMPLE)
 ladle["subjects"][0]["action"] = "ladles broth from the pot into a bowl"
 ladle_q = {q["id"] for q in image_spec.build_questions(ladle, image_spec.derive(ladle, WIDTH, HEIGHT))}
@@ -2922,11 +2960,11 @@ def loaded(on_counter, step_width=None):
     spec = copy.deepcopy(EXAMPLE)
     for oid, width, count in on_counter:
         spec["objects"].append({
-            "id": oid, "short_name": oid.replace("_", " "), "name": "woven " + oid.replace("_", " "), "count": count,
-            "material": "rattan", "state": "empty", "height_m": 0.2, "width_m": width,
-            "scale_anchor": "its rim meets the pharmacist's wrist", "support": {"kind": "rests_on", "by": "counter"},
+            "id": oid, "short_name": oid.replace("_", " "), "name": "stacked " + oid.replace("_", " "), "count": count,
+            "material": "moulded plastic", "state": "empty", "height_m": 0.79, "width_m": width,
+            "scale_anchor": "its top reaches the pharmacist's wrist", "support": {"kind": "stands_on", "by": "counter"},
             "position": "on the counter, left of centre", "distance_m": 1.95, "plane": "midground",
-            "variation": "each weave a little different in tone",
+            "variation": "each a little different in wear",
         })
     if step_width:
         spec["objects"].append({
@@ -2949,6 +2987,24 @@ check(
     over_loads["on_declared_supporter"] == 2 and over_loads["resting"] == over_loads["on_declared_supporter"] + 3,  # the counter and two people
     str({k: v for k, v in over_loads.items() if k != "loads"}),
 )
+_rest = copy.deepcopy(EXAMPLE)
+_rest["objects"].append({
+    "id": "stock", "name": "small white medicine cartons", "short_name": "cartons", "count": 40, "width_m": 0.08,
+    "height_m": 0.12, "distance_m": 3.6, "plane": "background", "position": "on the shelves",
+    "support": {"kind": "rests_on", "by": "shelving"}, "state": "squared up in rows on five shelves",
+    "material": "printed card", "scale_anchor": "each about the size of the pharmacist's hand",
+})
+check(
+    "things resting on a surface are never summed: they sit in two dimensions and on tiers",
+    not [w for w in image_spec.validate_spec(_rest, WIDTH, HEIGHT, DEFAULTS)[1] if "cannot hold" in w],
+)
+_lean = copy.deepcopy(EXAMPLE)
+_lean["subjects"][1]["position"] = "foreground right, leaning on the counter with both elbows"
+check(
+    "leaning on a counter is not standing on it",
+    not [r for load in image_spec.support_loads(_lean)["loads"] for r in load["items"] if r["id"] == "customer"],
+    str({k: v for k, v in over_loads.items() if k != "loads"}),
+)
 
 first = image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))
 check("q_anomalies is asked first", first[0]["id"] == "q_anomalies", first[0]["id"])
@@ -2961,7 +3017,139 @@ try:
     bare = image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))[0]["question"]
 finally:
     image_spec.REFERENCE_DIR = saved_reference
+check(
+    "the fresh look is told where the scene is, and nothing else of the brief",
+    f"The scene is in {EXAMPLE['location']['locale'].rstrip('.')}." in first[0]["question"]
+    and EXAMPLE["purpose"] not in first[0]["question"]
+    and "time and place (a garment" in first[0]["question"],
+    first[0]["question"][:300],
+)
 check("without the library it asks with no vocabulary", "Look at" not in bare and bare.startswith("Before reading any other question"))
+
+print("C68 the lite session's fourteen open findings")
+# dp-016-lite-open-findings.md; each reproduced before it was fixed.
+def _hand_qs(hands):
+    spec = copy.deepcopy(EXAMPLE)
+    spec["subjects"][0]["hands"] = hands
+    return [q["question"] for q in image_spec.build_questions(spec, image_spec.derive(spec, WIDTH, HEIGHT)) if "_hand_" in q["id"] and "count" not in q["id"]]
+
+
+_group = copy.deepcopy(EXAMPLE)
+_group["subjects"][1].update(count=2, pose="side by side with their backs to the camera", hands="the left hand holds a ticket", variation="one older man, one young woman with short hair")
+_group_prompt = image_spec.compile_spec(_group, WIDTH, HEIGHT, DEFAULTS)["prompt"]
+check("A1 a group with its backs to the camera is plural", "have their backs to the camera" in _group_prompt and " has his back" not in _group_prompt and " has her back" not in _group_prompt)
+_a2 = _hand_qs("the left hand rests on her shoulder, his right hand holds the stethoscope to her back")
+check("A2 a hand's pronoun is the one before that hand", _a2 and all("his own" in q for q in _a2), str(_a2))
+_a3 = _hand_qs("her right hand in her lap, her left hand on the armrest")
+check("A3 a verbless hand clause gets its verb", _a3 and all("that is in" in q or "that is on" in q for q in _a3), str(_a3))
+check(
+    "A4 turned away from something else is not a back to the camera",
+    image_spec.facing({"pose": "turned away from the shelves"}) != "away"
+    and image_spec.facing({"pose": "head turned away from the glare of the window"}) != "away"
+    and image_spec.facing({"pose": "turned away from the camera"}) == "away"
+    and image_spec.facing({"pose": "standing, turned away"}) == "away",
+)
+_cut = copy.deepcopy(EXAMPLE)
+_cut["objects"].append({
+    "id": "truck", "short_name": "truck", "name": "box delivery truck", "count": 1, "material": "painted steel",
+    "state": "parked, engine off", "height_m": 3.0, "width_m": 6.0,
+    "scale_anchor": "its cargo box stands well above the pharmacist's head", "support": {"kind": "stands_on", "by": "the road"},
+    "position": "far right, beyond the counter, running out of the frame", "distance_m": 3.5, "plane": "background",
+})
+check("B1 the truck is cut by the frame", image_spec.derive(_cut, WIDTH, HEIGHT)["fits_in_frame"].get("truck") is False)
+check(
+    "B1 a thing the frame cuts gets no per-cent crossing in the prompt",
+    "crosses the truck about" not in image_spec.compile_spec(_cut, WIDTH, HEIGHT, DEFAULTS)["prompt"],
+)
+_pours = {a: image_spec.pours({"subjects": [{"action": a}]}) for a in (
+    "waters the potted basil", "tips the kettle over the cup", "tipping the cart forward to unload",
+    "sprinkles salt over the grilled squid",
+)}
+check("B2 pours() reads watering and a tipped kettle, not a tipped cart or salt",
+      _pours == {"waters the potted basil": True, "tips the kettle over the cup": True,
+                 "tipping the cart forward to unload": False, "sprinkles salt over the grilled squid": False}, str(_pours))
+_names = ("a can of Red Bull", "the Blue Mosque", "a glass of green tea", "a bowl of brown rice", "a pot of red curry")
+check("B3 decolour() keeps names and dishes", all(image_spec.decolour(n) == n for n in _names), str([image_spec.decolour(n) for n in _names]))
+check("and still takes a plain colour out", image_spec.decolour("a red plastic stool") == "a plastic stool", image_spec.decolour("a red plastic stool"))
+_matched = copy.deepcopy(EXAMPLE)
+_matched["objects"][1].update(count=4, variation="identical model, one with a cracked corner")
+_matched_prompt = image_spec.compile_spec(_matched, WIDTH, HEIGHT, DEFAULTS)["prompt"]
+_matched_q = {q["id"]: q["question"] for q in image_spec.build_questions(_matched, image_spec.derive(_matched, WIDTH, HEIGHT))}
+check("D1 a matched set keeps the difference it names", "matched set" in _matched_prompt and "one with a cracked corner" in _matched_prompt)
+check("and the review asks it", "one with a cracked corner" in _matched_q.get("q_medicine_box_distinct", ""), _matched_q.get("q_medicine_box_distinct", ""))
+refuses("D2 people are never a matched set", "never a matched set", lambda s: s["subjects"][1].update(count=2, variation="matched"))
+check("D3 a counted collective is plural", image_spec.counted_name(2, "pair of moulded tigers") == "2 pairs of moulded tigers" and image_spec.counted_name(3, "row of scooters") == "3 rows of scooters")
+check("but a count of one in a question keeps its number", image_spec.counted_name(1, "pale wood counter", one=True) == "1 pale wood counter")
+_lib = json.loads((ROOT / "reference" / "content-production" / "image-failure-classes.json").read_text(encoding="utf-8"))
+check("D4 F-unwanted-text cites the sections that test text", "C9c" not in next(c["regression"] for c in _lib["classes"] if c["id"] == "F-unwanted-text"))
+_plat = copy.deepcopy(EXAMPLE)
+_plat["subjects"][1].update(posture="seated", pose="seated on a stool")
+_plat["subjects"][0]["ground_height_m"] = 0.8
+_plat["camera"]["height_m"] = round(image_spec.eye_height(_plat["subjects"][1]) + 0.30, 2)
+refuses("D5 a standing person on a platform does not widen the eye-level band for the seated", "eye_level", lambda s: s.update(copy.deepcopy(_plat)))
+
+print("C69 a small thing's width said against what it sits on, behind a switch")
+# rangsarn's experiment: the relation, not the metres, and the same number for the check.
+_bowls = copy.deepcopy(EXAMPLE)
+_bowls["objects"].append({
+    "id": "bowls", "short_name": "bowl", "name": "white melamine bowls", "count": 3, "material": "melamine",
+    "state": "empty, stacked apart", "height_m": 0.08, "width_m": 0.8,
+    "scale_anchor": "each about as wide as the pharmacist's forearm is long",
+    "support": {"kind": "rests_on", "by": "counter"}, "position": "on the counter, right of centre",
+    "distance_m": 1.9, "plane": "midground", "variation": "one with a chipped rim, one faintly stained",
+})
+_bowls["objects"][-1]["width_m"] = 0.2
+_rel = image_spec.derive(_bowls, WIDTH, HEIGHT)["relative_widths"]
+check("derive gives the width ratio against the supporter", _rel == [{"id": "bowls", "supporter": "counter", "ratio": round(0.2 / 2.4, 3), "said_as": 0.1, "words": "a tenth"}], str(_rel))
+check("off by default: the prompt says nothing", "as wide as the counter" not in image_spec.compile_spec(_bowls, WIDTH, HEIGHT, DEFAULTS)["prompt"])
+_bowls["relative_size_clause"] = True
+check("on, the prompt says it as a fraction", "Each bowl is about a tenth as wide as the" in image_spec.compile_spec(_bowls, WIDTH, HEIGHT, DEFAULTS)["prompt"])
+refuses("the switch must be true or false", "relative_size_clause must be true or false", lambda s: s.update(relative_size_clause="yes"))
+
+print("C70 seated landmarks for scale anchors; an anchor in a pose its person is not in")
+# The sweep session: "the mid-thigh of the surgeon standing" for a seated surgeon (s45).
+def _seated_with(anchor, height):
+    spec = copy.deepcopy(EXAMPLE)
+    spec["subjects"][1].update(posture="seated", pose="seated on a stool, leaning in")
+    spec["camera"]["height_m"] = round(
+        (image_spec.eye_height(spec["subjects"][0]) + image_spec.eye_height(spec["subjects"][1])) / 2, 2
+    )
+    spec["objects"].append({
+        "id": "side_table", "short_name": "side table", "name": "small round side table", "count": 1,
+        "material": "pale wood", "state": "bare", "height_m": height, "width_m": 0.5, "scale_anchor": anchor,
+        "support": {"kind": "stands_on", "by": "the tiled floor"}, "position": "right of centre, beside the customer",
+        "distance_m": 1.5, "plane": "foreground",
+    })
+    return spec
+
+
+_ok = _seated_with("its top is level with the customer's elbow", 0.66)
+_ok_errors, _ok_warn = image_spec.validate_spec(_ok, WIDTH, HEIGHT, DEFAULTS)
+check("a seated landmark is measured from the seat", not [e for e in _ok_errors if "side_table" in e], str(_ok_errors[:2]))
+check("and a wrong height against it is refused", any("side_table" in e and "seated" in e for e in image_spec.validate_spec(_seated_with("its top is level with the customer's elbow", 0.40), WIDTH, HEIGHT, DEFAULTS)[0]))
+check("a seated elbow sits about 0.68 m above the floor for a 1.68 m adult", abs(image_spec.landmark_height_m({"height_m": 1.68, "posture": "seated"}, "elbow") - (0.45 + 0.23 * 1.68 / 1.65)) < 1e-9)
+_pose = _seated_with("its top sits at about the mid-thigh of the customer standing", 0.71)
+_pose_errors, _pose_warn = image_spec.validate_spec(_pose, WIDTH, HEIGHT, DEFAULTS)
+check("an anchor in a pose its person is not in is warned", any("side_table" in w and "measures" in w and "standing" in w for w in _pose_warn), str(_pose_warn[-2:]))
+check("and left out of the prompt", "mid-thigh of the customer standing" not in image_spec.compile_spec(_pose, WIDTH, HEIGHT, DEFAULTS)["prompt"])
+_pose_q = {q["id"]: q["question"] for q in image_spec.build_questions(_pose, image_spec.derive(_pose, WIDTH, HEIGHT))}
+check("and out of its scale question", "standing" not in _pose_q.get("q_side_table_scale", "standing"), _pose_q.get("q_side_table_scale", ""))
+check("a posture word about a thing is not about a person", not image_spec.anchor_posture_mismatch("about the size of an egg standing on end", None))
+
+print("C71 a style reference, checked as a likeness is")
+_styled = copy.deepcopy(EXAMPLE)
+_styled["style"]["reference"] = {"path": "brand/ink-style-v2.png", "rights": "client_owned", "origin": "approved channel brand art v2"}
+check("a style reference with path, rights and origin is valid", not image_spec.validate_spec(_styled, WIDTH, HEIGHT, DEFAULTS)[0])
+check("the prompt takes its style, never its subject", image_spec.STYLE_LOCK in image_spec.compile_spec(_styled, WIDTH, HEIGHT, DEFAULTS)["prompt"])
+check("and it is listed with the images the generator is fed", {"role": "style", "path": "brand/ink-style-v2.png", "rights": "client_owned"} in image_spec.conditioning_references(_styled))
+refuses("its origin is required", "style.reference.origin is required", lambda s: s["style"].update(reference={"path": "x.png", "rights": "client_owned"}))
+refuses("and its rights", "style.reference.rights must be one of", lambda s: s["style"].update(reference={"path": "x.png", "rights": "found online", "origin": "x"}))
+check("reference_only warns", any("reference_only" in w for w in image_spec.validate_spec(
+    {**copy.deepcopy(EXAMPLE), "style": {**EXAMPLE["style"], "reference": {"path": "x.png", "rights": "reference_only", "origin": "lock sheet v1"}}},
+    WIDTH, HEIGHT, DEFAULTS)[1]))
+_plural = copy.deepcopy(_bowls)
+_plural["objects"][-1]["short_name"] = "bowls"
+check("a plural short name after Each takes 'of the'", "Each of the bowls is about a tenth as wide as the" in image_spec.compile_spec(_plural, WIDTH, HEIGHT, DEFAULTS)["prompt"])
 
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
