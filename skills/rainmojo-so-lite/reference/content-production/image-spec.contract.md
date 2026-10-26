@@ -1,5 +1,21 @@
 # Image spec contract
 
+## Contents
+
+- Why a spec and not a prompt
+- Pipeline
+- Spec fields
+- What validate_spec refuses, and why
+- What the review asks that the brief cannot
+- What the measurements say, and what this module does about it
+- Geometry the spec derives
+- Prompt compilation
+- The headline is overlaid, never generated
+- Plausibility review
+- Measuring the review
+- Learning from faults
+- Limits
+
 An image item in `image-manifest.json` carries a `spec`: the picture described the way a
 photographer's shot brief describes it, with real distances, real sizes and one named light.
 `image_spec.py` validates the spec, derives the geometry the brief implies, compiles it into
