@@ -888,6 +888,34 @@ the last two ports: a verbless clause asks "that in her lap?", "that on the stee
 "that holding a coffee cup?", "that flat on her cheek?"; and a bare "turned away" still means a
 back to the camera, so "head turned away from the glare" does.
 
+THIRTY-FOURTH PORT, `9560070`, `d262ad6` and `e07574f`, same version. A drawn medium is told
+it is drawn from start to end, with no kelvin, no camera wording and a closing line restating
+the style; a monochrome style keeps its light in its own tones, its entity text is
+`decolour`ed and every drawn spec is asked `q_medium`; an object may declare `heading_toward`;
+a locale detail that instructs the writer warns. Grounded things 0.5 to 4 m tall within 30 m get
+horizon crossings, and from a metre a prompt sentence; street seats, tables and vehicles join
+the reference heights, matched on the head noun, with a warning for a seat with no table at a
+usable height; and a scene that pours carries the pour rule and `q_pour`. Three files
+byte-identical, 817 assertions passing unchanged, the review example unchanged at 82.
+Regression 4 of 4. Battery and corpus identical to a clean export of `e07574f`, 16 of 19 clean,
+21, 2, 4, probe 2 with nothing missing. No lite doc quotes a height band, the closing line,
+the camera wording or a colour temperature, so T4 is green with nothing to move.
+
+On the client briefs, all photographs, validation and warnings are unchanged. drivehub's car,
+pulseth's two tents and rotkubkhao's truck gain a crossing sentence, tnp's anchor block a
+question only, and pulseth the pour rule and `q_pour`, as upstream says.
+
+Three findings, reported upstream. rotkubkhao's grocery truck is cut by the frame,
+`fits_in_frame` false, and the question is rightly skipped, but the prompt still says "That
+horizon line crosses the truck about 78 per cent of the way up": the cut-figure mismatch
+`457f9cc` fixed for people, back for objects. `pours()` misses "waters the potted basil", since
+the pattern has only "watering" while the commit says waters, and fires on "tipping the cart
+forward to unload" and "sprinkles salt", adding a liquid rule and question to scenes with no
+liquid. And `decolour()` strips colour words that are part of a name: "green tea" becomes
+"tea", "orange juice" "juice", "brown rice" "rice", "golden retriever" "retriever", and proper
+nouns break, "a can of Red Bull" to "a can of Bull", "the Blue Mosque" to "the Mosque". That
+touches only monochrome drawn styles, which no client brief uses.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

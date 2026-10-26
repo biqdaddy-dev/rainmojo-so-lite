@@ -287,7 +287,21 @@ REFERENCE_HEIGHTS_M = {
     "handrail": (0.84, 0.99, "code: ADA 505.4, 34 to 38 in"),
     "sedan": (1.35, 1.55, "convention: measured roof heights of current sedans"),
     "pickup truck": (1.75, 2.02, "model data: Ram 1500 at 1917 mm"),
+    # Street and floor seating, and the vehicles of a Thai street (rangsarn's
+    # audit). Conventions, not codes.
+    "plastic stool": (0.38, 0.50, "convention: moulded street stool"),
+    "folding table": (0.66, 0.78, "convention: folding street table"),
+    "floor table": (0.26, 0.38, "convention: low table for sitting on a mat"),
+    "low table": (0.26, 0.38, "convention: low table for sitting on a mat"),
+    "tuk-tuk": (1.65, 1.95, "convention: three-wheeled auto-rickshaw roof height"),
+    "motorcycle": (1.00, 1.30, "convention: step-through and street motorcycles"),
+    "scooter": (1.00, 1.30, "convention: step-through scooters"),
 }
+# Which reference names are seats and which are tables, and how far above a
+# seat its table sits (convention: about 0.27 to 0.30 m).
+SEAT_KEYS = {"chair seat", "office chair", "plastic stool"}
+TABLE_KEYS = {"dining table", "folding table", "desk", "work surface", "floor table", "low table"}
+SEAT_TO_TABLE_M = (0.18, 0.38)
 SUPPORT_KINDS = {"rests_on", "held_by", "mounted_on", "hangs_from", "worn_by", "stands_on", "floats_in", "fixed_in"}
 # A support that holds nothing is the floating-object failure written into the
 # brief. Scanned only for the kinds that bear weight: something may legitimately
@@ -943,7 +957,9 @@ def anchor_is_about_extent(anchor: str, word: str) -> bool:
 
 def reference_height(name: str) -> tuple[float, float, str] | None:
     """The code or convention height band for a named object, if there is one."""
-    lowered = name.lower()
+    # Matched on the head noun phrase: "folding steel tables with plastic stools"
+    # is tables, not stools (found on the client corpus).
+    lowered = _HEAD_NOUN_END.sub("", name.lower()).strip(" ,.")
     best: tuple[int, tuple[float, float, str]] | None = None
     for key, band in REFERENCE_HEIGHTS_M.items():
         # The name has to END with the reference word, so a desk lamp is not a
@@ -1410,6 +1426,40 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
                 }
             )
     derived["horizon_crossings"] = crossings
+
+    # The same identity for things standing on the camera's floor: the horizon
+    # crosses them at camera height over their height (Hoiem et al. put cars on
+    # it). A grounded object at least 0.5 m tall gets a crossing, which pins its
+    # size against the people's (rangsarn's audit: sizes are very wrong).
+    entity_ids = {_text(e.get("id")) for _, e in _entities(spec)}
+    object_crossings: list[dict[str, Any]] = []
+    if cam_height:
+        for obj in [o for o in _list(spec.get("objects")) if isinstance(o, dict)]:
+            support = obj.get("support", {}) if isinstance(obj.get("support"), dict) else {}
+            height = _num(obj.get("height_m"))
+            if (
+                _text(support.get("kind")) not in GROUNDED_SUPPORT
+                or _text(support.get("by")) in entity_ids
+                or not on_camera_floor(obj)
+                # People-scale things: a vehicle, a stall, furniture. A far building
+                # or roofline may not stand on the camera's floor and shows only in part.
+                or not height or height < 0.5 or height > 4.0
+                # Far across a pond or a field the ground may not be the camera's.
+                or (_num(obj.get("distance_m")) or 0) > 30.0
+                or obj.get("extends_beyond_frame")
+                or int(_num(obj.get("count")) or 1) != 1
+            ):
+                continue
+            fraction = cam_height / height
+            object_crossings.append(
+                {
+                    "id": _text(obj.get("id")),
+                    "fraction_of_height_from_base": round(min(fraction, 3.0), 3),
+                    "above_top": fraction > 1.0,
+                    "height_m": height,
+                }
+            )
+    derived["object_horizon_crossings"] = object_crossings
 
     # Apparent-size relations stated in words, because a model reads "clearly
     # larger in the frame" and cannot act on "1.55x". The exact ratios stay in
@@ -2131,6 +2181,36 @@ def validate_spec(
                     "one hand its scale_anchor describes."
                 )
 
+    # A seat and its table pair: a 0.45 m stool goes with a 0.70 m table, a mat
+    # with a 0.30 m table (rangsarn's audit). Warned when no table sits at a
+    # usable height above a declared seat.
+    def _ref_key(name: str) -> str:
+        lowered = name.lower()
+        lowered = _HEAD_NOUN_END.sub("", lowered).strip(" ,.")
+        hits = [k for k in REFERENCE_HEIGHTS_M if re.search(r"\b" + re.escape(k) + r"s?\b\s*$", lowered)]
+        return max(hits, key=len) if hits else ""
+
+    seats = [
+        (obj, _num(obj.get("height_m")))
+        for obj in objects
+        if _ref_key(_text(obj.get("name"))) in SEAT_KEYS and _num(obj.get("height_m"))
+    ]
+    tables = [
+        _num(obj.get("height_m"))
+        for obj in objects
+        if _ref_key(_text(obj.get("name"))) in TABLE_KEYS and _num(obj.get("height_m"))
+    ]
+    if seats and tables:
+        low, high = SEAT_TO_TABLE_M
+        for seat, seat_h in seats:
+            if not any(low <= table - seat_h <= high for table in tables):
+                warnings.append(
+                    f"object {_text(seat.get('id'))}: a {seat_h:g} m seat has no table {low:g} "
+                    f"to {high:g} m above it (tables at "
+                    + ", ".join(f"{t:g} m" for t in tables)
+                    + "), so whoever sits at it is drawn too low or too high for the table."
+                )
+
     # Object heights against code and settled convention, so a 1.2 m kitchen
     # counter or a 0.3 m stair riser is caught in the brief.
     for obj in objects:
@@ -2365,6 +2445,15 @@ def validate_spec(
                     "say where it is as well as what it is."
                 )
 
+    location_block = spec.get("location") if isinstance(spec.get("location"), dict) else {}
+    for index, detail in enumerate(_list(location_block.get("locale_details"))):
+        wording = LOCALE_WRITING_RE.search(_text(detail))
+        if wording:
+            warnings.append(
+                f"spec.location.locale_details[{index}] talks about the text ({wording.group(0)!r}) "
+                "rather than the picture, and becomes a question no picture can answer. Put "
+                "writing rules elsewhere and keep locale details to what is seen."
+            )
     for value in _list(spec.get("must_not_show")):
         found = UNSEEABLE_CLASS_RE.search(_text(value))
         if found:
@@ -2879,6 +2968,10 @@ def build_clauses(
         scene += f", {_text(location['weather'])}"
     add("opening", 1, scene)
 
+    look_words = " ".join(_text(style.get(k)) for k in ("look", "color_palette"))
+    monochrome = not photographic and bool(MONOCHROME_RE.search(look_words))
+    paint = decolour if monochrome else (lambda text: text)
+
     # subjects ----------------------------------------------------------------
     for subject in subjects:
         count = int(_num(subject.get("count")) or 1)
@@ -2890,11 +2983,11 @@ def build_clauses(
                 + f"{who}, the person from the reference image"
             )
         else:
-            line = (f"{count} " if count > 1 else "One ") + who
+            line = (f"{count} " if count > 1 else "One ") + paint(who)
             if _text(subject.get("appearance")):
-                line += f", {_text(subject['appearance'])}"
+                line += f", {paint(_text(subject['appearance']))}"
         if _text(subject.get("wardrobe")):
-            line += f", wearing {_text(subject['wardrobe'])}"
+            line += f", wearing {paint(_text(subject['wardrobe']))}"
         line += f", {_text(subject.get('position'))}"
         add("subject", 1, line)
         if has_reference_image(subject):
@@ -2932,13 +3025,13 @@ def build_clauses(
     # objects -----------------------------------------------------------------
     for obj in objects:
         count = int(_num(obj.get("count")) or 1)
-        line = (f"{count} " if count > 1 else "") + _text(obj.get("name"))
+        line = (f"{count} " if count > 1 else "") + paint(_text(obj.get("name")))
         if _text(obj.get("size")):
             line += f", {_text(obj['size'])}"
         if _text(obj.get("material")):
-            line += f", {_text(obj['material'])}"
+            line += f", {paint(_text(obj['material']))}"
         if _text(obj.get("state")):
-            line += f", {_text(obj['state'])}"
+            line += f", {paint(_text(obj['state']))}"
         line += f", {_text(obj.get('position'))}"
         support = obj.get("support", {}) if isinstance(obj.get("support"), dict) else {}
         by = _text(support.get("by"))
@@ -2966,6 +3059,14 @@ def build_clauses(
             )
         elif count > 1 and _text(obj.get("variation")):
             add("object", 1, f"Each of the {count} differs: {_text(obj['variation'])}")
+        heading = _text(obj.get("heading_toward"))
+        if heading:
+            target = _entity_name(spec, heading) if heading in {
+                _text(e.get("id")) for _, e in _entities(spec)
+            } else heading
+            # A canal boat headed away in rangsarn's runs 04 and 05 despite the
+            # prose rule; said as its own sentence, and asked.
+            add("object", 1, f"The front of {_noun(obj)} points toward {target}")
         if obj.get("extends_beyond_frame"):
             add(
                 "object",
@@ -2979,7 +3080,7 @@ def build_clauses(
     layout = spec.get("spatial_layout", {}) if isinstance(spec.get("spatial_layout"), dict) else {}
     for plane in PLANES:
         if _text(layout.get(plane)):
-            add("layout", 3, f"{plane.capitalize()}: {_text(layout[plane])}")
+            add("layout", 3, f"{plane.capitalize()}: {paint(_text(layout[plane]))}")
 
     # camera ------------------------------------------------------------------
     if photographic:
@@ -3064,6 +3165,15 @@ def build_clauses(
                     # The frame cuts this figure, so say where the line falls on
                     # what is shown, as the question asks it.
                     add("camera", 2, f"{line} crosses {name} at about the {crossing_landmark(crossing)}")
+        if horizon in HORIZON_IN_FRAME:
+            tall = [c for c in derived.get("object_horizon_crossings", []) if c["height_m"] >= 1.0][:2]
+            for crossing in tall:
+                name = _entity_name(spec, crossing["id"])
+                if crossing["above_top"]:
+                    add("camera", 2, f"That horizon line passes just above the top of {name}")
+                else:
+                    percent = round(crossing["fraction_of_height_from_base"] * 100)
+                    add("camera", 2, f"That horizon line crosses {name} about {percent} per cent of the way up")
         soft = derived.get("outside_focus", [])
         focus_name = _entity_name(spec, _text(camera.get("focus_on")))
         if soft:
@@ -3096,8 +3206,12 @@ def build_clauses(
         f"of the frame, {_text(key['quality'])}"
     )
     kelvin = _num(lighting.get("color_temperature_k"))
-    if kelvin:
+    if kelvin and photographic:
+        # A colour temperature in kelvin is a photographer's word; a drawing
+        # takes its colour from its own palette (rangsarn run 10).
         light += f", {_phrase_for(kelvin, KELVIN_PHRASES)} at about {kelvin:g} K"
+    if monochrome:
+        light += f", its light and shade shown only in the tones of {_text(style.get('look'))}"
     add("light", 1, light)
     shadow = _text(lighting.get("shadow_direction"))
     if shadow:
@@ -3108,7 +3222,8 @@ def build_clauses(
             "person and object touching a surface has a soft contact shadow where they meet",
         )
     for fill in _list(lighting.get("fill")):
-        if _text(fill):
+        # A fill given as a colour pulls a monochrome drawing toward full colour.
+        if _text(fill) and not monochrome:
             add("light", 3, f"Fill: {_text(fill)}")
 
     # composition -------------------------------------------------------------
@@ -3132,7 +3247,7 @@ def build_clauses(
 
     details = [_text(v) for v in _list(location.get("locale_details")) if _text(v)]
     if details:
-        add("locale", 1, "Local details that must be right: " + "; ".join(details))
+        add("locale", 1, "Local details that must be right: " + "; ".join(paint(d) for d in details))
     reference = reference_block(spec)
     facts = [_text(v) for v in _list(reference.get("verified_facts")) if _text(v)]
     if facts:
@@ -3167,15 +3282,30 @@ def build_clauses(
             "constraint",
             1,
             "Any lettering this place would really carry sits small, soft and out of "
-            "focus, too indistinct to read as words",
+            "focus, too indistinct to read as words"
+            if photographic
+            else "Any lettering this place would really carry is only loosely indicated, "
+            "too small and slight to read as words",
         )
+    if pours(spec):
+        add("invariant", 1, POUR_RULE)
     add(
         "closing",
         1,
-        "Everything obeys real-world physics: one camera viewpoint, every size consistent "
-        "with its distance, every object resting on or held by something, and hands with "
-        "five fingers each that close around what they hold",
+        "Everything obeys real-world physics: one "
+        + ("camera " if photographic else "")
+        + "viewpoint, every size consistent with its distance, every object resting on or "
+        "held by something, and hands with five fingers each that close around what they hold",
     )
+    if not photographic and _text(style.get("look")):
+        # The style said once, at the opening, lost to the rest of a long prompt in
+        # run 10; said again last, it frames everything before it.
+        add(
+            "closing",
+            1,
+            f"Every part of the picture is drawn as {_text(style['look'])}"
+            + (", in that palette only" if monochrome else ""),
+        )
     return clauses
 
 
@@ -3426,6 +3556,63 @@ SIZE_COMPARE_RE = re.compile(
 # A rule about how sizes look across distance, which the real-size sentence would
 # contradict: "the far page reads shorter than the near one" (the lite session).
 APPEARANCE_RE = re.compile(r"\b(?:reads?|looks?|appears?|recedes?|foreshorten\w*|seems?)\b", re.I)
+
+
+# A drawn style that keeps to one or two tones: run 10 lost all three of these to
+# full colour, while the painterly styles held.
+MONOCHROME_RE = re.compile(
+    r"\b(?:monochrome|black ink|ink wash|ink and charcoal|line art|charcoal|pencil|graphite|"
+    r"one (?:warm|cold|cool)(?: [a-z-]+)? wash|single (?:colour|color|wash)|sepia|grayscale|"
+    r"greyscale|black and white)\b",
+    re.I,
+)
+# Colour words, which in a monochrome drawing are each an instruction to paint
+# (rangsarn run 12: "faded green fabric", "red-and-white checked cloth").
+_COLOURS = (
+    r"red|green|blue|yellow|orange|purple|violet|pink|brown|grey|gray|cream|beige|gold|golden|"
+    r"silver|teal|turquoise|navy|maroon|olive|tan|khaki|crimson|scarlet|amber|ochre|sage|"
+    r"magenta|indigo|copper|bronze|rust|lilac|mauve|emerald|jade"
+)
+COLOUR_WORD_RE = re.compile(
+    r"\b(?:(?:light|dark|pale|deep|bright|faded|dusty|muted|soft|warm|cool)[- ])?"
+    r"(?:" + _COLOURS + r")(?:[- ](?:and[- ])?(?:" + _COLOURS + r"|white|black))*"
+    r"(?:-(?:coloured|colored|ish|toned))?\b",
+    re.I,
+)
+
+
+def decolour(text: str) -> str:
+    """The text with its colour words taken out, for a monochrome drawing."""
+    out = COLOUR_WORD_RE.sub("", text)
+    out = re.sub(r"\s{2,}", " ", out)
+    out = re.sub(r"\s+([,;.])", r"\1", out)
+    out = re.sub(r"(?:^|(?<=[,;]))\s*,", "", out)
+    return out.strip(" ,")
+
+
+# A scene that pours: broth fell from beneath a bowl in rangsarn's ladle scene.
+POUR_RE = re.compile(r"\b(?:pour\w*|ladl\w*|watering|sprinkl\w*|spills?|drips?|tipp(?:ed|ing))\b", re.I)
+POUR_RULE = (
+    "Any liquid leaves its vessel at the lip or spout and falls in one continuous arc to "
+    "where it lands"
+)
+
+
+def pours(spec: dict[str, Any]) -> bool:
+    """Whether anyone in the scene pours, ladles or waters."""
+    return any(
+        POUR_RE.search(" ".join(_text(subject.get(k)) for k in ("action", "hands")))
+        for subject in _list(spec.get("subjects")) if isinstance(subject, dict)
+    )
+
+
+# A locale detail that tells the writer what to do with the text, not what the
+# picture shows (rangsarn run 10).
+LOCALE_WRITING_RE = re.compile(
+    r"\b(?:is|are) (?:named|written|spelled|described|labelled)\b|\bwritten out\b|"
+    r"\bdescribed as\b|\bspelled out\b|\bnamed exactly\b",
+    re.I,
+)
 
 
 # Supports under which an object's height_m is its upright extent in the frame.
@@ -3781,6 +3968,19 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             )
         if _text(obj.get("state")):
             add(f"{base}_state", "attribute", f"Is {noun} {_text(obj['state'])}?", base)
+        heading = _text(obj.get("heading_toward"))
+        if heading:
+            target = _entity_name(spec, heading) if heading in {
+                _text(e.get("id")) for _, e in _entities(spec)
+            } else heading
+            add(
+                f"{base}_heading",
+                "spatial",
+                f"Does the front of {noun} point toward {target}?",
+                base,
+                verify_with="geometry",
+                measure={"kind": "heading", "entity": oid, "expected": heading},
+            )
 
     camera = spec.get("camera", {}) if isinstance(spec.get("camera"), dict) else {}
     shot = _text(camera.get("shot_type"))
@@ -4084,6 +4284,35 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                         },
                     )
 
+    if horizon_in_frame:
+        fits_objects = derived.get("fits_in_frame", {})
+        for crossing in derived.get("object_horizon_crossings", [])[:4]:
+            if not fits_objects.get(crossing["id"], True):
+                continue
+            name = _entity_name(spec, crossing["id"])
+            if crossing["above_top"]:
+                text = f"Does the horizon pass above the top of {name}, as a camera higher than it requires?"
+                relation = "above_top"
+            else:
+                percent = round(crossing["fraction_of_height_from_base"] * 100)
+                text = (
+                    f"Does the horizon cross {name} about {percent} per cent of the way up from "
+                    "its base, measured on the image?"
+                )
+                relation = "crosses"
+            add(
+                f"q_horizon_cut_{crossing['id']}",
+                "geometry",
+                text,
+                verify_with="geometry",
+                measure={
+                    "kind": "horizon_fraction",
+                    "entity": crossing["id"],
+                    "relation": relation,
+                    "expected": crossing["fraction_of_height_from_base"],
+                },
+            )
+
     composition = spec.get("composition", {}) if isinstance(spec.get("composition"), dict) else {}
     if _text(composition.get("negative_space")):
         add(
@@ -4141,6 +4370,23 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
     # "Exactly two walkers?" answered yes while twenty more people stood in the
     # lane, because every count question asks about a declared entity and none
     # asks about the frame.
+    if pours(spec):
+        add(
+            "q_pour",
+            "physics",
+            "Does every liquid leave its vessel at the lip or spout and fall in one continuous "
+            "arc to where it lands, never from beneath or beside the vessel?",
+        )
+    style_block = spec.get("style", {}) if isinstance(spec.get("style"), dict) else {}
+    if _text(spec.get("medium") or "photograph") not in PHOTOGRAPHIC_MEDIA and _text(style_block.get("look")):
+        # Every drawn spec, not only one scene type: in rangsarn's runs 10 and 12
+        # monochrome styles came back in full colour.
+        add(
+            "q_medium",
+            "stylistic",
+            f"Is the whole picture drawn as {_text(style_block['look'])}, with no photographic "
+            "rendering and no colour outside that style's palette?",
+        )
     if people_count(spec) > 1:
         add(
             "q_distinct_faces",

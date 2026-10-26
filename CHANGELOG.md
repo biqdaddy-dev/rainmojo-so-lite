@@ -269,6 +269,12 @@ behind or a pair with their backs to the camera is recognised as facing away, an
 the question names which member's hand it means. Contract test **784 assertions**, passing
 here unchanged.
 
+Then `9560070`, `d262ad6` and `e07574f`: a drawn picture is now told it is drawn from start to
+end, and a black-and-white style is kept free of colour; cars, stalls and other large things
+on the ground are now sized against the people through the horizon, street stools and tables
+have their usual heights, and a scene where someone pours is checked for liquid that leaves
+its vessel the right way. Contract test **817 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

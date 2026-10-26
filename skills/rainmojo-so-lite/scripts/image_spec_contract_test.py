@@ -1648,7 +1648,7 @@ print("C38 every measurable question says what a tool should find")
 MEASURE_KINDS = {
     "count", "finger_count", "framing", "camera_angle", "horizon_band", "eye_line",
     "height_ratio", "viewpoint", "horizon_fraction", "undeclared", "glyphs", "text",
-    "position", "crop_safety", "leaves_frame",
+    "position", "crop_safety", "leaves_frame", "heading",
 }
 for spec_name, spec in (("example", EXAMPLE), ("real place", REAL_PLACE)):
     questions = image_spec.build_questions(spec, image_spec.derive(spec, WIDTH, HEIGHT))
@@ -2697,6 +2697,118 @@ check(
     right61,
 )
 check("a clause with no side asks nothing", "q_customer_hand_left" not in g_q)
+
+print("C62 a drawn picture is told it is drawn, start to end")
+# rangsarn run 10: all three monochrome drawn styles came back in full colour.
+ink = copy.deepcopy(drawn60)
+ink["style"]["look"] = "black ink line art on cream paper with one warm wash"
+ink["lighting"]["color_temperature_k"] = 4800
+ink_text = " ".join(c["text"] for c in image_spec.build_clauses(
+    ink, image_spec.derive(ink, WIDTH, HEIGHT), WIDTH, HEIGHT, image_spec.policy_from_config(DEFAULTS)))
+ink_prompt = image_spec.compile_spec(ink, WIDTH, HEIGHT, DEFAULTS)["prompt"]
+check(
+    "a drawing's last line restates its medium",
+    ink_prompt.rstrip(" .").endswith("drawn as black ink line art on cream paper with one warm wash, in that palette only"),
+    ink_prompt[-160:],
+)
+check("it carries no colour temperature in kelvin", not re.search(r"[0-9]+ ?K[.,; ]", ink_prompt), ink_prompt[:200])
+check("its light is described within the style's tones", "shown only in the tones of black ink line art" in ink_text)
+check("a colour fill is left out of a monochrome drawing", "Fill:" not in ink_text)
+check("its physics line speaks of one viewpoint, not one camera", "one camera viewpoint" not in ink_text and "one viewpoint" in ink_text)
+check("its lettering is loosely indicated, not out of focus", "out of focus" not in ink_text)
+gouache = copy.deepcopy(drawn60)
+gouache["style"]["look"] = "gouache illustration in warm saturated colour"
+g_text = " ".join(c["text"] for c in image_spec.build_clauses(
+    gouache, image_spec.derive(gouache, WIDTH, HEIGHT), WIDTH, HEIGHT, image_spec.policy_from_config(DEFAULTS)))
+check("a painterly colour style keeps its fills", "Fill:" in g_text and "shown only in the tones" not in g_text)
+check("a photograph keeps its camera words", "one camera viewpoint" in image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)["prompt"])
+check(
+    "a locale detail about the text itself is warned",
+    any("talks about the text" in w for w in image_spec.validate_spec(
+        dict(copy.deepcopy(EXAMPLE), location=dict(EXAMPLE["location"], locale_details=["the species is named exactly, and its field marks are written out"])),
+        WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+check(
+    "and one about the picture is not",
+    not any("talks about the text" in w for w in image_spec.validate_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+
+print("C63 colour words out of a monochrome drawing; the medium asked; where a front points")
+# rangsarn run 12.
+check("colour words come out", image_spec.decolour("faded green fabric shade over a steel frame") == "fabric shade over a steel frame")
+check("a colour compound comes out whole", image_spec.decolour("a red-and-white checked cloth") == "a checked cloth")
+check("the ink palette's own black and white stay", image_spec.decolour("white dispensing coat, black hair") == "white dispensing coat, black hair")
+ink63 = copy.deepcopy(ink)
+ink63["subjects"][0]["wardrobe"] = "faded green apron over a red shirt"
+ink_prompt63 = image_spec.compile_spec(ink63, WIDTH, HEIGHT, DEFAULTS)["prompt"]
+check(
+    "a monochrome drawing's people, things and layout carry no colour words",
+    "green apron" not in ink_prompt63 and "red shirt" not in ink_prompt63 and "sage-green shelving" not in ink_prompt63,
+)
+check("its own palette is kept as the author wrote it", "Color palette:" in ink_prompt63)
+check("and the spec itself is left as written", ink63["subjects"][0]["wardrobe"] == "faded green apron over a red shirt")
+gouache63 = copy.deepcopy(gouache)
+gouache63["subjects"][0]["wardrobe"] = "faded green apron over a red shirt"
+check("a colour style keeps them", "faded green apron" in image_spec.compile_spec(gouache63, WIDTH, HEIGHT, DEFAULTS)["prompt"])
+drawn_q = {q["id"]: q["question"] for q in image_spec.build_questions(ink63, image_spec.derive(ink63, WIDTH, HEIGHT))}
+check("every drawn spec is asked about its medium", "drawn as black ink line art" in drawn_q.get("q_medium", ""))
+check("a photograph is not", "q_medium" not in {q["id"] for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))})
+boat = copy.deepcopy(EXAMPLE)
+boat["objects"][0]["heading_toward"] = "pharmacist"
+boat_q = {q["id"]: q["question"] for q in image_spec.build_questions(boat, image_spec.derive(boat, WIDTH, HEIGHT))}
+check("a heading is asked", boat_q.get("q_counter_heading") == "Does the front of the counter point toward the pharmacist?", boat_q.get("q_counter_heading", "(none)"))
+check("and said", "The front of the counter points toward the pharmacist" in image_spec.compile_spec(boat, WIDTH, HEIGHT, DEFAULTS)["prompt"])
+
+print("C64 sizes pinned by the horizon for things; seats paired with tables; pouring")
+# The owner: sizes are very wrong in every picture. From rangsarn's audit.
+car = copy.deepcopy(wide44)
+car["objects"].append({
+    "id": "car", "short_name": "car", "name": "compact white hatchback", "count": 1,
+    "material": "painted steel and glass", "state": "parked, clean", "height_m": 1.5, "width_m": 4.0,
+    "scale_anchor": "its roof is level with the pharmacist's chin", "support": {"kind": "stands_on", "by": "the road"},
+    "position": "far right, beyond the counter", "distance_m": 9.0, "plane": "background",
+})
+car_derived = image_spec.derive(car, WIDTH, HEIGHT)
+car_x = [c for c in car_derived["object_horizon_crossings"] if c["id"] == "car"]
+check(
+    "a grounded thing gets a crossing at camera height over its height",
+    car_x and abs(car_x[0]["fraction_of_height_from_base"] - round(1.55 / 1.5, 3)) < 1e-9,
+    str(car_x),
+)
+car_q = {q["id"]: q["question"] for q in image_spec.build_questions(car, car_derived)}
+check("and a question", "q_horizon_cut_car" in car_q, str([k for k in car_q if "horizon_cut" in k]))
+far = copy.deepcopy(car)
+far["objects"][-1]["distance_m"] = 45.0
+check("a thing far beyond 30 m gets none", not [c for c in image_spec.derive(far, WIDTH, HEIGHT)["object_horizon_crossings"] if c["id"] == "car"])
+tall = copy.deepcopy(car)
+tall["objects"][-1].update({"height_m": 12.0, "name": "shophouse block"})
+check("nor does a building", not [c for c in image_spec.derive(tall, WIDTH, HEIGHT)["object_horizon_crossings"] if c["id"] == "car"])
+check("a held thing gets none", not [c for c in image_spec.derive(EXAMPLE, WIDTH, HEIGHT)["object_horizon_crossings"] if c["id"] == "medicine_box"])
+check("a tuk-tuk has a height band", image_spec.reference_height("blue tuk-tuk")[:2] == (1.65, 1.95))
+check("a name is matched on its head noun", image_spec.reference_height("folding steel tables with plastic stools") is None)
+
+
+def seating(stool, table):
+    spec = copy.deepcopy(EXAMPLE)
+    spec["objects"].extend([
+        {"id": "stool", "short_name": "stool", "name": "red plastic stool", "count": 1, "material": "moulded plastic",
+         "state": "empty", "height_m": stool, "scale_anchor": "its seat meets the pharmacist's knee",
+         "support": {"kind": "stands_on", "by": "the floor"}, "position": "lower left", "distance_m": 2.6, "plane": "midground"},
+        {"id": "table", "short_name": "table", "name": "steel folding table", "count": 1, "material": "steel",
+         "state": "wiped clean", "height_m": table, "scale_anchor": "its top meets the pharmacist's hip",
+         "support": {"kind": "stands_on", "by": "the floor"}, "position": "lower left", "distance_m": 2.7, "plane": "midground"},
+    ])
+    return [w for w in image_spec.validate_spec(spec, WIDTH, HEIGHT, DEFAULTS)[1] if "seat has no table" in w]
+
+
+check("a stool with no table at a usable height above it is warned", bool(seating(0.45, 0.33)))
+check("a stool with its folding table is not", not seating(0.45, 0.72))
+ladle = copy.deepcopy(EXAMPLE)
+ladle["subjects"][0]["action"] = "ladles broth from the pot into a bowl"
+ladle_q = {q["id"] for q in image_spec.build_questions(ladle, image_spec.derive(ladle, WIDTH, HEIGHT))}
+check("a scene that pours is asked where the liquid leaves", "q_pour" in ladle_q)
+check("and told", image_spec.POUR_RULE in image_spec.compile_spec(ladle, WIDTH, HEIGHT, DEFAULTS)["prompt"])
+check("one that does not, is not", "q_pour" not in {q["id"] for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))})
 
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}

@@ -133,6 +133,8 @@ distance and the conditioning rights, and are vouched for by the contract test a
 | People implied | `purpose`, `subjects[]` | Warns when the spec declares nobody and the purpose describes a human act ("is handed over", "as its customers meet it"). Verb forms only, so "an explainer" or "the consultant's empty office" do not warn. | The purpose opens the prompt and outweighs an empty subject list: two of six zero-subject client briefs came back with people. |
 | Real place | `location.reference{}` | With `place_is_real`: no `place_name`; fewer than two `sources` (the client's `min_reference_sources`); a source without `url`, `publisher`, `shows`, `accessed`, a known `viewpoint` and `rights`; no `verified_facts`, or one that hedges; and no source that shows the space from where the camera is. Inside needs an interior viewpoint; outside needs an exterior one; a staff portrait or a product shot never answers for a room. A `state` other than `existing` warns that the image is a visualisation. | A picture of a named place that gets it wrong is worse than a generic one, because the client's own customers know the room. |
 | Conditioning rights | `reference.conditioning_images[]`, `subjects[].reference{path,rights,origin}`, `subjects[].reference_image` | Every image fed to the generator needs its own provenance: a row in `sources`, or the subject's own `reference` block with `path`, `rights` and `origin` ("lock sheet cast/pim v3"), independent of any real place. Any recorded rights value may condition, `client_owned`, `licensed` or `reference_only` (owner decision, 2026-10-26); a `reference_only` image warns that the published file must be the generated image and never the source. The older `reference_image` must match a row in `location.reference.sources` whether or not the place is real: before, with `place_is_real` false, it was fed with no provenance check at all. | Every input to the picture is on record, so a reviewer can see what it was built on, and the source of a reference-only image never reaches the page. |
+| A writer's note as a locale detail | `location.locale_details[]` | Warns when a detail talks about the text itself ("is named exactly", "written out", "described as"). | It becomes a question no picture can answer; in run 10 the reviewer rightly answered no to "the species is named exactly". |
+| Seat and table | objects named as a seat and as a table, `height_m` | Warns when a declared seat has no table 0.18 to 0.38 m above it. Bands include a street plastic stool, a folding table and a low floor table, all conventions, and a tuk-tuk and a motorcycle. A name is matched on its head noun, so "folding steel tables with plastic stools" is tables. | Whoever sits at it is drawn too low or too high for the table. |
 | Unseeable exclusion | `must_not_show[]` | Warns on an entry that names a provenance or an origin ("plants from outside Southeast Asia", "imported", "made in"). | No reviewer can see where a leaf was grown, so the question can only be answered `cannot_tell`. Name what such a thing would look like. |
 | Floor left at the camera's | `subjects[].position`, `ground_height_m` | Warns when a standing person's position puts them on a declared thing at least 0.2 m high ("on the landing", "on the stage") and their `ground_height_m` is 0. | Their eye line and their floor are then measured from the camera's floor, and they are grouped there with everything else. |
 | Lint | every prose field that reaches the prompt | Negation, quality boosters, similes ("hands like a pianist's"; "what X is really like" is an idiom and accepted), a pose named by its effect ("a confident pose"), camera words in a drawing, and hedges in `verified_facts` (maybe, probably, reportedly; not an approximator such as "about as wide as" or "roughly square", and not "around the square"). Audit fields such as `sources` and `conflicting_claims` are exempt, because they never reach the prompt. | Each of these is measured to cost fidelity, or to put the compared thing in the frame. |
@@ -160,6 +162,19 @@ refuse the brief:
   person fails, and it is measured: position and crop-safety questions route to
   `geometry` and are answered in fractions of the frame. In rangsarn's run 02 all four
   remaining misses were in-frame position and scale, judged by eye.
+- **Things on the camera's floor are pinned to the horizon too.** The horizon crosses
+  anything standing on the camera's floor at camera height over its height, the same
+  identity as for people (Hoiem et al. put cars on it). A grounded thing from 0.5 to
+  4 m tall and within 30 m, single, not running past the frame, gets a crossing
+  question, and one a metre or taller a prompt sentence: "That horizon line crosses the
+  car about 68 per cent of the way up". A far building is left out, because it may not
+  stand on the camera's floor. Any tool that measures this against a horizon it
+  calibrated itself should answer firm only when that horizon agrees with the one the
+  people give: rangsarn's GeoCalib put a street horizon 100 rows low, which read a 1.5 m
+  tuk-tuk as 2.6 m.
+- **A scene that pours is told and asked where the liquid leaves.** A ladle scene drew
+  broth falling from beneath a bowl; a scene whose action pours, ladles or waters
+  carries the rule that liquid leaves at the lip and falls in one arc.
 - **A count is counted where the thing is.** Something supported by another declared
   entity is counted there: "exactly 3 baskets resting on the near sampan", because in
   rangsarn's run 04 a far boat carried a fourth. A surface named only in words does not
@@ -361,6 +376,16 @@ of rangsarn's 20 pictures found a Bangkok floating market drawn with Vietnamese 
 hats, a Thai pharmacy as a generic stock shop and figs as crabapples, all from facts that
 sat late in the prompt. A person's distinguishing traits follow their identity in the same
 sentence, before wardrobe and pose.
+
+A drawn picture is told it is drawn from start to end. In rangsarn's run 10 all three
+monochrome drawn styles (black ink line art with one warm wash, ink and charcoal with one
+cold wash, ink-wash landscape) came back as full-colour painterly or near-photographic
+pictures while the painterly styles held: the style sat only in the opening, and the
+compiler's own sentences still spoke photography. For a drawn medium the light carries no
+colour temperature in kelvin, lettering is "loosely indicated" rather than "out of focus",
+the physics line speaks of one viewpoint rather than one camera, and the closing line
+restates the medium and the look. A monochrome style has its light and shade described in
+its own tones, and fills given as colours are left out.
 
 The viewpoint is said in pictures, and only where it is true. A camera that looks down
 shows the tops of heads, so that wording needs a downward tilt, a high angle or the lens
