@@ -127,15 +127,22 @@ INTERIOR_VIEWPOINTS = {
 # Viewpoints that answer for a person or an object and never for a space.
 NON_SPATIAL_VIEWPOINTS = {"product_detail", "staff_or_uniform"}
 EXTERIOR_VIEWPOINTS = {"exterior", "entrance", "street", "aerial"}
-# Only a source the client owns or has licensed may be fed to the generator as a
-# conditioning image. A source found on the web informs what the author writes;
-# it is not an input to the model.
-CONDITIONING_RIGHTS = {"client_owned", "licensed"}
+# Every recorded reference may be fed to the generator as a conditioning image,
+# whatever its rights: the output is a new picture and the source is never
+# published (owner decision, 2026-10-26, the same in rangsarn). The rights are
+# still recorded per image, and a reference_only one warns so the author keeps the
+# source out of the published page.
+CONDITIONING_RIGHTS = {"client_owned", "licensed", "reference_only"}
+REFERENCE_ONLY_NOTE = (
+    "is reference_only: it may condition the generator, but the published file must be "
+    "the generated image, never this source, and the generated image must not "
+    "reproduce it closely."
+)
 # A real site with an unbuilt scheme on it is neither a photograph of something
 # that exists nor an invented place. Saying which it is keeps the facts and
 # labels the picture honestly.
 REFERENCE_STATES = {"existing", "planned", "under_construction", "former"}
-REFERENCE_RIGHTS = CONDITIONING_RIGHTS | {"reference_only"}
+REFERENCE_RIGHTS = {"client_owned", "licensed", "reference_only"}
 
 # Eye height as a fraction of stature, by posture. Standing 0.93 is stable across
 # populations: ANSUR II gives 164.0/175.5 = 0.934 for men and 151.7/162.6 = 0.933
@@ -690,6 +697,11 @@ def ground_height(entity: dict[str, Any]) -> float:
     return _num(entity.get("ground_height_m")) or 0.0
 
 
+def on_camera_floor(entity: dict[str, Any]) -> bool:
+    """Whether this stands on the camera's own floor."""
+    return abs(ground_height(entity)) < 0.05
+
+
 def eye_height(subject: dict[str, Any]) -> float | None:
     """Eye height above the floor for a person, from stature and posture.
 
@@ -893,6 +905,49 @@ def camera_is_inside(spec: dict[str, Any]) -> bool:
     return horizon == "not_visible"
 
 
+# Words that say nothing about how a person looks, left out of the look-alike
+# comparison.
+_TRAIT_STOP = {
+    "a", "an", "the", "and", "or", "of", "in", "on", "at", "with", "to", "her", "his",
+    "their", "she", "he", "they", "is", "are", "who", "for", "from", "by", "over", "under",
+    "one", "two", "three", "into", "across", "behind", "beside", "near", "as",
+}
+# Above this share of shared trait words, two people are described as one.
+LOOKALIKE_OVERLAP = 0.6
+# A name that lists what several of a thing hold: "baskets of bananas, pomelos
+# and mangoes".
+CONTENTS_RE = re.compile(
+    r"^(?P<head>.+?)\s+(?:of|with|holding|filled with|full of|piled with|carrying)\s+(?P<items>.+)$",
+    re.I,
+)
+
+
+def _trait_words(text: str) -> set[str]:
+    return {w for w in re.findall(r"[a-z][a-z'-]+", text.lower()) if w not in _TRAIT_STOP}
+
+
+def person_traits(subject: dict[str, Any]) -> set[str]:
+    """The words a brief uses for how this person looks."""
+    return _trait_words(
+        " ".join(_text(subject.get(k)) for k in ("description", "appearance", "wardrobe"))
+    )
+
+
+def listed_contents(name: str) -> tuple[str, list[str]]:
+    """The thing and the contents a name lists, or the name and no contents."""
+    match = CONTENTS_RE.match(_text(name))
+    if not match:
+        return _text(name), []
+    items = [
+        item.strip(" .")
+        for item in re.split(r",\s*(?:and\s+|or\s+)?|\s+and\s+|\s+or\s+", match.group("items"))
+        if item.strip(" .")
+    ]
+    if len(items) < 2:
+        return _text(name), []
+    return match.group("head").strip(), items
+
+
 def people_count(spec: dict[str, Any]) -> int:
     total = 0
     for subject in _list(spec.get("subjects")):
@@ -997,7 +1052,13 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
     # The camera at standing eye height puts the horizon through the eyes: the
     # single most reliable cue that a generated scene has one consistent viewpoint.
     cam_height = _num(camera.get("height_m"))
-    eyes = [e for e in (eye_height(s) for s in eye_line_people(spec)) if e is not None]
+    # The horizon is at the lens height, so the people whose eyes it can meet are
+    # the ones on the camera's own floor. A fighter on a raised ring has his eyes
+    # above it whatever the camera does, and must not pull the mean (run 03).
+    floor_people = [s for s in eye_line_people(spec) if on_camera_floor(s)]
+    eyes = [
+        e for e in (eye_height(s) for s in (floor_people or eye_line_people(spec))) if e is not None
+    ]
     derived["camera_at_eye_height"] = bool(
         cam_height is not None
         and eyes
@@ -1370,11 +1431,13 @@ def validate_spec(
                     "source records where it came from. Every conditioning image needs "
                     "its own row in sources with the rights it is used under."
                 )
+            elif _text(match.get("rights")) == "reference_only":
+                warnings.append(f"spec.location.reference: {image!r} {REFERENCE_ONLY_NOTE}")
             elif _text(match.get("rights")) not in CONDITIONING_RIGHTS:
                 errors.append(
                     f"spec.location.reference: {image!r} is recorded as "
-                    f"{_text(match.get('rights'))!r}, which may inform what you write but "
-                    "may not be fed to the generator. Only client_owned or licensed may."
+                    f"{_text(match.get('rights'))!r}, which is not a rights value: use one of "
+                    + ", ".join(sorted(REFERENCE_RIGHTS)) + "."
                 )
     elif isinstance(reference, dict) and _list(reference.get("conditioning_images")):
         errors.append(
@@ -1745,12 +1808,8 @@ def validate_spec(
                     f"subject {sid}: reference.rights must be one of "
                     + ", ".join(sorted(REFERENCE_RIGHTS)) + "."
                 )
-            elif rights not in CONDITIONING_RIGHTS:
-                errors.append(
-                    f"subject {sid}: reference.rights is {rights!r}, which may inform what "
-                    "you write but may not be fed to the generator. Only client_owned or "
-                    "licensed may."
-                )
+            elif rights == "reference_only":
+                warnings.append(f"subject {sid}: reference {path!r} {REFERENCE_ONLY_NOTE}")
             if _text(subject.get("reference_image")) and _text(subject.get("reference_image")) != path:
                 errors.append(
                     f"subject {sid}: reference_image and reference.path name different "
@@ -1785,11 +1844,13 @@ def validate_spec(
                     "where it came from. Give the subject a reference block, or a row in "
                     "location.reference.sources with the rights it is used under."
                 )
+            elif _text(match.get("rights")) == "reference_only":
+                warnings.append(f"subject {sid}: {image!r} {REFERENCE_ONLY_NOTE}")
             elif _text(match.get("rights")) not in CONDITIONING_RIGHTS:
                 errors.append(
                     f"subject {sid}: {image!r} is recorded as {_text(match.get('rights'))!r}, "
-                    "which may inform what you write but may not be fed to the generator. "
-                    "Only client_owned or licensed may."
+                    "which is not a rights value: use one of "
+                    + ", ".join(sorted(REFERENCE_RIGHTS)) + "."
                 )
 
     for subject in subjects:
@@ -1975,6 +2036,37 @@ def validate_spec(
                     "ground_height_m to the height they stand at."
                 )
                 break
+
+    # Two people described with most of the same words come out with one face:
+    # the owner found exactly that in rangsarn's run 03.
+    described = [
+        subject for subject in subjects
+        if _text(subject.get("kind") or "person") == "person" and not has_reference_image(subject)
+    ]
+    for index, first in enumerate(described):
+        for second in described[index + 1:]:
+            a, b = person_traits(first), person_traits(second)
+            if a and b:
+                shared = len(a & b) / len(a | b)
+                if shared >= LOOKALIKE_OVERLAP:
+                    warnings.append(
+                        f"subjects {_text(first.get('id'))} and {_text(second.get('id'))} are "
+                        f"described almost alike ({shared:.0%} of their words shared), and a "
+                        "generator draws one face for both. Give each visible traits of their "
+                        "own: face shape, age signs, build, hair, a mark, garment colour or wear."
+                    )
+    for kind, entity in _entities(spec):
+        many = int(_num(entity.get("count")) or 1)
+        if many > 1 and not _text(entity.get("variation")):
+            what = (
+                "faces, ages and builds" if kind == "subject"
+                else "size, wear, ripeness, angle or what sits on each; even identical "
+                "stock differs in wear and angle"
+            )
+            warnings.append(
+                f"{kind} {_text(entity.get('id'))}: {many} of them from one description draws "
+                f"{many} copies. Say in variation how they differ: {what}."
+            )
 
     for value, eid, name in collisions(spec):
         errors.append(
@@ -2345,6 +2437,15 @@ def build_clauses(
             add("subject", 2, f"{_cap(noun)} looks {_text(subject['gaze'])}")
         if _text(subject.get("expression")):
             add("subject", 3, f"Expression of {noun}: {_text(subject['expression'])}")
+        if count > 1 and _text(subject.get("variation")):
+            add("subject", 1, f"Each of the {count} differs: {_text(subject['variation'])}")
+    if people_count(spec) > 1:
+        add(
+            "subject",
+            1,
+            "Every person in the frame has a face, a build and an age of their own, as "
+            "different people do, while all of them belong to this place and time",
+        )
 
     # objects -----------------------------------------------------------------
     for obj in objects:
@@ -2363,6 +2464,8 @@ def build_clauses(
         kind = _text(support.get("kind"))
         line += f", {SUPPORT_PARTICIPLE.get(kind, kind.replace('_', ' '))} {by_name}"
         add("object", 1, line)
+        if count > 1 and _text(obj.get("variation")):
+            add("object", 1, f"Each of the {count} differs: {_text(obj['variation'])}")
         if obj.get("extends_beyond_frame"):
             add(
                 "object",
@@ -2751,6 +2854,35 @@ def detect_as(entity: dict[str, Any], person: bool = False) -> str:
     return head
 
 
+# Supports under which an object's height_m is its upright extent in the frame.
+UPRIGHT_SUPPORT = {"stands_on", "rests_on", "mounted_on", "fixed_in"}
+# A thing much wider than it is tall reads by its width, not its height: a
+# sampan or a landing, several times wider. A counter at 2.7 is still read by
+# its top.
+LYING_ASPECT = 4.0
+
+
+def ratio_ready(entity: dict[str, Any], is_subject: bool) -> bool:
+    """Whether height_m is what the entity measures vertically in the picture.
+
+    In rangsarn's run 03 every height ratio against a seated person, a boat, a
+    set of baskets, a held bunch or a landing was answered no on a correct
+    picture, because none of them has a frame height equal to height_m.
+    """
+    if is_subject:
+        if _text(entity.get("kind") or "person") != "person":
+            return bool(_num(entity.get("height_m")))
+        return _text(entity.get("posture") or "standing").lower() in STATURE_POSTURES
+    support = entity.get("support", {}) if isinstance(entity.get("support"), dict) else {}
+    if _text(support.get("kind")) not in UPRIGHT_SUPPORT:
+        return False
+    if entity.get("extends_beyond_frame") or int(_num(entity.get("count")) or 1) != 1:
+        return False
+    height = _num(entity.get("height_m"))
+    width = _num(entity.get("width_m"))
+    return bool(height) and not (width and width > height * LYING_ASPECT)
+
+
 def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[str, Any]]:
     """Atomic yes/no questions from the spec, each answerable by looking at the image.
 
@@ -2935,10 +3067,14 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         noun = _noun(obj)
         count = int(_num(obj.get("count")) or 1)
         base = f"q_{oid}"
+        # A count counts the thing. Contents the name lists are asked one at a
+        # time below: "exactly 3 baskets of bananas, pomelos and mangoes" was
+        # answered yes on bananas, pomelos, bananas (rangsarn run 03).
+        head, contents = listed_contents(_text(obj.get("name"))) if count > 1 else (_text(obj.get("name")), [])
         add(
             base,
             "entity",
-            f"Does the image show exactly {count} {_text(obj.get('name'))}?",
+            f"Does the image show exactly {count} {head if contents else _text(obj.get('name'))}?",
             verify_with="count",
             measure={
                 "kind": "count",
@@ -2949,6 +3085,22 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 "expected": count,
             },
         )
+        for index, item in enumerate(contents, start=1):
+            add(
+                f"{base}_holds_{index:02d}",
+                "attribute",
+                f"Does one of the {head} hold {item}, as the spec lists?",
+                base,
+            )
+        if count > 1:
+            add(
+                f"{base}_distinct",
+                "stylistic",
+                f"Do the {count} {head if contents else _text(obj.get('name'))} each look like a "
+                "real one of their own, with small differences in wear, angle, position or "
+                "what sits on them, rather than one image repeated?",
+                base,
+            )
         if _text(obj.get("size")) or _text(obj.get("scale_anchor")):
             add(
                 f"{base}_scale",
@@ -3053,20 +3205,24 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             verify_with="geometry",
             measure={"kind": "horizon_band", "expected": horizon},
         )
+    # Only people on the camera's own floor have their eyes on the horizon: a
+    # buyer on a 0.8 m landing has it below his eyes, correctly (run 03).
+    floor_standing = [person for person in standing_people(spec) if on_camera_floor(person)]
     if (
         derived.get("camera_at_eye_height")
         and horizon in HORIZON_IN_FRAME
-        and standing_people(spec)
+        and floor_standing
     ):
         add(
             "q_eye_line",
             "camera",
-            "Does that horizon line cross the eyes of the standing people, as a camera at "
-            "their eye height requires?",
+            "Does that horizon line cross the eyes of "
+            + _and_list([_noun(person) for person in floor_standing])
+            + ", as a camera at their eye height requires?",
             verify_with="geometry",
             measure={
                 "kind": "eye_line",
-                "entities": [_text(person.get("id")) for person in standing_people(spec)],
+                "entities": [_text(person.get("id")) for person in floor_standing],
             },
         )
     focus = _text(camera.get("focus_on"))
@@ -3100,6 +3256,13 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         for ratio in measurable
         if 1 / MAX_MEASURABLE_RATIO <= ratio["a_to_b_apparent_height"] <= MAX_MEASURABLE_RATIO
     ]
+    by_id = {_text(entity.get("id")): (kind, entity) for kind, entity in _entities(spec)}
+
+    def _ready(eid: str) -> bool:
+        kind, entity = by_id.get(eid, ("", {}))
+        return bool(entity) and ratio_ready(entity, kind == "subject")
+
+    measurable = [ratio for ratio in measurable if _ready(ratio["a"]) and _ready(ratio["b"])]
     for ratio in measurable[:6]:
         add(
             f"q_ratio_{ratio['a']}_{ratio['b']}",
@@ -3304,6 +3467,23 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
     # "Exactly two walkers?" answered yes while twenty more people stood in the
     # lane, because every count question asks about a declared entity and none
     # asks about the frame.
+    if people_count(spec) > 1:
+        add(
+            "q_distinct_faces",
+            "anatomy",
+            "Does each person have a visibly different face, build and signs of age, as "
+            "different people would, rather than copies of one face? Compare the face crops "
+            "side by side.",
+        )
+    for subject in _list(spec.get("subjects")):
+        if isinstance(subject, dict) and int(_num(subject.get("count")) or 1) > 1:
+            add(
+                f"q_{_text(subject.get('id'))}_distinct",
+                "anatomy",
+                f"Do the {int(_num(subject.get('count')))} {_text(subject.get('description'))} "
+                "each look like a different person, in face, build and age?",
+                f"q_{_text(subject.get('id'))}",
+            )
     add(
         "q_undeclared",
         "logic",

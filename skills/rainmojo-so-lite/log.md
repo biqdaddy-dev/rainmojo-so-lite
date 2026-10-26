@@ -382,6 +382,43 @@ four reach checks guessed the trigger words; the diff, which shows the warning f
 the eighteen, is the definitive evidence. Both warnings and the rights fix are vouched for by
 the contract test alone.
 
+SEVENTEENTH PORT, `6b2a3d8`, `0e0d9ec` and `ba30c4c`, same version. Every recorded reference
+may condition the generator, a reference-only source warning instead of being refused, by the
+owner's decision as relayed by the full edition; this reverses the per-image rights refusal
+this edition argued for, and is ported as written. Height ratios only between things whose
+`height_m` is their upright measure; the standing eye-level line only for people on the
+camera's floor; likeness, distinct-faces and per-copy variation warnings and questions; and a
+count that no longer counts contents. Five files byte-identical, the review example
+regenerated from this edition's own defaults and byte-identical at 79 questions, the
+real-place example ported. 407 assertions passing unchanged, regression 4 of 4, T4 green.
+
+The doc checks were searched, then tested. No lite-owned doc says a reference-only source may
+not condition the generator. No lite-owned doc mentions ratios: a search for "ratio" returns a
+dozen lines, every one the substring inside "configuration", "operation" or "generation", and a
+count of hits would have said the opposite. One sentence touches the eye line, `agent.json`'s
+"a seated or kneeling figure still has an eye line, and in an interview or desk scene it is the
+only one". It is still true, since the narrowing is to the standing eye-level line and not to
+per-figure crossings, but only its 0.15 m band was pinned. D9 now pins the clause itself: with
+nobody standing, every seated person gets a horizon crossing and a measured question; with
+seated people simulated out of the eye line it fails on both, so it can catch what it is for.
+T4 is at 54 checks.
+
+The new warnings, read one by one. On the client briefs nothing new is refused, the compiled
+prompt changes on seven, adding the distinct-faces clause, and new warnings fire on seven
+briefs, thirteen warnings in all. Eleven are true positives: groups of people from one
+description, which come out with cloned faces; two fighters described in 81 per cent the same
+words; and desks, chairs, tables, scooters and produce trays, which really do differ in angle,
+wear and contents. Two give advice that would make the picture less real. The solar array's own
+invariants put its panels on one rail at one tilt and give each the same size, and its state
+already describes the variation that is right, dust on the low edge and a leaf caught on one
+panel; the warning still asks for the panels to differ in size and angle. The tiger sculptures
+are a moulded matched pair, and varying their size would be wrong. The warning's trigger is a
+missing `variation` field, not missing variation, and its justification, that even identical
+stock differs in wear and angle, is false for stock mounted at one tilt. A `variation` answer
+silences it, so the cost is the advice text, reported upstream. Seven briefs, not the eight
+quoted upstream; the shipped examples raise none, and the eighth was likely the real-place
+example's fighters, which the same commit made distinct.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

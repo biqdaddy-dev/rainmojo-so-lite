@@ -1137,9 +1137,9 @@ check(
     "an unprovenanced image reached the generator",
 )
 check(
-    "one owned source does not authorise a reference-only image",
-    any(
-        "may not be fed to the generator" in error
+    "a reference-only image may condition now, but is never silent about it",
+    not any(
+        "reference_only" in error
         for error in real_errors(
             lambda spec: (
                 own_first(spec),
@@ -1944,7 +1944,6 @@ check(
 locked_prompt = image_spec.compile_spec(locked, WIDTH, HEIGHT, DEFAULTS)["prompt"]
 check("and is prompted as a reference, with the identity lock", "the person from the reference image" in locked_prompt and "bone structure" in locked_prompt)
 for field, value, needle in (
-    ("rights", "reference_only", "may not be fed to the generator"),
     ("rights", "found_online", "reference.rights must be one of"),
     ("origin", "", "reference.origin is required"),
     ("path", "", "reference.path is required"),
@@ -1975,15 +1974,168 @@ refuses(
     "no source records where it came from",
     fictional_with_legacy,
 )
-refuses(
-    "and one recorded as reference_only is refused",
-    "may not be fed to the generator",
-    lambda spec: fictional_with_legacy(spec, "reference_only"),
+check(
+    "and one recorded as reference_only is accepted, with a warning",
+    not [e for e in errors_for(lambda spec: fictional_with_legacy(spec, "reference_only")) if "subject" in e and "reference" in e],
+    str(errors_for(lambda spec: fictional_with_legacy(spec, "reference_only"))[:2]),
 )
 check(
     "and one recorded as client_owned is accepted",
     not [e for e in errors_for(lambda spec: fictional_with_legacy(spec, "client_owned")) if "subject" in e and "reference" in e],
     str(errors_for(lambda spec: fictional_with_legacy(spec, "client_owned"))[:2]),
+)
+
+print("C43 every recorded reference may condition, and says so when it is reference_only")
+# Owner decision 2026-10-26, the same in rangsarn: every reference is attachable.
+check("all three rights values may condition", image_spec.CONDITIONING_RIGHTS == image_spec.REFERENCE_RIGHTS)
+ref_only = copy.deepcopy(EXAMPLE)
+ref_only["subjects"][0]["appearance"] = ""
+ref_only["subjects"][0]["reference"] = {
+    "path": "refs/street-vendor.jpg", "rights": "reference_only", "origin": "photo from a market visit",
+}
+ref_errors, ref_warnings = image_spec.validate_spec(ref_only, WIDTH, HEIGHT, DEFAULTS)
+check("a reference_only likeness is accepted", not ref_errors, str(ref_errors[:2]))
+check(
+    "and warns that the source never reaches the published page",
+    any("never this source" in w for w in ref_warnings),
+    str(ref_warnings)[:200],
+)
+owned_only = copy.deepcopy(ref_only)
+owned_only["subjects"][0]["reference"]["rights"] = "client_owned"
+check(
+    "an owned one does not warn",
+    not any("never this source" in w for w in image_spec.validate_spec(owned_only, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+refuses(
+    "provenance is still required: a likeness with no origin",
+    "reference.origin is required",
+    lambda spec: (
+        spec["subjects"][0].update({"appearance": "", "reference": {"path": "x.jpg", "rights": "reference_only"}}),
+    ),
+)
+refuses(
+    "and a rights value that is not one",
+    "reference.rights must be one of",
+    lambda spec: (
+        spec["subjects"][0].update(
+            {"appearance": "", "reference": {"path": "x.jpg", "rights": "found_online", "origin": "web"}}
+        ),
+    ),
+)
+
+print("C44 run 03: ratios of things whose height is what they measure, an eye line on one floor")
+
+
+def _ids(spec):
+    return {q["id"]: q for q in image_spec.build_questions(spec, image_spec.derive(spec, WIDTH, HEIGHT))}
+
+
+base44 = _ids(EXAMPLE)
+wide44 = copy.deepcopy(EXAMPLE)
+wide44["camera"].update({"shot_type": "wide", "focal_length_mm": 24})
+ratio_ids = [q for q in _ids(wide44) if q.startswith("q_ratio")]
+check(
+    "a standing person whose whole height fits is compared",
+    any("pharmacist" in q for q in ratio_ids),
+    str(ratio_ids),
+)
+seated44 = copy.deepcopy(wide44)
+seated44["subjects"][0]["posture"] = "seated"
+check(
+    "the same person seated is not compared by stature",
+    not any(q.startswith("q_ratio") and "pharmacist" in q for q in _ids(seated44)),
+    str([q for q in _ids(seated44) if q.startswith("q_ratio")]),
+)
+check("a held object is not compared", not any(q.startswith("q_ratio") and "medicine_box" in q for q in base44))
+check("an upright standing object is", image_spec.ratio_ready(EXAMPLE["objects"][0], False))
+lying = dict(EXAMPLE["objects"][0], width_m=6.0, height_m=0.6)
+check("but not one much wider than tall", not image_spec.ratio_ready(lying, False))
+check("nor one running past the frame", not image_spec.ratio_ready(dict(EXAMPLE["objects"][0], extends_beyond_frame=True), False))
+check("nor a set of several", not image_spec.ratio_ready(dict(EXAMPLE["objects"][0], count=3), False))
+check("nor a boat on the water", not image_spec.ratio_ready(dict(EXAMPLE["objects"][0], support={"kind": "floats_in", "by": "the canal"}), False))
+check("an animal subject is compared by its height", image_spec.ratio_ready({"kind": "animal", "height_m": 0.7}, True))
+eye44 = base44.get("q_eye_line", {})
+check(
+    "the eye line names the people on the camera's floor",
+    "the pharmacist" in eye44.get("question", "") and "the older customer" in eye44.get("question", ""),
+    eye44.get("question", ""),
+)
+raised44 = copy.deepcopy(EXAMPLE)
+raised44["subjects"][1]["ground_height_m"] = 0.8
+raised_eye = _ids(raised44).get("q_eye_line", {})
+check(
+    "and leaves out someone standing higher, whose eyes are above the horizon",
+    "the pharmacist" in raised_eye.get("question", "") and "the older customer" not in raised_eye.get("question", "")
+    and raised_eye.get("measure", {}).get("entities") == ["pharmacist"],
+    raised_eye.get("question", ""),
+)
+
+print("C45 people do not look alike, repeats are not copies, contents are asked one by one")
+# The owner's rule after rangsarn's run 03: two vendors came out with one face,
+# three baskets were copies, and a count question passed the wrong fruit.
+twins = copy.deepcopy(EXAMPLE)
+twins["subjects"][1].update(
+    {"description": twins["subjects"][0]["description"], "appearance": twins["subjects"][0]["appearance"],
+     "wardrobe": twins["subjects"][0].get("wardrobe", "")}
+)
+check(
+    "two people described with the same words are warned",
+    any("described almost alike" in w for w in image_spec.validate_spec(twins, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+check(
+    "two people described differently are not",
+    not any("described almost alike" in w for w in image_spec.validate_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+check(
+    "the shipped real place's two fighters are no longer twins",
+    not any("described almost alike" in w for w in image_spec.validate_spec(REAL_PLACE, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+two_people_prompt = image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)["prompt"]
+check("the prompt gives every person a face of their own", "a face, a build and an age of their own" in two_people_prompt)
+q45 = {q["id"]: q for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))}
+check("and the review compares their faces", "q_distinct_faces" in q45)
+alone = copy.deepcopy(EXAMPLE)
+alone["subjects"] = alone["subjects"][:1]
+alone["camera"]["focus_on"] = "pharmacist"
+alone_q = {q["id"] for q in image_spec.build_questions(alone, image_spec.derive(alone, WIDTH, HEIGHT))}
+check("one person is not compared with nobody", "q_distinct_faces" not in alone_q)
+
+baskets = copy.deepcopy(EXAMPLE)
+baskets["objects"][1].update(
+    {"name": "round woven bamboo baskets of bananas, pomelos and mangoes", "count": 3}
+)
+b_q = {q["id"]: q for q in image_spec.build_questions(baskets, image_spec.derive(baskets, WIDTH, HEIGHT))}
+check(
+    "the count counts the baskets, not the fruit",
+    b_q["q_medicine_box"]["question"] == "Does the image show exactly 3 round woven bamboo baskets?",
+    b_q["q_medicine_box"]["question"],
+)
+check(
+    "and each content is asked on its own",
+    [b_q[f"q_medicine_box_holds_{i:02d}"]["question"] for i in (1, 2, 3)]
+    == [f"Does one of the round woven bamboo baskets hold {f}, as the spec lists?" for f in ("bananas", "pomelos", "mangoes")],
+)
+check("repeated things are asked whether they are copies", "q_medicine_box_distinct" in b_q)
+check("a single thing is not", "q_counter_distinct" not in b_q and "q_medicine_box_holds_01" not in q45)
+_, b_warn = image_spec.validate_spec(baskets, WIDTH, HEIGHT, DEFAULTS)
+check("three of a thing with no variation is warned", any("draws 3 copies" in w for w in b_warn), str(b_warn)[:200])
+varied = copy.deepcopy(baskets)
+varied["objects"][1]["variation"] = "one deeper and darker with age, one with a split rim, the mango basket half empty"
+_, v_warn = image_spec.validate_spec(varied, WIDTH, HEIGHT, DEFAULTS)
+check("and not once the variation is said", not any("draws 3 copies" in w for w in v_warn))
+check(
+    "and the prompt carries it",
+    "Each of the 3 differs: one deeper and darker with age" in image_spec.compile_spec(varied, WIDTH, HEIGHT, DEFAULTS)["prompt"],
+)
+one_ring = copy.deepcopy(EXAMPLE)
+one_ring["objects"][0]["name"] = "boxing ring on a raised platform with red, white and blue ropes"
+check(
+    "a single thing whose name lists parts is not split into contents",
+    not any("_holds_" in q["id"] for q in image_spec.build_questions(one_ring, image_spec.derive(one_ring, WIDTH, HEIGHT))),
+)
+check(
+    "a name with one thing in it is not split",
+    image_spec.listed_contents("small ceramic cup of iced black coffee") == ("small ceramic cup of iced black coffee", []),
 )
 
 print("C15 a thin client config still has a gate")

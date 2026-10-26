@@ -375,6 +375,41 @@ check(
     "a soft, weaker fill was refused",
 )
 
+print("D9 a seated figure still has an eye line, which only the band used to pin")
+# agent.json says a seated or kneeling figure "still has an eye line, and in an
+# interview or desk scene it is the only one". D4 pins the 0.15 m band that
+# sentence ends with, not the eye line it opens with. When the full edition
+# narrowed q_eye_line to standing people on the camera's floor, that clause was
+# true but checked by nothing. Here it is checked: in a scene with nobody
+# standing, every seated person gets a horizon crossing and a measured question.
+check(
+    "the docs say a seated figure still has an eye line",
+    said("A seated or kneeling figure still has an eye line"),
+)
+interview = copy.deepcopy(EXAMPLE)
+for person in interview["subjects"]:
+    person["posture"] = "sitting"
+    person["pose"] = "seated at the consultation desk, both feet on the floor"
+interview["camera"]["height_m"] = image_spec.EYE_ABSOLUTE_M["sitting"]
+compiled = image_spec.compile_spec(interview, WIDTH, HEIGHT, CONFIG, "none")
+seated_ids = {p["id"] for p in interview["subjects"]}
+crossed = {c["id"] for c in compiled["derived"].get("horizon_crossings", [])}
+measured = {
+    q["id"].removeprefix("q_horizon_cut_")
+    for q in compiled["questions"]
+    if q["id"].startswith("q_horizon_cut_") and q.get("verify_with") == "geometry"
+}
+check(
+    "and with nobody standing, every seated person gets a horizon crossing",
+    seated_ids <= crossed,
+    f"seated {sorted(seated_ids)}, crossings for {sorted(crossed)}",
+)
+check(
+    "and a measured question about where it crosses them",
+    seated_ids <= measured,
+    f"seated {sorted(seated_ids)}, measured crossing questions for {sorted(measured)}",
+)
+
 print("D6 the claims this edition once made and the code does not honour stay gone")
 for stale in (
     "both bands are read and intersected",

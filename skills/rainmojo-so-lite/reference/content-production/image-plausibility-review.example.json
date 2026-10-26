@@ -392,7 +392,7 @@
     "q_eye_line": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Does that horizon line cross the eyes of the standing people, as a camera at their eye height requires?"
+      "_question": "Does that horizon line cross the eyes of the pharmacist and the older customer, as a camera at their eye height requires?"
     },
     "q_focus": {
       "answer": "yes",
@@ -538,6 +538,11 @@
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
       "_question": "Is the image free of this: retouched glossy skin or specular bloom?"
+    },
+    "q_distinct_faces": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does each person have a visibly different face, build and signs of age, as different people would, rather than copies of one face? Compare the face crops side by side."
     },
     "q_undeclared": {
       "answer": "yes",

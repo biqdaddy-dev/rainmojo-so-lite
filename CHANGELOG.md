@@ -168,6 +168,16 @@ legacy reference image on a brief that marks its place as not real was fed to th
 with no check at all. Contract test **376 assertions**, passing here unchanged; the shipped
 review example drops from 80 to 78 questions.
 
+Then `6b2a3d8`, `0e0d9ec` and `ba30c4c`. By the owner's decision every recorded reference
+may now condition the generator: a reference marked reference-only warns instead of being
+refused, and its provenance is still required. Height ratios are asked only between things
+whose height is what they measure upright, and the standing eye-level line counts only
+people standing on the camera's own floor. Two people described alike are flagged, because a
+generator draws one face for both, and every scene with two or more people asks for
+distinct faces in the prompt and the review. Anything counted more than once asks how the
+copies differ. A count no longer counts what an object holds. Contract test **407
+assertions**, passing here unchanged; the shipped review example is now 79 questions.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
