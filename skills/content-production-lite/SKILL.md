@@ -130,8 +130,9 @@ python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compi
      to fail roughly one time in four even so, which is survivable only because
      the headline is laid over the image by the template and never drawn by the
      model. Keep every person and object out of the region it reserves: the
-     compiler warns when a `position` opens in that part of the frame. A position
-     relative to another thing ("the lower right of the notebook") is not warned.
+     compiler warns when a `position` opens in that part of the frame, including a
+     part of a thing that lies there ("the lower right of" a centred notebook), and
+     warns more softly when the quiet area is described around the thing itself.
 
    A viewpoint that must hold is written as something the camera sees, not as an
    instruction. An angle stated as an instruction failed 4 of 4 times; a near

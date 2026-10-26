@@ -3246,12 +3246,37 @@ _ns["composition"]["negative_space"] = "the upper left quarter, where the plain 
 _ns["objects"][2]["position"] = "overhangs the top left corner, close and soft"
 check("a thing in the reserved region is warned", any("shelving" in w and "negative_space" in w for w in image_spec.validate_spec(_ns, WIDTH, HEIGHT, DEFAULTS)[1]))
 _ns["objects"][2]["position"] = "across the upper left of the counter"
-check("a part of another thing is not a part of the frame", not [w for w in image_spec.validate_spec(_ns, WIDTH, HEIGHT, DEFAULTS)[1] if "negative_space" in w and "shelving" in w])
+_ns["objects"][0]["position"] = "centre of the frame, running across it"
+check(
+    "a part of a centred thing is placed by its offset (the sweep session: papayiw's pen)",
+    any("shelving" in w and "negative_space" in w for w in image_spec.validate_spec(_ns, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+_ns["objects"][0]["position"] = "lower right of the frame"
+check(
+    "and a part of a placed thing is where that thing is",
+    not [w for w in image_spec.validate_spec(_ns, WIDTH, HEIGHT, DEFAULTS)[1] if "negative_space" in w and "shelving" in w],
+)
 _ns["objects"][2]["position"] = "across the upper left background"
 _ns["composition"]["negative_space"] = "the upper left quarter, where the plain wall above the shelving reads as an even field"
-check("nor a thing the reserved field was written around", not [w for w in image_spec.validate_spec(_ns, WIDTH, HEIGHT, DEFAULTS)[1] if "negative_space" in w and "shelving" in w])
+check(
+    "a thing the quiet field is written around is warned, more softly (the sweep session: drivehub's canopy)",
+    any("shelving" in w and "described around it" in w for w in image_spec.validate_spec(_ns, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
 _ns["objects"][2]["position"] = "upper right background beyond the counter"
 check("one elsewhere is not", not [w for w in image_spec.validate_spec(_ns, WIDTH, HEIGHT, DEFAULTS)[1] if "negative_space" in w and "shelving" in w])
+
+print("C74 the registry decides where exclusions go, unless a target is given")
+# Found answering the owner on hosts: the shipped prompt_target overrode the
+# registry, so a gpt-image client lost its exclusions to negative_prompt.
+check("the shipped default leaves the target to the registry", image_spec.policy_from_config(DEFAULTS)["spec"].get("prompt_target") == "")
+_gpt = copy.deepcopy(DEFAULTS)
+_gpt["images"]["spec"]["target_model"] = "openai-gpt-image"
+check("a gpt-image client compiles its exclusions inline", image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, _gpt, "")["target"] == "inline_constraints")
+_gem = copy.deepcopy(DEFAULTS)
+_gem["images"]["spec"]["target_model"] = "gemini-image"
+check("a Gemini client describes the positive state only", image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, _gem, "")["target"] == "none")
+check("with neither set, the fallback is negative_prompt", image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS, "")["target"] == "negative_prompt")
+check("an explicit target still wins", image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, _gpt, "none")["target"] == "none")
 
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}

@@ -1118,7 +1118,19 @@ def compile_specs(
     """
     _, package, _, manifest_path, manifest, config = read_manifest(client_value, slug)
     policy = image_spec.policy_from_config(config)["spec"]
-    prompt_target = target or str(policy.get("prompt_target", "negative_prompt"))
+    # Empty means the registry entry for target_model decides; compile_spec
+    # resolves it. Passing "negative_prompt" here overrode the registry, so
+    # gpt-image clients lost their exclusions to a field it does not have.
+    prompt_target = target or str(policy.get("prompt_target") or "")
+    target_warning = (
+        "images.spec.target_model is not set, so exclusions go to negative_prompt. "
+        "Most current generators have no such field and drop it: set target_model to "
+        "the generator this host uses (openai-gpt-image on Codex and ChatGPT, "
+        "gemini-image on Gemini), or prompt_target explicitly."
+        if not prompt_target and not image_spec.target_model_policy(config)
+        else ""
+    )
+    compiled_target = ""
     items = (
         [find_item(manifest, image_id)]
         if image_id
@@ -1141,6 +1153,7 @@ def compile_specs(
                 "the prompt is compiled from the spec, never written by hand."
             )
         result = image_spec.compile_spec(spec, width, height, config, prompt_target)
+        compiled_target = str(result.get("target") or "")
         item["prompt"] = result["prompt"]
         item["negative_prompt"] = result["negative_prompt"]
         item["spec_compiled"] = image_spec.compile_record(
@@ -1155,14 +1168,14 @@ def compile_specs(
                 "avoid_items": len(result["avoid"]),
                 "questions": len(result["questions"]),
                 "derived": result["derived"],
-                "warnings": result["warnings"],
+                "warnings": result["warnings"] + ([target_warning] if target_warning else []),
             }
         )
     content_pipeline.write_json(manifest_path, manifest)
     return {
         "compiled_at": content_pipeline.now_iso(),
         "slug": slug,
-        "target": prompt_target,
+        "target": compiled_target or prompt_target or "negative_prompt",
         "compiled": compiled,
         "skipped": skipped,
         "package": str(package),

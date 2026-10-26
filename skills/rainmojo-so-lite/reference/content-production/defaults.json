@@ -130,7 +130,7 @@
         "ai_generated"
       ],
       "target_model": "",
-      "prompt_target": "negative_prompt",
+      "prompt_target": "",
       "max_prompt_words": 0,
       "max_people": 4,
       "max_key_objects": 8,

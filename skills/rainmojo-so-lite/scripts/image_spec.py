@@ -2899,19 +2899,45 @@ def validate_spec(
     reserved = negative_space_region(spec)
     if reserved:
         reserved_text = _text((spec.get("composition") or {}).get("negative_space")).lower()
-        for kind, entity in [("subject", x) for x in subjects] + [("object", x) for x in objects]:
+        people_and_things = [("subject", x) for x in subjects] + [("object", x) for x in objects]
+        for kind, entity in people_and_things:
             where = re.split(r",|;", _text(entity.get("position")), maxsplit=1)[0]
-            # "the lower right of the notebook" is a part of another thing, not of
-            # the frame; and a field "above the canopy" was written around it.
+            region = frame_region(where)
+            # "the lower right of the notebook": resolved through the notebook's
+            # own place in the frame. A centred anchor leaves the offset as the
+            # place; a placed one is where the thing is (the sweep session: the pen
+            # lay in the reserved quarter).
             relative = re.search(
                 r"\b(?:left|right|top|bottom|upper|lower|corner|edge|end|side)\s+of\s+(?:the|a|an|her|his|their)\s+"
-                r"(?!frame\b|picture\b|image\b|shot\b)\w+",
+                r"(?P<anchor>(?!frame\b|picture\b|image\b|shot\b)[a-z][\w-]*)",
                 where.lower(),
             )
-            names = [n for n in (_text(entity.get("short_name")).lower(), _text(entity.get("id")).replace("_", " ").lower()) if n]
-            if relative or any(re.search(r"\b" + re.escape(n) + r"\b", reserved_text) for n in names):
+            if relative:
+                anchor_word = relative.group("anchor")
+                anchor = next(
+                    (
+                        e for _, e in people_and_things
+                        if e is not entity and anchor_word in {
+                            _text(e.get("short_name")).lower(), _text(e.get("id")).replace("_", " ").lower(),
+                            (_text(e.get("short_name")).lower().split() or [""])[-1],
+                        }
+                    ),
+                    None,
+                )
+                anchor_region = frame_region(re.split(r",|;", _text(anchor.get("position")), maxsplit=1)[0]) if anchor else {}
+                region = {**region, **anchor_region} if anchor_region else region
+            if region != reserved:
                 continue
-            if frame_region(where) == reserved:
+            names = [n for n in (_text(entity.get("short_name")).lower(), _text(entity.get("id")).replace("_", " ").lower()) if n]
+            if any(re.search(r"\b" + re.escape(n) + r"\b", reserved_text) for n in names):
+                # The quiet field is written around it, so it shares the region:
+                # the canopy won the quarter in all three drivehub images.
+                warnings.append(
+                    f"{kind} {_text(entity.get('id'))}: the quiet area in composition.negative_space is "
+                    f"described around it, in the same {reserved['v']} {reserved['h']} region. Leave room "
+                    "for the headline beside it, or move it out of that region."
+                )
+            else:
                 warnings.append(
                     f"{kind} {_text(entity.get('id'))}: its position ({where.strip()!r}) is in the "
                     f"{reserved['v']} {reserved['h']} of the frame, which composition.negative_space "

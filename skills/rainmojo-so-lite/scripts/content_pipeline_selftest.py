@@ -349,6 +349,12 @@ def run(image_format: str = "WEBP") -> None:
 
         compiled = image_production.compile_specs(client, slug)
         assert len(compiled["compiled"]) == len(manifest["items"]), compiled
+        # No target_model set: the compile says the exclusions may be dropped.
+        assert all(
+            any("target_model is not set" in w for w in entry["warnings"])
+            for entry in compiled["compiled"]
+        ), compiled["compiled"][0]["warnings"]
+        assert compiled["target"] == "negative_prompt", compiled["target"]
         manifest = content_pipeline.load_json(package / "image-manifest.json")
         for item in manifest["items"]:
             assert item["prompt"].startswith("A realistic editorial photograph"), (

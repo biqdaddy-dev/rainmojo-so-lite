@@ -308,6 +308,12 @@ Then `e6704f9`: a brief that puts a person or object in the quiet area kept for 
 warned, and the guide explains how to make a camera angle stick by showing something only that
 angle can see. Contract test **945 assertions**, passing here unchanged.
 
+Then `962c4e3` and `3c7dab3`: a fix for a production bug. When a brief named the image model in
+use, the things to keep out of the picture were still sent to a field most current models ignore,
+so they were dropped; the model's own setting now decides, and a brief that names no model is
+warned. The quiet-area warning now also catches a thing placed beside something that sits in the
+quiet area. Contract test **951 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

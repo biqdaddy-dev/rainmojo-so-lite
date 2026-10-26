@@ -1073,6 +1073,40 @@ upper right is warned, and one at the upper right of the counter, or in another 
 frame, is not. Run against `d6a7468`'s module the positive case fails, so it can catch what it is
 for. T4 is at 59 checks.
 
+FORTY-FIRST PORT, `e6704f9` to `3c7dab3`, same version, one commit on `a99b27d`. Two things.
+
+`962c4e3`, a production bug this edition shared. `defaults.json` shipped `"prompt_target":
+"negative_prompt"` and `compile_specs` passed it on, which overrode the model registry: a client
+that set `images.spec.target_model` to openai-gpt-image still had its exclusions compiled into
+`negative_prompt`, a field gpt-image does not have, and lost every one. This edition's
+`defaults.json` and `image_production.py` are its own files, not copies of the full edition's,
+and they carried the same default and the same line, so the fix is applied here by hand: the
+default is empty, `compile_specs` lets the registry decide, warns when neither a target model
+nor a prompt target is set, and reports the target the compile actually used; the selftest
+asserts the warning on the real compile path and fails on the old two files. The ported C74
+failed against this edition's old default before the fix, which is how the port showed it. The
+docs here already promised it, "image-model-registry.json then decides where exclusions go", in
+both SKILL.md and agent.json, and T4 had pinned nothing about it; D11 now does: the claim is in
+the docs, the shipped default is empty, and a gpt-image client gets its exclusions inline with
+no negative prompt. On the old code the last two fail.
+
+`3c7dab3` reverses the negative-space exemptions the fortieth port described. The sweep showed
+from the images that both skips hid real collisions, so a position relative to another thing now
+resolves through that thing's own place in the frame, and a thing the quiet area is described
+around is warned softly. SKILL.md's sentence that a relative position "is not warned" became
+false and is rewritten; D10 is rebuilt on the example's own layout: its counter runs across the
+lower third and its medicine box sits near the centre, so "the upper right of the counter"
+resolves away from the reserved upper right and stays clear, while "the upper right of the
+medicine box" keeps its offset and is warned. On the previous module that case fails. T4 is at
+64 checks.
+
+The image-spec files are byte-identical to `3c7dab3`, the review example regenerated here and
+unchanged at 82. 951 assertions passing, as on the full edition's export; regression 4 of 4.
+Battery and corpus identical to a clean export of `3c7dab3`, 17 of 20 clean, 21, 2, 4, the
+findings reproducer at 0 of 14. On the client briefs prompts are unchanged and two warnings are
+added, both the collisions the sweep saw: papayiw's pen "across the lower right of the notebook"
+and drivehub's terminal canopy, which the quiet area is described around.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

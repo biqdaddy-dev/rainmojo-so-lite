@@ -416,18 +416,22 @@ check(
     f"seated {sorted(seated_ids)}, measured crossing questions for {sorted(measured)}",
 )
 
-print("D10 a thing placed in the reserved quiet area is warned, a relative position is not")
+print("D10 a thing placed in the reserved quiet area is warned, through its anchor too")
 # SKILL.md says the compiler warns when a position opens in the part of the frame
-# composition.negative_space reserves, and that a position relative to another
-# thing is not warned. The shipped example reserves the upper right quarter.
+# composition.negative_space reserves, including a part of a thing that lies there.
+# The shipped example reserves the upper right quarter; its counter runs across the
+# lower third and its medicine box sits near the centre. So "the upper right of the
+# counter" resolves to the lower right and is clear, while "the upper right of the
+# medicine box" keeps its offset, since a centred anchor leaves it, and is warned.
 check(
     "the docs say the compiler warns on a position in the quiet area",
     said("the compiler warns when a `position` opens in that part of the frame"),
 )
 check(
-    "and that a position relative to another thing is not warned",
-    said('A position relative to another thing ("the lower right of the notebook") is not warned'),
+    "including a part of a thing that lies there",
+    said('including a part of a thing that lies there ("the lower right of" a centred notebook)'),
 )
+check("the docs no longer say a relative position is never warned", not said("is not warned"))
 
 
 def quiet_area_warnings(position: str) -> list[str]:
@@ -439,10 +443,34 @@ def quiet_area_warnings(position: str) -> list[str]:
 
 placed = quiet_area_warnings("upper right of the frame, nearer the camera")
 check("a person whose position opens in the reserved upper right is warned", bool(placed), "no warning")
-relative = quiet_area_warnings("the upper right of the counter, nearer the camera")
-check("one at the upper right of another thing is not", not relative, str(relative)[:160])
+centred = quiet_area_warnings("the upper right of the medicine box, nearer the camera")
+check("so is one at the upper right of a centred thing", bool(centred), "no warning")
+placed_away = quiet_area_warnings("the upper right of the counter, nearer the camera")
+check("but not one at the upper right of a thing in the lower third", not placed_away, str(placed_away)[:160])
 elsewhere = quiet_area_warnings("lower left of the frame, nearer the camera")
 check("nor one in another part of the frame", not elsewhere, str(elsewhere)[:160])
+
+print("D11 the registry decides where exclusions go, as the docs say")
+# SKILL.md and agent.json say image-model-registry.json decides where exclusions go
+# once images.spec.target_model is set. Until 962c4e3 the shipped default named
+# negative_prompt, which overrode the registry for every client.
+check(
+    "the docs say the registry decides where exclusions go",
+    said("then decides where exclusions go"),
+)
+check(
+    "the shipped default leaves the target empty",
+    CONFIG["images"]["spec"].get("prompt_target") == "",
+    repr(CONFIG["images"]["spec"].get("prompt_target")),
+)
+gpt_config = copy.deepcopy(CONFIG)
+gpt_config["images"]["spec"]["target_model"] = "openai-gpt-image"
+gpt = image_spec.compile_spec(copy.deepcopy(EXAMPLE), WIDTH, HEIGHT, gpt_config, CONFIG["images"]["spec"].get("prompt_target") or "")
+check(
+    "a gpt-image client gets its exclusions inline, with no negative prompt",
+    gpt.get("target") == "inline_constraints" and not gpt["negative_prompt"].strip(),
+    f"target {gpt.get('target')!r}, negative_prompt words {len(gpt['negative_prompt'].split())}",
+)
 
 print("D6 the claims this edition once made and the code does not honour stay gone")
 for stale in (
