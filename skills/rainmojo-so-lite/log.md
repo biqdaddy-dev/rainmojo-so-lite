@@ -1132,6 +1132,30 @@ the selftest fail on the previous module and `image_production.py`. T4 is at 67 
 Regression 4 of 4. Battery and corpus identical to a clean export of `8ef6916`, 17 of 20 clean,
 21, 2, 4, the findings reproducer at 0 of 14; every compilable client spec compiles inline.
 
+FORTY-THIRD PORT, `a8ec844` to `a1f19dc`, same version, one commit on `36ac5a9`. Shared:
+`a1f19dc` puts `hangs_from` in `UPRIGHT_SUPPORT`, since a hanging thing's `height_m` is its own
+vertical size and the clean truth-v2 scoring found three of four hanging ratios to be real faults;
+wide structures stay out. `d786903`, `ef6ab22` and `1bc17d6` change only the contract doc, on how
+recall is scored against review-blind readers. The image-spec files are byte-identical to
+`a1f19dc`, the review example unchanged at 82; 957 assertions passing, as on the full edition's
+export.
+
+Mirrored by hand, `844846b`, a production bug this edition shared: every recorded reference may
+condition the generator, by the owner's decision, and `conditioning_references()` listed them,
+but nothing sent them. The skill told the host to generate from the compiled prompt alone, so a
+real place's references, a likeness and a style reference never reached the generator.
+`compile_specs` now writes each item's `conditioning` list into the manifest and a count into
+the compile report; SKILL.md's step 4 and the agent.json workflow say to attach every image in
+that list as an image input, and to say so in the source review when the generator takes none.
+The selftest gives the first fixture item a style reference and asserts the list reaches the
+manifest; on the old `image_production.py` it fails. T4 gains D12: the docs say to attach the
+list, and a style reference is in it with its role and rights. T4 is at 70 checks.
+
+Regression 4 of 4. Battery and corpus identical to a clean export of `a1f19dc`, 17 of 20 clean,
+21, 2, 4, the findings reproducer at 0 of 14. On the client briefs the only change is four ratio
+questions returning, the whiteboard against the projector on ecc and the bag roll, scale and
+spirit house on rotkubkhao, as upstream says.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

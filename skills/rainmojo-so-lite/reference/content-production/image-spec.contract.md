@@ -617,7 +617,7 @@ be compared. The definitions were agreed between the two projects.
 
 | Measure | Definition | Target | Last measured |
 |---|---|---|---|
-| Recall | Faults the review answered `no`, over faults in the ground truth | 90% pooled, and **no group below its floor**: people 80% | 73% (40 of 55; objects 87%, places 83%, people 55%), 16 client scenes, before the `c2761f5` template fixes |
+| Recall | Faults the review answered `no`, over faults in the ground truth | 90% pooled, and **no group below its floor**: people 80% | 73% (40 of 55; objects 87%, places 83%, people 55%), 16 client scenes, before the `c2761f5` template fixes, on truth reconciled after reading the GPT review; **63.5% (40 of 63; people 41%) against the blind first reading alone**, which was itself wrong on 9 claims. Clean, against faults the human found and a reader who never saw a review confirmed: **65.9% (27 of 41; people 42%, objects 77%, places 75%)** |
 | False-alarm rate | `no` answers on things that are correct, over all answers on correct things | 15% | Not yet measured as a rate on either side |
 | Unanswerable rate | `cannot_tell`, counted only where the thing asked about is visible in the frame | Report it | Not yet measured |
 | Attribution | Each miss and each false alarm traced to the question template that produced it | Every one | 12 of 15 misses traced to three templates |
@@ -632,7 +632,7 @@ first time: tier-1-only prompts about 30% shorter (689 to 1223 words against 946
 drew 44 spec faults against 46 over about 400 visible checks each, so trimming tiers 2 and
 3 cost no compliance there. Five specs is a small sample.
 
-Three rules make the numbers mean something:
+These rules make the numbers mean something:
 
 - **Ground truth is read at the reviewer's magnification.** The first measurement read the
   full 1200 px frame while the reviewer had 2x crops, and 9 of the person's 63 claims were
@@ -643,6 +643,16 @@ Three rules make the numbers mean something:
   too long for the mirror handle she held passed two readings with 2x crops and was found
   by the owner at 8x, and a malformed Thai letter was softened to "close to correct" by a
   reader who does not read Thai.
+- **Truth is never reconciled against one reviewer.** A fault a reviewer found and the human
+  then adopted counts in that reviewer's favour twice, as truth and as a catch. rangsarn's
+  runs 04 and 05, reviewed by GPT and by Claude on identical inputs: GPT 88.0% and Claude
+  74.7% against truth that had adopted GPT's finds, but 71.8% and 65.9% against the blind
+  reading alone. Our own 73% has the same property: nine first-reading claims were withdrawn
+  after the reviews were read, six of them where the review was right, and against the blind
+  reading alone the figure is 63.5%. So the base is the
+  blind reading at the reviewer's magnification, and every reviewer's further claims are
+  pooled and adjudicated by one procedure, without the adjudicator knowing which reviewer
+  made them. A comparison between reviewers is valid only on truth built that way.
 - **A pooled figure never stands alone.** Faults involving people are fewer than faults
   involving objects, so a pooled 90% can hide a people group at 60%. Each group is reported
   against its own floor.

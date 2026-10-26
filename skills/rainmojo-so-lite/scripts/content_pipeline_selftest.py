@@ -314,6 +314,10 @@ def run(image_format: str = "WEBP") -> None:
             item["source"] = "images/raw/" + item["id"] + ".png"
             item["concept"] = "A distinct editorial concept for " + item["id"]
             item["spec"] = fixture_spec(item["id"])
+            if item is manifest["items"][0]:
+                item["spec"]["style"]["reference"] = {
+                    "path": "brand/style-v1.png", "rights": "client_owned", "origin": "approved brand art v1",
+                }
             item["alt"] = "Editorial visual for " + item["id"]
             item["title"] = "Editorial visual " + item["id"]
             item["provenance"] = {
@@ -355,6 +359,14 @@ def run(image_format: str = "WEBP") -> None:
             for entry in compiled["compiled"]
         ), compiled["compiled"][0]["warnings"]
         assert compiled["target"] == "inline_constraints", compiled["target"]
+        # The references reach the manifest for the host to attach.
+        written = content_pipeline.load_json(package / "image-manifest.json")["items"]
+        assert written[0]["conditioning"] == [
+            {"role": "style", "path": "brand/style-v1.png", "rights": "client_owned"}
+        ], written[0].get("conditioning")
+        assert all(item["conditioning"] == [] for item in written[1:]), [
+            i.get("conditioning") for i in written
+        ]
         manifest = content_pipeline.load_json(package / "image-manifest.json")
         for item in manifest["items"]:
             assert item["prompt"].startswith("A realistic editorial photograph"), (

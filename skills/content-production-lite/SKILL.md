@@ -164,7 +164,11 @@ python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compi
    describing the positive state only. Most current generators have no
    negative-prompt field at all, so an empty `negative_prompt` is the normal
    result, not a failure.
-4. Generate from the compiled prompt exactly as written, save the raw asset under
+4. Generate from the compiled prompt exactly as written, and attach every image in
+   the item's `conditioning` list as an image input: the real place's references,
+   each person's likeness and the style reference, each with its role. If the
+   generator takes no image input, say so in the source review, since a likeness
+   or a style it was never shown cannot hold. Save the raw asset under
    `images/raw/`, approve it with `review-source`, then run `process`.
 5. Cut the optimized image into the review grid and open the blank review. A whole
    1200 px image hides the failures that matter: fingers, teeth, contact shadows,

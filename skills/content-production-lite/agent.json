@@ -82,7 +82,7 @@
       "Dispatch the generic engine or the declared end-to-end client-native operations",
       "Record structured content review bound to the current article SHA-256",
       "Fill one shot spec per image from spec-template and compile it with compile-spec; never write prompt or negative_prompt by hand",
-      "Generate from the compiled prompt, approve the raw source, then run deterministic processing",
+      "Generate from the compiled prompt, attaching every image in the item's conditioning list as an image input, approve the raw source, then run deterministic processing",
       "Cut review crops, answer every plausibility check and every spec question with evidence, and record the pass",
       "Run publish validation",
       "Use one serial WordPress writer",

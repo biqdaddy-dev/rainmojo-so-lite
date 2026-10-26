@@ -3295,6 +3295,12 @@ finally:
 check("a registry that cannot be read is named as the cause, not the model", "could not be read" in _registry_error and "is not in" not in _registry_error, _registry_error)
 check("an explicit target still wins", image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, _gpt, "none")["target"] == "none")
 
+print("C75 a hanging thing's height is its vertical size")
+# The sweep session's clean scoring: hanging pairs 3 true, 1 false, 0 unmeasurable.
+check("a hanging projector is ratio-ready", image_spec.ratio_ready({"support": {"kind": "hangs_from", "by": "the ceiling"}, "height_m": 0.3, "width_m": 0.4}, False))
+check("a wide platform people stand on is not", not image_spec.ratio_ready({"support": {"kind": "stands_on", "by": "the hall floor"}, "height_m": 1.1, "width_m": 6.1}, False))
+check("nor a row of desks", not image_spec.ratio_ready({"support": {"kind": "stands_on", "by": "the floor"}, "height_m": 0.75, "width_m": 1.2, "count": 6}, False))
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

@@ -4487,7 +4487,11 @@ LOCALE_WRITING_RE = re.compile(
 
 
 # Supports under which an object's height_m is its upright extent in the frame.
-UPRIGHT_SUPPORT = {"stands_on", "rests_on", "mounted_on", "fixed_in"}
+# A hanging thing's height is its own vertical size too: the clean reader could
+# measure all four hanging pairs, 3 of them real faults the template had missed
+# (the sweep session's truth-v2 scoring). A wide structure stays out: of seven,
+# three were a boxing ring whose frame height is not its 1.1 m.
+UPRIGHT_SUPPORT = {"stands_on", "rests_on", "mounted_on", "fixed_in", "hangs_from"}
 # A thing much wider than it is tall reads by its width, not its height: a
 # sampan or a landing, several times wider. A counter at 2.7 is still read by
 # its top.

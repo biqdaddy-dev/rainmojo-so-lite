@@ -1156,6 +1156,10 @@ def compile_specs(
         compiled_target = str(result.get("target") or "")
         item["prompt"] = result["prompt"]
         item["negative_prompt"] = result["negative_prompt"]
+        # Every recorded reference conditions the generator (owner decision,
+        # 2026-10-26), so the manifest carries them for the host to attach. Until
+        # this, nothing sent them: the rangsarn session found its harness attached none.
+        item["conditioning"] = image_spec.conditioning_references(spec)
         item["spec_compiled"] = image_spec.compile_record(
             spec,
             result,
@@ -1167,6 +1171,7 @@ def compile_specs(
                 "prompt_words": len(result["prompt"].split()),
                 "avoid_items": len(result["avoid"]),
                 "questions": len(result["questions"]),
+                "conditioning": len(item["conditioning"]),
                 "derived": result["derived"],
                 "warnings": result["warnings"] + ([target_warning] if target_warning else []),
             }

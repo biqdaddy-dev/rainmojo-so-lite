@@ -493,6 +493,21 @@ check(
     f"target {gemini.get('target')!r}",
 )
 
+print("D12 the conditioning list the docs say to attach is the one the compiler writes")
+# SKILL.md and agent.json tell the host to attach every image in the item's
+# conditioning list; compile_specs writes that list from conditioning_references,
+# which the selftest checks on the real compile path (the full edition's 844846b).
+check("the docs say to attach the conditioning list", said("attach every image in the item's `conditioning` list"))
+check("and agent.json says it too", "conditioning list" in RULES or "conditioning list" in json.dumps(AGENT))
+styled = copy.deepcopy(EXAMPLE)
+styled.setdefault("style", {})["reference"] = {"path": "brand/style-v1.png", "rights": "client_owned", "origin": "approved brand art v1"}
+listed = image_spec.conditioning_references(styled)
+check(
+    "a style reference is in the list, with its role and rights",
+    {"role": "style", "path": "brand/style-v1.png", "rights": "client_owned"} in listed,
+    str(listed),
+)
+
 print("D6 the claims this edition once made and the code does not honour stay gone")
 for stale in (
     "both bands are read and intersected",

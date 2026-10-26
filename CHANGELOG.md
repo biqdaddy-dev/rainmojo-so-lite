@@ -320,6 +320,12 @@ ChatGPT needs, so they are no longer lost. Briefs for Gemini or FLUX should name
 A missing model list is now named as the cause. Contract test **954 assertions**, passing here
 unchanged.
 
+Then `844846b` to `a1f19dc`: a fix for a production bug. Reference images a brief records, a
+real place, a person's likeness or a style, were never handed to the image model; they now travel
+with each image and the guide says to attach them. Hanging things such as a projector or a
+scale are now sized against what is beside them. Contract test **957 assertions**, passing here
+unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
