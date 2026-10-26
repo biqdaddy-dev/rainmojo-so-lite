@@ -702,6 +702,31 @@ def on_camera_floor(entity: dict[str, Any]) -> bool:
     return abs(ground_height(entity)) < 0.05
 
 
+# The horizon crosses a person's eyes only when their eye height is this close to
+# the lens; anyone further off has it above their head or across their body.
+EYE_LINE_BAND_M = 0.15
+
+
+def eyes_on_horizon(spec: dict[str, Any]) -> list[dict[str, Any]]:
+    """Standing people on the camera's floor whose eyes the horizon actually meets.
+
+    pulseth's prompt told the model the horizon passed above a vendor's head and,
+    a sentence later, through her eyes: she was counted as a standing person on
+    the camera's floor although the lens stood 5 cm above the top of her head.
+    """
+    camera = spec.get("camera", {}) if isinstance(spec.get("camera"), dict) else {}
+    cam = _num(camera.get("height_m"))
+    if cam is None:
+        return []
+    return [
+        person
+        for person in standing_people(spec)
+        if on_camera_floor(person)
+        and eye_height(person) is not None
+        and abs(eye_height(person) - cam) <= EYE_LINE_BAND_M
+    ]
+
+
 def eye_height(subject: dict[str, Any]) -> float | None:
     """Eye height above the floor for a person, from stature and posture.
 
@@ -1553,6 +1578,9 @@ def validate_spec(
         errors.append(f"spec.camera.focus_on {focus_on!r} is not a subject or object id.")
 
     eye_heights: list[float] = []
+    # Eye level is the eye height of the people on the camera's own floor; someone
+    # on a platform has their eyes above the horizon whatever the camera does.
+    floor_eye_heights: list[float] = []
     for subject in subjects:
         sid = _text(subject.get("id")) or "?"
         kind = _text(subject.get("kind") or "person")
@@ -1589,6 +1617,8 @@ def validate_spec(
                 eye = eye_height(subject)
                 if eye is not None:
                     eye_heights.append(eye)
+                    if on_camera_floor(subject):
+                        floor_eye_heights.append(eye)
         if photographic:
             d = _num(subject.get("distance_m"))
             if d is None or d <= 0:
@@ -1886,7 +1916,8 @@ def validate_spec(
 
     # Camera height against angle and the people in frame.
     if photographic and cam_height is not None and eye_heights:
-        mean_eye = sum(eye_heights) / len(eye_heights)
+        level_eyes = floor_eye_heights or eye_heights
+        mean_eye = sum(level_eyes) / len(level_eyes)
         eye_level_tolerance = 0.35 if standing_people(spec) else 0.15
         if angle == "eye_level" and abs(cam_height - mean_eye) > eye_level_tolerance:
             errors.append(
@@ -2594,7 +2625,7 @@ def build_clauses(
                 f"The horizon and eye-level line sit across the {horizon.replace('_', ' ')} of the frame, "
                 "parallel edges converge to vanishing points on that line, and verticals stay vertical",
             )
-        floor_standing = [person for person in standing_people(spec) if on_camera_floor(person)]
+        floor_standing = eyes_on_horizon(spec)
         # A horizon the spec puts out of frame is called the eye-level line, so the
         # word does not invite a window or a skyline into an indoor picture.
         line = "That horizon line" if horizon in HORIZON_IN_FRAME else "The eye-level line"
@@ -3291,7 +3322,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         )
     # Only people on the camera's own floor have their eyes on the horizon: a
     # buyer on a 0.8 m landing has it below his eyes, correctly (run 03).
-    floor_standing = [person for person in standing_people(spec) if on_camera_floor(person)]
+    floor_standing = eyes_on_horizon(spec)
     if (
         derived.get("camera_at_eye_height")
         and horizon in HORIZON_IN_FRAME

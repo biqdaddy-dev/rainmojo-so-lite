@@ -206,6 +206,12 @@ horizon in the prompt, which could invite a window or a skyline; they say "eye-l
 The camera-at-eye-height sentence names only the people standing on the camera's own floor.
 Contract test **615 assertions**, passing here unchanged.
 
+Then `5e87963`: the prompt says the horizon crosses someone's eyes only when their eyes are
+within 0.15 m of the camera, so a person whose head is below the lens is no longer told both
+that the horizon passes above them and that it crosses their eyes. A person standing on a
+platform no longer makes a level camera at the floor people's eye height count as wrong.
+Contract test **620 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

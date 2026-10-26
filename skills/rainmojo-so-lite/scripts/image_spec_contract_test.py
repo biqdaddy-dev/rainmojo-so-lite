@@ -2281,13 +2281,42 @@ check(
     str([x for x in indoor_own.split(". ") if "horizon" in x.lower()][:2]),
 )
 check("a horizon in frame is still a horizon", "horizon" in _prompt_of(EXAMPLE).lower())
+# A valid scene this time: the lite session found the first version used a raise
+# validate_spec refuses, and passed on the old code too.
 raised50 = copy.deepcopy(EXAMPLE)
-raised50["subjects"][1]["ground_height_m"] = 0.8
+raised50["subjects"][1]["ground_height_m"] = 0.3
+check("the raised scene is valid", not image_spec.validate_spec(raised50, WIDTH, HEIGHT, DEFAULTS)[0],
+      str(image_spec.validate_spec(raised50, WIDTH, HEIGHT, DEFAULTS)[0][:1]))
 raised_text = _prompt_of(raised50)
 check(
-    "the eye-height sentence names only the people on the camera's floor",
-    "eye height of the older customer" not in raised_text,
+    "the eye-height sentence names the pharmacist on the camera's floor, and not the raised customer",
+    "eye height of the pharmacist," in raised_text and "older customer, so that horizon" not in raised_text,
     str([x for x in raised_text.split(". ") if "eye height" in x][:1]),
+)
+low_head = copy.deepcopy(EXAMPLE)
+# 1.4 m keeps the mean eye height within the band, so the sentence is written,
+# while this person's own eyes sit 0.25 m below the lens.
+low_head["subjects"].append(dict(copy.deepcopy(EXAMPLE["subjects"][1]), id="child", short_name="child",
+                                 description="a teenager beside the counter", height_m=1.4, distance_m=2.3))
+check("the scene does put the camera at eye height", image_spec.derive(low_head, WIDTH, HEIGHT)["camera_at_eye_height"])
+eyes = [p["id"] for p in image_spec.eyes_on_horizon(low_head)]
+check(
+    "someone whose eyes are far below the lens is not said to have the horizon through them",
+    "child" not in eyes and "pharmacist" in eyes,
+    str(eyes),
+)
+low_text = _prompt_of(low_head)
+check(
+    "and the prompt does not name them in the eye-height sentence",
+    not [x for x in low_text.split(". ") if "eye height of" in x and "child" in x],
+    str([x for x in low_text.split(". ") if "eye height of" in x][:1]),
+)
+platform = copy.deepcopy(EXAMPLE)
+platform["subjects"][1]["ground_height_m"] = 0.8
+check(
+    "a level camera at the floor people's eye height is not refused because someone stands on a platform",
+    not [e for e in image_spec.validate_spec(platform, WIDTH, HEIGHT, DEFAULTS)[0] if "angle eye_level" in e],
+    str(image_spec.validate_spec(platform, WIDTH, HEIGHT, DEFAULTS)[0][:2]),
 )
 
 print("C15 a thin client config still has a gate")

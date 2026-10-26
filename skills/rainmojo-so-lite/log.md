@@ -533,6 +533,39 @@ the floor people's eye height is refused once someone stands on a 0.8 m platform
 narrowed at `0e0d9ec` and the prompt here, the validator not yet. Whether that is intended is
 upstream's call.
 
+TWENTY-SECOND PORT, `5e87963`, same version: the horizon meets only the eyes it can meet. It
+fixes the twenty-first port's findings. `eyes_on_horizon` returns the standing people on the
+camera's floor whose eyes are within 0.15 m of the lens, `EYE_LINE_BAND_M`, and the
+eye-height sentence and `q_eye_line` both use it, so pulseth names the two walkers and not the
+vendor whose head is below the lens. The validator's eye-level mean uses the people on the
+camera's floor, so a platform at 0.8 m no longer refuses a level camera at floor eye height.
+Two files byte-identical, the contract doc unchanged; 620 assertions passing unchanged, the
+review example unchanged at 80. Regression 4 of 4, T4 green.
+
+The new guards were run against `a57d0ef`'s module. The test as a whole stops there with an
+AttributeError at `eyes_on_horizon`, which is a failure but hides whether the later guards
+discriminate, so they were run by hand: on the old code the 1.4 m teenager is named in both
+the prompt sentence and `q_eye_line` and the 0.8 m platform is refused as not eye level; on
+the new code neither. The valid 0.3 m raise that replaced the refused 0.8 m one guards the
+previous commit's fix, since `a57d0ef` already names the pharmacist alone there. The teenager
+scene, though, is refused by `validate_spec` on both versions, for a reason unrelated to the
+eye line: the copied subject keeps the customer's foreground plane while standing behind the
+midground pharmacist. With its plane set to midground the scene is valid and the guard gives
+the same answer both ways, so the fix is right and the fixture only needs the plane and a
+validity check, as the 0.3 m raise already has.
+
+On the client briefs validation is unchanged and only pulseth moves: its eye-height sentence
+and `q_eye_line` name the two walkers. Battery and corpus identical to a clean export of
+`5e87963`, 16 of 19 clean. The one lite sentence on the band, "with nobody standing the
+eye_level band is 0.15 m", still describes the code.
+
+One finding, reported upstream. The mean now counts the camera's floor, but the band width
+does not: it is 0.35 m whenever anyone stands, on any floor. With the pharmacist on a 0.8 m
+platform and the seated customer the only person on the camera's floor, a lens 0.30 m above
+the customer's eyes is accepted as eye level, where the seated rule gives 0.15 m. It was
+accepted before this commit too, through the old mean, so it is not a regression; the band
+would follow the mean if it asked whether anyone stands on the camera's floor.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New
