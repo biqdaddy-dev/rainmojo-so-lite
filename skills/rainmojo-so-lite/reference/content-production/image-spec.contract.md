@@ -179,10 +179,13 @@ refuse the brief:
   in real size. In rangsarn's run 08 a serving spoon's invariant passed on its bowl alone
   while its handle rested on another plate. Writing one fact per invariant is better
   still; a validator warning was not added because it would fire on 37 of 85 real ones.
-- **Hands are asked one at a time.** When a hands field names both sides ("a spoon in
-  the right hand and a fork in the left"), each hand gets its own question from the
-  person's own side, with the picture side stated when the spec says which way they
-  face; a person with their back to the camera is told in the prompt that their own
+- **Hands are asked one at a time.** Every clause in a hands field that names a side
+  gets its own question, whether that hand holds something ("a spoon in the right
+  hand"), rests ("her left rests on the chair arm") or gestures ("his right hand is
+  raised"); the client sweep's four real which-hand catches were all of the last three
+  kinds. Each is asked from the person's own side, with the picture side stated when the
+  spec says which way they face (a place such as "from behind the head of the bed" is
+  not a facing), and with the person's own pronoun; a person with their back to the camera is told in the prompt that their own
   right hand is on the right of the picture. "A utensil in each hand" passed a spoon and
   fork held the wrong way round in rangsarn's run 05.
 - **Contents come from their source.** An object may declare `filled_from`, the ids it
@@ -568,10 +571,10 @@ be compared. The definitions were agreed between the two projects.
 
 | Measure | Definition | Target | Last measured |
 |---|---|---|---|
-| Recall | Faults the review answered `no`, over faults in the ground truth | 90% pooled, and **no group below its floor**: people 80% | 74% (objects 87%, places 83%, people 57%), 16 client scenes, before the `c2761f5` template fixes |
+| Recall | Faults the review answered `no`, over faults in the ground truth | 90% pooled, and **no group below its floor**: people 80% | 73% (40 of 55; objects 87%, places 83%, people 55%), 16 client scenes, before the `c2761f5` template fixes |
 | False-alarm rate | `no` answers on things that are correct, over all answers on correct things | 15% | Not yet measured as a rate on either side |
 | Unanswerable rate | `cannot_tell`, counted only where the thing asked about is visible in the frame | Report it | Not yet measured |
-| Attribution | Each miss and each false alarm traced to the question template that produced it | Every one | 11 of 14 misses traced to three templates |
+| Attribution | Each miss and each false alarm traced to the question template that produced it | Every one | 12 of 15 misses traced to three templates |
 | First-generation pass | Images that pass on their first generation | A goal, never a gate | Not tracked |
 
 rangsarn measured the same table on its own five specs with this module, codex-imagegen
@@ -589,6 +592,11 @@ Three rules make the numbers mean something:
   full 1200 px frame while the reviewer had 2x crops, and 9 of the person's 63 claims were
   wrong; in 6 of those 9 the review had already answered correctly. At different
   magnifications the comparison measures the reader's screen, not the review.
+- **Every visible hand gets its own crop at 6x or more, and Thai lettering is read by a
+  native reader.** Magnification of the whole frame was not enough: a patient's fingers
+  too long for the mirror handle she held passed two readings with 2x crops and was found
+  by the owner at 8x, and a malformed Thai letter was softened to "close to correct" by a
+  reader who does not read Thai.
 - **A pooled figure never stands alone.** Faults involving people are fewer than faults
   involving objects, so a pooled 90% can hide a people group at 60%. Each group is reported
   against its own floor.

@@ -257,6 +257,13 @@ Then `d90b24e`: each review question about a physical rule of the scene now asks
 to check every part of the rule on its own, so a rule that holds only halfway no longer
 passes. Contract test **765 assertions**, passing here unchanged.
 
+Then `00bf8dc`: the review now checks which hand does what for every hand the brief names,
+not only hands that hold something. A person merely standing behind something is no longer
+treated as having their back to the camera, rules about how sizes look across a room are no
+longer told to ignore how they look, and a drawn picture is no longer told it is a photograph.
+Contract test **778 assertions**, passing here unchanged; the shipped review example is now 82
+questions.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

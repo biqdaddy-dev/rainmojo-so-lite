@@ -199,6 +199,16 @@
       "evidence": "<what you saw and in which crop>",
       "_question": "Do the hands of the pharmacist do this: her left hand holds the medicine box at its base; her right index finger points at the label on its front, the fingertip beside the printed panel so the panel stays visible?"
     },
+    "q_pharmacist_hand_left": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is it the left hand of the pharmacist, her own left, whichever side of the picture that falls on, that holds the medicine box at its base?"
+    },
+    "q_pharmacist_hand_right": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is it the right hand of the pharmacist, her own right, whichever side of the picture that falls on, that index finger points at the label on its front?"
+    },
     "q_pharmacist_hands_count": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",

@@ -1056,8 +1056,11 @@ def listed_contents(name: str) -> tuple[str, list[str]]:
 
 # Which way a person faces, from the words the spec uses for it.
 FACING_AWAY_RE = re.compile(
+    # "from behind the head of the bed" is where someone stands, not which way
+    # they face (the lite session's finding on theklinique), so bare "from
+    # behind" does not count.
     r"\b(?:back (?:three-quarters )?to the (?:lens|camera)|facing away|seen from behind|"
-    r"from behind|back three-quarters|turned away)\b",
+    r"back three-quarters|turned away)\b",
     re.I,
 )
 FACING_CAMERA_RE = re.compile(
@@ -1090,7 +1093,16 @@ _HAND_WORDS = {
 
 def possessive(subject: dict[str, Any]) -> str:
     """her, his or their, as the spec's own hands and pose text say it."""
+    # The pronoun before the person's own hand, not any her or his in the text:
+    # "his left hand rests on her shoulder" is his (the lite session's finding).
     text = " ".join(_text(subject.get(k)) for k in ("hands", "pose", "action")).lower()
+    own = re.search(
+        r"\b(her|his)\s+(?:own\s+)?(?:left\s+|right\s+)?(?:hand|hands|palm|palms|fingers|thumb|arm|arms)\b",
+        text,
+    )
+    if own:
+        return own.group(1)
+    # No pronoun before a hand: "her spoon in the right hand" still says whose.
     hers = len(re.findall(r"\bher\b", text))
     his = len(re.findall(r"\bhis\b", text))
     if hers > his:
@@ -1143,6 +1155,41 @@ def held_things(hands: str) -> set[str]:
         if words:
             nouns.add(words[-1].rstrip("s") if words[-1].endswith("s") and not words[-1].endswith("ss") else words[-1])
     return nouns
+
+
+_SIDE_CLAUSE = re.compile(
+    r"^(?:the |her |his |their )?(?P<side>left|right)(?:\s+(?:hand|palm|arm|fingers))?\s+(?P<rest>.+)$",
+    re.I,
+)
+
+
+def hand_clauses(hands: str) -> dict[str, str]:
+    """What each named hand does, as a verb phrase: "holds a mirror", "rests on the arm".
+
+    Every clause that names a side, not only one that holds something: the
+    sweep's four real which-hand catches were a single held phone, a raised
+    hand, a hand resting on a lap and a cup in the wrong hand.
+    """
+    found: dict[str, str] = {}
+    for part in re.split(r",|;|\band\b|\bwhile\b", hands):
+        part = part.strip(" .")
+        if not part:
+            continue
+        clause = _SIDE_CLAUSE.match(part)
+        if clause:
+            found.setdefault(clause.group("side").lower(), clause.group("rest").strip())
+            continue
+        held = _HAND_IN_SIDE.search(part)
+        if held:
+            # "the woman carries a plastic cup in her right hand": the item starts
+            # after the verb, not at the start of the clause.
+            item = re.split(
+                r"\b(?:holds?|holding|carr(?:ies|ying)|grips?|gripping|has|with)\b",
+                held.group("item"),
+                flags=re.I,
+            )[-1].strip()
+            found.setdefault(held.group("side").lower(), f"holds {item}")
+    return found
 
 
 def people_count(spec: dict[str, Any]) -> int:
@@ -2795,7 +2842,7 @@ def build_clauses(
         add("subject", 1, f"{actor} {_text(subject.get('action'))}")
         if _text(subject.get("hands")):
             add("subject", 1, f"Hands of {noun}: {_text(subject['hands'])}")
-            if hand_items(_text(subject["hands"])) and facing(subject) == "away":
+            if hand_clauses(_text(subject["hands"])) and facing(subject) == "away":
                 # Left and right are the person's own; with their back to the
                 # camera they fall on the same sides of the picture (run 05).
                 add(
@@ -3042,12 +3089,14 @@ def build_clauses(
     realism = spec.get("realism", {}) if isinstance(spec.get("realism"), dict) else {}
     flaws = [_text(v) for v in _list(realism.get("imperfections")) if _text(v)]
     if flaws:
-        add(
-            "realism",
-            1,
+        # A drawing told it is a photograph drifts toward a photographic look,
+        # against a channel's locked style (the rangsarn session's finding).
+        opening = (
             "This is a photograph of a real place and it carries the marks of use: "
-            + "; ".join(flaws),
+            if photographic
+            else "The scene carries the marks of use: "
         )
+        add("realism", 1, opening + "; ".join(flaws))
 
     # constraints and closing -------------------------------------------------
     if _text(spec.get("text_in_image") or "none") == "none":
@@ -3308,11 +3357,14 @@ def detect_as(entity: dict[str, Any], person: bool = False) -> str:
 # A comparison of sizes in a sentence, which reads wrong across distances unless
 # the reviewer is told to judge real size (rangsarn run 08).
 SIZE_COMPARE_RE = re.compile(
-    r"\b\d+(?:\.\d+)?\s+times\b|\btwice\b|\bhalf (?:the size|as)\b"
-    r"|\b(?:larger|smaller|bigger|longer|shorter|taller|wider|narrower|higher|lower)\s+than\b"
+    r"\b\d+(?:\.\d+)?\s+times\b|\btwice (?:the size|the length|as)\b|\bhalf (?:the size|as)\b"
+    r"|\b(?:larger|smaller|bigger|longer|shorter|taller|wider|narrower)\s+than\b"
     r"|\bas (?:long|wide|tall|large|big|high|small) as\b",
     re.I,
 )
+# A rule about how sizes look across distance, which the real-size sentence would
+# contradict: "the far page reads shorter than the near one" (the lite session).
+APPEARANCE_RE = re.compile(r"\b(?:reads?|looks?|appears?|recedes?|foreshorten\w*|seems?)\b", re.I)
 
 
 # Supports under which an object's height_m is its upright extent in the frame.
@@ -3469,7 +3521,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             # round (rangsarn run 05). Each hand is asked on its own, from the
             # person's own side.
             way = facing(subject)
-            for side, item in sorted(hand_items(_text(subject["hands"])).items()):
+            for side, doing in sorted(hand_clauses(_text(subject["hands"])).items()):
                 picture_side = (
                     side if way == "away"
                     else ("right" if side == "left" else "left") if way == "camera"
@@ -3482,7 +3534,8 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 add(
                     f"{base}_hand_{side}",
                     "anatomy",
-                    f"Does {noun} hold {item} in {possessive(subject)} own {side} hand{where}?",
+                    f"Is it the {side} hand of {noun}, {possessive(subject)} own {side}{where}, "
+                    f"that {doing}?",
                     base,
                 )
             add(
@@ -3994,7 +4047,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             "only if every part holds; name each part and what you saw in the evidence."
             + (
                 " Judge real sizes, not how large each looks at its distance."
-                if SIZE_COMPARE_RE.search(text)
+                if SIZE_COMPARE_RE.search(text) and not APPEARANCE_RE.search(text)
                 else ""
             ),
         )

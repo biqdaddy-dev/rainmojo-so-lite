@@ -827,6 +827,39 @@ the far one", which is foreshortening again. Reported upstream: an apparent-size
 looks, appears, recedes, foreshortens, should keep the sentence off, "higher than" and "lower
 than" want a size word, and a bare "twice" wants "the size", "the length" or "as".
 
+THIRTY-SECOND PORT, `00bf8dc`, same version, carrying the docs-only `b333efe` in the
+contract doc. It fixes this edition's three open findings: the real-size sentence stays out
+where a verb about appearance is present, and "higher than", "lower than" and a bare "twice"
+no longer count; a bare "from behind" no longer means facing away; and `possessive()` takes the
+pronoun before the person's own hand first. It also gives a per-hand question to every clause
+that names a side, `hand_clauses`, and stops a drawn medium's marks-of-use clause saying
+"photograph". Four files byte-identical, the review example regenerated here and byte-identical
+to the full edition's at 82 questions, the pharmacist's two hands now asked. 778 assertions
+passing unchanged, regression 4 of 4, T4 green. Battery and corpus identical to a clean export
+of `00bf8dc`, 16 of 19 clean, 21, 2, 4, probe 2 with nothing missing.
+
+Checked: theklinique loses its false back-to-camera sentence, inlingua's and papayiw's
+foreshortening invariants lose the real-size sentence, the male dentist reads "his", and of the
+five face-on phrases reported, the three with "from behind" now read as not facing away. On the
+13 valid client briefs validation and prompts are otherwise unchanged and 19 per-hand questions
+appear in 7 scenes; the refused briefs carry the rest of upstream's nine.
+
+Read one by one, three of those 19 are broken, and they are on client briefs. `_SIDE_CLAUSE`
+consumes only hand, palm, arm or fingers after the side, and the clauses are split on every
+"and". bangmod's "her right thumb and index finger pinch the edge of a clear aligner tray" splits
+at "and" and gives right = "thumb": "Is it the right hand of the dentist, her own right, ...,
+that thumb?", with the pinch lost. Its "her left index finger steadies the patient jaw" gives
+"...that index finger steadies the patient jaw at the chin?". biqdaddy's "his right index finger
+rests on a box" gives "...that index finger rests on a box...", and "his left hand lies open and
+flat beside the sheet" is cut to "lies open". Verbless phrasings, common in briefs, break the
+same way on a constructed scene: "her right hand in her lap" asks "...that in her lap?", and
+"holding a coffee cup", "raised to wave", "at her side" and "flat on the patient's cheek" all
+follow "that" with no verb. Reported upstream: consume thumb and index finger with the side,
+split only where "and" is followed by a pronoun and a side, and put "is" before a clause that
+does not open with a verb. Also still open: `FACING_AWAY_RE` keeps a bare "turned away", so
+"head turned away from the glare" and "turned away from the shelves" still read as a back to
+the camera.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

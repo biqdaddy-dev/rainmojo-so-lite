@@ -2522,15 +2522,15 @@ away = diner("right of centre, nearer the camera, back to the camera")
 away_q = {q["id"]: q["question"] for q in image_spec.build_questions(away, image_spec.derive(away, WIDTH, HEIGHT))}
 check(
     "each hand is asked on its own, from the person's side, with the picture side when they face away",
-    "right hand, which is on the right of the picture" in away_q.get("q_customer_hand_right", "")
-    and "left hand, which is on the left of the picture" in away_q.get("q_customer_hand_left", ""),
+    "own right, which is on the right of the picture" in away_q.get("q_customer_hand_right", "")
+    and "own left, which is on the left of the picture" in away_q.get("q_customer_hand_left", ""),
     str({k: v for k, v in away_q.items() if "_hand_" in k}),
 )
 toward = diner("right of centre, facing the camera")
 toward_q = {q["id"]: q["question"] for q in image_spec.build_questions(toward, image_spec.derive(toward, WIDTH, HEIGHT))}
 check(
     "and the sides swap for someone facing the camera",
-    "right hand, which is on the left of the picture" in toward_q.get("q_customer_hand_right", ""),
+    "own right, which is on the left of the picture" in toward_q.get("q_customer_hand_right", ""),
     toward_q.get("q_customer_hand_right", ""),
 )
 away_text = image_spec.compile_spec(away, WIDTH, HEIGHT, DEFAULTS)["prompt"]
@@ -2577,7 +2577,7 @@ hers["subjects"][1].update({"hands": "her spoon in the right hand and her fork i
 hers_q = {q["id"]: q["question"] for q in image_spec.build_questions(hers, image_spec.derive(hers, WIDTH, HEIGHT))}
 check(
     "the hand questions use the subject's own possessive",
-    "in her own right hand" in hers_q.get("q_customer_hand_right", ""),
+    "her own right" in hers_q.get("q_customer_hand_right", ""),
     hers_q.get("q_customer_hand_right", "(none)"),
 )
 check(
@@ -2609,6 +2609,62 @@ check(
 )
 for phrase in ("twice as long as the fork", "larger than the plate", "as wide as the shoulders", "1.5 times an eating spoon"):
     check(f"{phrase!r} is a size comparison", bool(image_spec.SIZE_COMPARE_RE.search(phrase)))
+
+print("C59 a hand that rests or gestures is asked about too; facing and pronouns read right")
+# From the sweep session and the lite session.
+check(
+    "a hand that rests is its own clause",
+    image_spec.hand_clauses("her right hand holds a round hand mirror and her left rests on the chair arm")
+    == {"right": "holds a round hand mirror", "left": "rests on the chair arm"},
+)
+check(
+    "so is a raised hand",
+    image_spec.hand_clauses("his right hand is raised, his left hand rests on his knee")["right"] == "is raised",
+)
+check(
+    "a single held thing names its own item",
+    image_spec.hand_clauses("the woman carries a plastic cup in her right hand") == {"right": "holds a plastic cup"},
+)
+check(
+    "from behind the head of the bed is a place, not a back to the camera",
+    image_spec.facing({"position": "leaning in from behind the head of the bed"}) == "",
+)
+check("seen from behind still is", image_spec.facing({"position": "seen from behind"}) == "away")
+check("the pronoun before the person's own hand decides", image_spec.possessive({"hands": "his left hand rests on her shoulder"}) == "his")
+one_hand = copy.deepcopy(EXAMPLE)
+one_hand["subjects"][1]["hands"] = "the phone in her left hand"
+one_q = {q["id"]: q["question"] for q in image_spec.build_questions(one_hand, image_spec.derive(one_hand, WIDTH, HEIGHT))}
+check(
+    "one named hand gets its own question",
+    "q_customer_hand_left" in one_q and "that holds the phone" in one_q["q_customer_hand_left"],
+    str({k: v for k, v in one_q.items() if "_hand_" in k}),
+)
+check(
+    "a real-size sentence stays out of a foreshortening rule",
+    not (image_spec.SIZE_COMPARE_RE.search("the far page reads shorter than the near one")
+         and not image_spec.APPEARANCE_RE.search("the far page reads shorter than the near one")),
+)
+check("or a position", not image_spec.SIZE_COMPARE_RE.search("the scale hangs higher than the shelf top"))
+check("or an event", not image_spec.SIZE_COMPARE_RE.search("the bell has rung twice"))
+check("and still marks a real comparison", bool(image_spec.SIZE_COMPARE_RE.search("twice the length of the fork")))
+
+print("C60 a drawing is not told it is a photograph")
+drawn60 = copy.deepcopy(EXAMPLE)
+drawn60.update({"medium": "illustration"})
+drawn60["style"]["look"] = "flat editorial illustration with soft grain"
+for key in ("focal_length_mm", "aperture_f", "subject_distance_m", "height_m"):
+    drawn60["camera"].pop(key, None)
+drawn_text = " ".join(c["text"] for c in image_spec.build_clauses(
+    drawn60, image_spec.derive(drawn60, WIDTH, HEIGHT), WIDTH, HEIGHT, image_spec.policy_from_config(DEFAULTS)))
+check(
+    "an illustration's marks of use do not call it a photograph",
+    "The scene carries the marks of use" in drawn_text and "This is a photograph" not in drawn_text,
+    str([x for x in drawn_text.split(". ") if "marks of use" in x][:1]),
+)
+check(
+    "a photograph still is one",
+    "This is a photograph of a real place" in image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)["prompt"],
+)
 
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
