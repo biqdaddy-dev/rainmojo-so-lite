@@ -1,11 +1,13 @@
 {
   "version": 1,
-  "about": "Every fault a reader, an owner or an audit found in a generated picture, as a named class. A class is closed only when it has a prevention (a spec rule or prompt clause), a detection (a question or rubric check) and a regression (a contract-test section that keeps catching it), and its prevention has not been measured to fail. Proposed by the rangsarn session; rainmojo-so and rangsarn each keep their own copy, in step, and run apart.",
+  "about": "Every fault a reader, an owner or an audit found in a generated picture, as a named class. A class is closed only when it has a prevention (a spec rule or prompt clause), a detection (a question or rubric check) and a regression (a contract-test section that keeps catching it), and its prevention has not been measured to fail. Proposed by the rangsarn session; rainmojo-so and rangsarn each keep their own copy, in step, and run apart. family groups classes in the order of families; look_for, on a class a viewer can see without the brief, is the plain phrase q_anomalies names it by, under its family.",
   "status_rule": "closed when prevention, detection and regression are all non-empty and prevention_effective is not false; otherwise open",
   "classes": [
     {
       "id": "F-clone-faces",
+      "family": "people",
       "symptom": "Two or more people in one scene share a face, hair, skin and pose.",
+      "look_for": "two people with one face",
       "cause": "Near-identical appearance text, the generator's one canonical face for a demographic, attribute leakage between adjacent subjects.",
       "found_by": "owner, rangsarn run 03 (river market)",
       "prevention": [
@@ -25,7 +27,9 @@
     },
     {
       "id": "F-copied-repeats",
+      "family": "repeats",
       "symptom": "Repeated objects are one image pasted: baskets, fruit, tents, shelf stock.",
+      "look_for": "repeated things that are one pasted copy",
       "cause": "One description for a count above one draws that many copies.",
       "found_by": "owner, rangsarn run 03; rainmojo-so sweep scene 10 (tents)",
       "prevention": [
@@ -44,6 +48,7 @@
     },
     {
       "id": "F-contents-in-count",
+      "family": "counts",
       "symptom": "Containers hold the wrong contents while their count is right.",
       "cause": "Contents named in the object's name rode along in the count question.",
       "found_by": "owner, rangsarn run 03 (bananas, pomelos, bananas)",
@@ -61,7 +66,9 @@
     },
     {
       "id": "F-pseudo-text",
+      "family": "text",
       "symptom": "Lettering-like marks that are no real script, on packaging, signs, pages and diagrams.",
+      "look_for": "lettering that is not a real script",
       "cause": "text_in_image none makes the model fill text-bearing surfaces with half-formed glyphs.",
       "found_by": "rainmojo-so sweep (4 images), rangsarn run 01 (carton)",
       "prevention": [
@@ -79,6 +86,7 @@
     },
     {
       "id": "F-unwanted-text",
+      "family": "text",
       "symptom": "Legible text, numbers or logos the brief did not ask for.",
       "cause": "Text-bearing surfaces invite lettering; digits are what the model draws best.",
       "found_by": "rainmojo-so sweep (10 of 16 images)",
@@ -98,6 +106,7 @@
     },
     {
       "id": "F-extra-people",
+      "family": "counts",
       "symptom": "More people than declared, or people in a scene declared empty.",
       "cause": "A purpose sentence describing a human action outweighs an empty subject list; counts only ever asked about declared entities.",
       "found_by": "rainmojo-so sweep (scene 5, 10, 11, E)",
@@ -117,6 +126,7 @@
     },
     {
       "id": "F-all-sharp",
+      "family": "size and distance",
       "symptom": "Things outside the depth of field are drawn sharp.",
       "cause": "Image models draw everything sharp whatever the aperture says.",
       "found_by": "rainmojo-so sweep (5 misses), rangsarn runs 01 to 03",
@@ -136,6 +146,7 @@
     },
     {
       "id": "F-fill-as-second-key",
+      "family": "light",
       "symptom": "A second visible light source, or a reviewer counting the declared fill as one.",
       "cause": "The light question did not know about the declared fill.",
       "found_by": "rainmojo-so sweep (4 false alarms)",
@@ -153,7 +164,9 @@
     },
     {
       "id": "F-scale-drift",
+      "family": "size and distance",
       "symptom": "Apparent sizes do not follow distance: two fighters 1.22 apart drawn 1.05 apart.",
+      "look_for": "sizes that do not shrink with distance",
       "cause": "A model cannot act on a ratio; it draws its own prior.",
       "found_by": "rainmojo-so sweep (ringside)",
       "prevention": [
@@ -174,7 +187,9 @@
     },
     {
       "id": "F-floating-object",
+      "family": "support and physics",
       "symptom": "An object with no visible support.",
+      "look_for": "a thing with nothing holding it up",
       "cause": "Nothing in the brief said what holds it.",
       "found_by": "literature (CHI 2025 prevalence) and module design",
       "prevention": [
@@ -192,7 +207,9 @@
     },
     {
       "id": "F-hands",
+      "family": "people",
       "symptom": "Extra, missing or fused fingers, or fingers bending the wrong way.",
+      "look_for": "extra, missing or fused fingers",
       "cause": "Anatomy the generator gets wrong most often.",
       "found_by": "rainmojo-so sweep; rangsarn run 01 (question defect on grips)",
       "prevention": [
@@ -209,7 +226,9 @@
     },
     {
       "id": "F-wrong-floor",
+      "family": "support and physics",
       "symptom": "People and things on different surfaces drawn on one floor, or one floor drawn as several.",
+      "look_for": "people or things standing on the wrong surface",
       "cause": "A raised landing, stage or ring left at the camera's floor in the brief.",
       "found_by": "rangsarn runs 01 to 02 (landing, boat)",
       "prevention": [
@@ -229,7 +248,9 @@
     },
     {
       "id": "F-face-distortion",
+      "family": "people",
       "symptom": "A nose rendered large against the ears, the close wide-angle portrait.",
+      "look_for": "a face stretched by the lens",
       "cause": "A face nearer the camera than perspective allows.",
       "found_by": "module design, corrected by the lite session",
       "prevention": [
@@ -246,6 +267,7 @@
     },
     {
       "id": "F-position-and-crop",
+      "family": "framing",
       "symptom": "A subject past the third line, or a crop that loses the key thing.",
       "cause": "Placement judged by eye.",
       "found_by": "rangsarn run 02 (all four remaining misses)",
@@ -265,7 +287,9 @@
     },
     {
       "id": "F-tiled-stock",
+      "family": "repeats",
       "symptom": "A background filled with one repeated box in uniform rows, too many and too even for a real shop.",
+      "look_for": "stock tiled in identical rows",
       "cause": "The brief says 'boxed stock' and nothing about how the real kind of place is organised.",
       "found_by": "rangsarn (pharmacy)",
       "prevention": [],
@@ -295,6 +319,7 @@
     },
     {
       "id": "F-locale-prior",
+      "family": "time and place",
       "symptom": "Locale facts lose to the commonest world image: Vietnamese conical hats at a Bangkok floating market, a tube sarong for a panung, a Thai pharmacy as a stock shop, figs as crabapples.",
       "cause": "Locale facts placed late in a long prompt, against a strong common-world prior.",
       "found_by": "rangsarn independent audit of 20 pictures; run 04 (panung)",
@@ -313,6 +338,7 @@
     },
     {
       "id": "F-dropped-secondary-action",
+      "family": "people",
       "symptom": "A secondary action is dropped or replaced: serving becomes eating, a girl holds two spoons and two forks.",
       "cause": "Counts, hand-object pairings and secondary actions lose to the main action in a long prompt.",
       "found_by": "rangsarn independent audit; run 04 (grandmother, mother)",
@@ -329,6 +355,7 @@
     },
     {
       "id": "F-seated-cross-legged",
+      "family": "people",
       "symptom": "Seated people default to a cross-legged or lotus posture whatever the seat, culture or spec says.",
       "cause": "A strong prior for sitting on the floor.",
       "found_by": "rangsarn run 02 (second reading); cleanroom library",
@@ -345,6 +372,7 @@
     },
     {
       "id": "F-gaze-wrong-target",
+      "family": "people",
       "symptom": "Gaze, pointing, reaching or serving is aimed at the wrong person, plate or object, or at the camera.",
       "cause": "Targets named by role rather than placed in the frame.",
       "found_by": "cleanroom library",
@@ -360,6 +388,7 @@
     },
     {
       "id": "F-framing-wider",
+      "family": "framing",
       "symptom": "Framing comes back one step wider than asked: a medium close-up as a medium shot, waist-up showing the knees.",
       "cause": "Generators widen toward the commonest framing.",
       "found_by": "rangsarn run 01; cleanroom library",
@@ -378,6 +407,7 @@
     },
     {
       "id": "F-hand-swap",
+      "family": "people",
       "symptom": "What each hand holds is swapped: a spoon left and a fork right where the spec says the reverse.",
       "cause": "Left and right are the person's own, and a person facing away puts them on the picture's same sides; a question about both hands at once passes 'a utensil in each hand'.",
       "found_by": "owner, rangsarn run 05 (family dinner)",
@@ -395,7 +425,9 @@
     },
     {
       "id": "F-food-from-nowhere",
+      "family": "support and physics",
       "symptom": "A plate or bowl holds food that none of the declared dishes could produce.",
+      "look_for": "food no dish on the table could give",
       "cause": "Nothing tied the containers' contents to their source.",
       "found_by": "owner, rangsarn run 05 (fried rice from three shared dishes)",
       "prevention": [
@@ -412,7 +444,9 @@
     },
     {
       "id": "F-duplicated-by-contradiction",
+      "family": "repeats",
       "symptom": "An item is drawn twice, held in a hand and lying on a plate.",
+      "look_for": "one item drawn twice, held and set down",
       "cause": "The spec named the same item in a subject's hands and in an object's state.",
       "found_by": "owner, rangsarn run 05 and 06 (a third utensil on the father's plate)",
       "prevention": [
@@ -429,7 +463,9 @@
     },
     {
       "id": "F-extra-light-source",
+      "family": "light",
       "symptom": "A window, door or lamp is lit that the brief did not allow: a second lit window, a lamp from nowhere.",
+      "look_for": "a light or shadow with no source",
       "cause": "Nothing listed which openings and lights exist, so the generator added its own.",
       "found_by": "rangsarn (a second lit window where one was allowed)",
       "prevention": [
@@ -446,5 +482,16 @@
       "prevention_effective": "unmeasured",
       "status": "closed"
     }
+  ],
+  "families": [
+    "people",
+    "repeats",
+    "size and distance",
+    "support and physics",
+    "light",
+    "text",
+    "time and place",
+    "counts",
+    "framing"
   ]
 }

@@ -1489,6 +1489,7 @@ def derive(spec: dict[str, Any], width: int, height: int) -> dict[str, Any]:
             f"{_noun(a)} reads {_size_word(apparent)} {_noun(b)}"
         )
     derived["scale_notes"] = notes[:3]
+    derived["support_loads"] = support_loads(spec)
     return derived
 
 
@@ -2445,6 +2446,29 @@ def validate_spec(
                     "say where it is as well as what it is."
                 )
 
+    for index, entry in enumerate(_list(spec.get("physical_checks"))):
+        if not isinstance(entry, dict) or not _text(entry.get("check")):
+            errors.append(f"spec.physical_checks[{index}] needs a check.")
+            continue
+        try:
+            re.compile(_text(entry.get("trigger")))
+        except re.error as exc:
+            errors.append(f"spec.physical_checks[{index}].trigger is not a valid pattern: {exc}.")
+        for flag in ("ask", "prompt"):
+            if flag in entry and not isinstance(entry.get(flag), bool):
+                errors.append(f"spec.physical_checks[{index}].{flag} must be true or false.")
+
+    # Things side by side on a declared supporter wider than it: a 0.5 m bund
+    # carrying a buffalo and a man (rangsarn). Only above 100%, which cannot be.
+    for load in support_loads(spec)["loads"]:
+        if load["load_m"] > load["width_m"]:
+            warnings.append(
+                f"object {load['id']}: {load['width_m']:g} m wide but carries "
+                + ", ".join(f"{i['id']} ({i['width_m']:g} m)" for i in load["items"])
+                + f" side by side, {load['load_m']:g} m in all. It cannot hold them; widen "
+                "it, or move something off it."
+            )
+
     inv_openings, inv_practicals = light_inventory(spec)
     if inv_openings or inv_practicals:
         seen_ids: set[str] = set()
@@ -2456,6 +2480,11 @@ def validate_spec(
                 if eid in seen_ids:
                     errors.append(f"spec.{where}[{index}]: id {eid!r} is used twice.")
                 seen_ids.add(eid)
+                if "lit" in entry and not isinstance(entry.get("lit"), bool):
+                    warnings.append(
+                        f"spec.{where}[{index}].lit is {entry.get('lit')!r}, not true or false; "
+                        "it is read as dark."
+                    )
                 if where == "openings":
                     for field, allowed in (("kind", OPENING_KINDS), ("wall", OPENING_WALLS), ("state", OPENING_STATES)):
                         value = _text(entry.get(field))
@@ -2467,7 +2496,7 @@ def validate_spec(
         lighting_block = spec.get("lighting") if isinstance(spec.get("lighting"), dict) else {}
         key_block = lighting_block.get("key") if isinstance(lighting_block.get("key"), dict) else {}
         key_source = _text(key_block.get("source"))
-        if key_source and not _names_lit(key_source, spec):
+        if key_source and not _names_lit(key_source, spec, _text(key_block.get("direction"))):
             errors.append(
                 f"spec.lighting.key.source {key_source!r} is none of the lit openings and "
                 "practicals the spec declares. With an inventory declared, the key light comes "
@@ -2481,7 +2510,7 @@ def validate_spec(
                     "that the inventory does not list. List it as a lit practical or opening, "
                     "or say what it bounces off."
                 )
-        lit_walls = {_text(o.get("wall")) for o in inv_openings if o.get("lit")}
+        lit_walls = {_text(o.get("wall")) for o in inv_openings if is_lit(o)}
         if any(pair <= lit_walls for pair in OPPOSITE_WALLS) and not _list(lighting_block.get("fill")):
             warnings.append(
                 "spec.openings: lit openings face each other across the room, but there is one "
@@ -3268,8 +3297,8 @@ def build_clauses(
     if inv_open or inv_prac:
         # An inventory closes the scene's light: a second lit window appeared
         # where one was allowed (agreed with the rangsarn session).
-        lit = [_entry_label(e) for e in inv_open + inv_prac if e.get("lit")]
-        dark = [o for o in inv_open if not o.get("lit")]
+        lit = [_entry_label(e) for e in inv_open + inv_prac if is_lit(e)]
+        dark = [o for o in inv_open if not is_lit(o)]
         sentence = (
             "The only light comes from " + _and_list(lit) if lit
             else "Every window, doorway and lamp is dark, and the scene takes only its ambient light"
@@ -3347,6 +3376,9 @@ def build_clauses(
         )
     if pours(spec):
         add("invariant", 1, POUR_RULE)
+    for entry in triggered_checks(spec):
+        if entry.get("prompt") is True:
+            add("invariant", 1, _text(entry["check"]))
     add(
         "closing",
         1,
@@ -3668,14 +3700,39 @@ def _inventory_names(entry: dict[str, Any]) -> list[str]:
     return [n for n in names if n]
 
 
+def is_lit(entry: dict[str, Any]) -> bool:
+    """Lit only when lit is a real true: the string "false" is not (the lite session)."""
+    return entry.get("lit") is True
+
+
 def lit_entries(spec: dict[str, Any]) -> list[dict[str, Any]]:
     openings, practicals = light_inventory(spec)
-    return [e for e in openings + practicals if e.get("lit")]
+    return [e for e in openings + practicals if is_lit(e)]
 
 
-def _names_lit(text: str, spec: dict[str, Any]) -> bool:
+SKY_SOURCE_RE = re.compile(r"\b(?:sun|sunlight|daylight|sky|skylight)\b", re.I)
+
+
+def _names_lit(text: str, spec: dict[str, Any], direction: str = "") -> bool:
+    """Whether a light source names a lit entry, on word boundaries.
+
+    "flat outdoor daylight" is not a door. And sun or daylight from a direction
+    counts as the lit daylight opening in that wall.
+    """
     lowered = text.lower()
-    return any(name in lowered for entry in lit_entries(spec) for name in _inventory_names(entry))
+    for entry in lit_entries(spec):
+        for name in _inventory_names(entry):
+            if re.search(r"\b" + re.escape(name) + r"s?\b", lowered):
+                return True
+        wall = _text(entry.get("wall")).lower()
+        light = _text(entry.get("light")).lower()
+        if (
+            direction and wall and wall in direction.lower()
+            and light in {"daylight", "dusk", "moonlight", ""}
+            and SKY_SOURCE_RE.search(lowered)
+        ):
+            return True
+    return False
 
 
 def _entry_label(entry: dict[str, Any]) -> str:
@@ -3688,6 +3745,109 @@ def _entry_label(entry: dict[str, Any]) -> str:
         else f"the {kind} {position}" if position
         else f"the {kind}"
     )
+
+
+def scene_text(spec: dict[str, Any]) -> str:
+    """The words a trigger is matched against: what people do and what is there."""
+    location = spec.get("location") if isinstance(spec.get("location"), dict) else {}
+    parts = [_text(spec.get("purpose")), _text(location.get("place"))]
+    for subject in _list(spec.get("subjects")):
+        if isinstance(subject, dict):
+            parts += [_text(subject.get(k)) for k in ("description", "action", "hands", "pose", "position")]
+    for obj in _list(spec.get("objects")):
+        if isinstance(obj, dict):
+            parts += [_text(obj.get(k)) for k in ("name", "state", "position")]
+    return " ".join(part for part in parts if part)
+
+
+def triggered_checks(spec: dict[str, Any]) -> list[dict[str, Any]]:
+    """The physical_checks whose trigger the scene contains (or that have none)."""
+    text = scene_text(spec)
+    out = []
+    for entry in _list(spec.get("physical_checks")):
+        if not isinstance(entry, dict) or not _text(entry.get("check")):
+            continue
+        trigger = _text(entry.get("trigger"))
+        try:
+            if trigger and not re.search(trigger, text, re.I):
+                continue
+        except re.error:
+            continue
+        out.append(entry)
+    return out
+
+
+def support_loads(spec: dict[str, Any]) -> dict[str, Any]:
+    """What rests or stands on each declared supporter, side by side, in metres.
+
+    A thing counts its width_m times its count; a person 0.5 m standing and
+    0.6 m seated, found by "on the <supporter>" in their position. Coverage says
+    how much of what rests on something could be checked: a supporter named only
+    in words ("the road") has no width to check against.
+    """
+    objects = [o for o in _list(spec.get("objects")) if isinstance(o, dict)]
+    by_id = {_text(o.get("id")): o for o in objects if _text(o.get("id"))}
+    items: dict[str, list[dict[str, Any]]] = {}
+    resting = on_declared = 0
+    for obj in objects:
+        support = obj.get("support") if isinstance(obj.get("support"), dict) else {}
+        if _text(support.get("kind")) not in GROUNDED_SUPPORT:
+            continue
+        resting += 1
+        on = _text(support.get("by"))
+        if on in by_id and _num(by_id[on].get("width_m")) and _num(obj.get("width_m")):
+            on_declared += 1
+            items.setdefault(on, []).append({
+                "id": _text(obj.get("id")),
+                "width_m": round(_num(obj.get("width_m")) * int(_num(obj.get("count")) or 1), 3),
+            })
+    for subject in _list(spec.get("subjects")):
+        if not isinstance(subject, dict) or _text(subject.get("kind") or "person") != "person":
+            continue
+        resting += 1
+        position = _text(subject.get("position")).lower()
+        for oid, obj in by_id.items():
+            if not _num(obj.get("width_m")):
+                continue
+            names = {n for n in (_text(obj.get("short_name")).lower(), oid.replace("_", " ").lower()) if n}
+            if any(
+                re.search(r"\b(?:on|upon|atop|on top of)\s+(?:the\s+|a\s+)?" + re.escape(n) + r"\b", position)
+                for n in names
+            ):
+                seated = _text(subject.get("posture") or "standing").lower() in EYE_ABSOLUTE_M
+                on_declared += 1
+                items.setdefault(oid, []).append({
+                    "id": _text(subject.get("id")),
+                    "width_m": round((0.6 if seated else 0.5) * int(_num(subject.get("count")) or 1), 3),
+                })
+                break
+    loads = [
+        {"id": oid, "width_m": _num(by_id[oid].get("width_m")), "items": rows,
+         "load_m": round(sum(r["width_m"] for r in rows), 3)}
+        for oid, rows in items.items()
+    ]
+    return {"loads": loads, "resting": resting, "on_declared_supporter": on_declared}
+
+
+def failure_vocabulary() -> list[str]:
+    """The failure classes a viewer can see without the brief, in a viewer's words, by family.
+
+    Only those carry look_for: "framing wider" or "hand swap" need the spec, and
+    q_anomalies is the look that does not read it. An id such as "fill as second
+    key" says nothing to a viewer.
+    """
+    try:
+        data = json.loads((REFERENCE_DIR / "image-failure-classes.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    # By family, so a class added later reaches the question without lengthening
+    # it into a checklist (rangsarn): "people (two people with one face; ...)".
+    grouped: dict[str, list[str]] = {}
+    for entry in data.get("classes", []):
+        if _text(entry.get("look_for")):
+            grouped.setdefault(_text(entry.get("family")) or "other", []).append(_text(entry.get("look_for")))
+    order = [f for f in _list(data.get("families")) if f in grouped] + [f for f in grouped if f not in _list(data.get("families"))]
+    return [f"{family} ({'; '.join(grouped[family])})" for family in order]
 
 
 # A scene that pours: broth fell from beneath a bowl in rangsarn's ladle scene.
@@ -3786,6 +3946,19 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             question["verify_with"] = verify_with
         questions.append(question)
 
+    # First, a fresh look before any checklist: the faults nobody wrote a
+    # question for. Asked last, it answered no once in 28 pictures while missing
+    # seven known faults, its evidence opening "apart from the issues identified
+    # above" (rangsarn). A true answer here becomes a failure class.
+    vocabulary = failure_vocabulary()
+    add(
+        "q_anomalies",
+        "logic",
+        "Before reading any other question, look at the whole image and every crop: is it "
+        "free of anything a careful viewer would find wrong or implausible?"
+        + (" Look at " + ", ".join(vocabulary) + ", and at anything else." if vocabulary else "")
+        + " If not, answer no and list each thing in the evidence, with where it is.",
+    )
     for subject in [s for s in _list(spec.get("subjects")) if isinstance(s, dict)]:
         sid = _text(subject.get("id"))
         noun = _noun(subject)
@@ -4470,9 +4643,19 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
     # "Exactly two walkers?" answered yes while twenty more people stood in the
     # lane, because every count question asks about a declared entity and none
     # asks about the frame.
+    for index, entry in enumerate(triggered_checks(spec), start=1):
+        if entry.get("ask", True) is not False:
+            # Group "check": counted apart from recall, since whether the
+            # generator was told changes what a pass means.
+            add(
+                "q_check_%02d" % index,
+                "check",
+                f"Does the image respect this: {_text(entry['check']).rstrip('.')}? Check each "
+                "part on its own and name what you saw in the evidence.",
+            )
     inv_open_q, inv_prac_q = light_inventory(spec)
     if inv_open_q or inv_prac_q:
-        lit_labels = [_entry_label(e) for e in inv_open_q + inv_prac_q if e.get("lit")]
+        lit_labels = [_entry_label(e) for e in inv_open_q + inv_prac_q if is_lit(e)]
         add(
             "q_light_sources",
             "light",
@@ -4487,7 +4670,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                     f"q_{_text(opening.get('id'))}_state",
                     "light",
                     f"Is {_entry_label(opening)} {state}"
-                    + (", with light coming through it" if opening.get("lit") else ", and dark")
+                    + (", with light coming through it" if is_lit(opening) else ", and dark")
                     + "?",
                 )
     if pours(spec):
@@ -4546,17 +4729,6 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
         "read as lettering at a glance without being any real script?",
         verify_with="ocr",
         measure={"kind": "glyphs", "expected": "none"},
-    )
-    # Last, the faults nobody wrote a question for. Clone faces in rangsarn's run
-    # 03 were found by the owner, not by any question; this is how they would
-    # have been found by the review. A true answer here becomes a failure class.
-    add(
-        "q_anomalies",
-        "logic",
-        "Apart from everything asked above, is the image free of anything a careful viewer "
-        "would find wrong or implausible, such as two people with one face, stock tiled in "
-        "identical rows, lettering that is not a real script, a shadow with no source or an "
-        "object that could not stand? If not, answer no and list each thing in the evidence.",
     )
     add(
         "q_no_text",
@@ -4834,6 +5006,7 @@ def review_template(item: dict[str, Any], config: dict[str, Any]) -> dict[str, A
         "_instructions": (
             "status is passed, failed or not_applicable; answer is yes or no. Every entry "
             "needs evidence naming the zone or crop you looked at and what you saw. "
+            "Answer q_anomalies first, before reading the other questions. "
             "Skip a question whose parent thing is absent from the image; when the parent "
             "fails on count or kind, still answer every question below it. "
             f"Review the full image, then all {int(plaus.get('zoom_grid', 3)) ** 2} crops from review-crops."

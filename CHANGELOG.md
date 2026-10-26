@@ -280,6 +280,12 @@ the picture is then told those are its only light, and the review checks that no
 window or lamp appears. Briefs that do not list them behave as before. Contract test **837
 assertions**, passing here unchanged.
 
+Then `dd60935` and `d11e9c4`: the light inventory reads "lit" strictly, a brief may add its own
+physical checks that apply only when the scene calls for them, things set side by side on a
+table or shelf narrower than they need are warned, and the review now starts with an open look
+for anything wrong, prompted by the kinds of fault found so far. Contract test **857
+assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

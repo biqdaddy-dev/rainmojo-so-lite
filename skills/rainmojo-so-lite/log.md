@@ -939,6 +939,29 @@ kind, so "flat outdoor daylight" names a lit door through "outdoor"; a false acc
 A design point rather than a defect: "low afternoon sun from the left" is refused with a lit
 window in the left wall, physically right but not naming the entry, and the error says how.
 
+THIRTY-SIXTH PORT, `dd60935` and `d11e9c4`, same version. `dd60935` fixes the thirty-fifth
+port's findings: a non-boolean `lit` warns and is read dark, inventory names match whole words,
+and sun or daylight from a lit wall is accepted. `d11e9c4` adds `physical_checks` asked only
+when their trigger matches the scene, a support-capacity warning for things side by side on a
+declared supporter, and moves `q_anomalies` first with a vocabulary of failure families built
+from `image-failure-classes.json`; C30 now holds the review example to the generator's order and
+words. Five files byte-identical, the review example regenerated here and byte-identical at 82
+questions. 857 assertions passing unchanged, as on the full edition's own export; regression 4
+of 4, T4 green. Battery and corpus identical to a clean export of `d11e9c4`, 16 of 19 clean, 21,
+2, 4. On the client briefs prompts and warnings are byte-identical and every valid brief keeps
+its question ids, with `q_anomalies` first, as upstream says. `failure_vocabulary` reads the
+library next to the module, so lite reads its own copy.
+
+The full-edition session reported that none of this edition's open findings had reached it:
+each port reply reaches it as its first 400 characters. So every open finding is now in the
+shared notes as `dp-016-lite-open-findings.md`, with `dp-016-realism-battery/open_findings.py`
+reproducing each one against either edition; at `d11e9c4` it reports 14 open of 14, identical on
+both. Two of the fourteen are new with this port. Support capacity treats a supporter as one
+row: 40 cartons on a 3 m shelving wall "in rows on five shelves" warn that it cannot hold them,
+and four plates set two per side on a 0.9 m table warn too; no client brief names a supporter
+by id, so the corpus could not show it. And a person "leaning on the counter with both elbows"
+is counted as a load standing on it.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

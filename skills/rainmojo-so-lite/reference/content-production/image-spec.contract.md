@@ -135,6 +135,8 @@ distance and the conditioning rights, and are vouched for by the contract test a
 | Conditioning rights | `reference.conditioning_images[]`, `subjects[].reference{path,rights,origin}`, `subjects[].reference_image` | Every image fed to the generator needs its own provenance: a row in `sources`, or the subject's own `reference` block with `path`, `rights` and `origin` ("lock sheet cast/pim v3"), independent of any real place. Any recorded rights value may condition, `client_owned`, `licensed` or `reference_only` (owner decision, 2026-10-26); a `reference_only` image warns that the published file must be the generated image and never the source. The older `reference_image` must match a row in `location.reference.sources` whether or not the place is real: before, with `place_is_real` false, it was fed with no provenance check at all. | Every input to the picture is on record, so a reviewer can see what it was built on, and the source of a reference-only image never reaches the page. |
 | A writer's note as a locale detail | `location.locale_details[]` | Warns when a detail talks about the text itself ("is named exactly", "written out", "described as"). | It becomes a question no picture can answer; in run 10 the reviewer rightly answered no to "the species is named exactly". |
 | Light inventory | `openings[]`, `practicals[]`, `lighting.key.source`, `lighting.fill[]` | Optional. When declared, the key light must come from a lit opening or practical (refused otherwise), a fill that is a source and not a bounce should be listed (warned), and lit openings facing each other with no fill are warned. The prompt says the lit entries are the only light and every other opening is dark; `q_light_sources` and `q_<id>_state` ask it. | A second lit window appeared where one was allowed, and nothing asked about light sources. |
+| Physical checks | `physical_checks[]` `{check, trigger, ask, prompt}` | A check needs its words; `trigger` must compile as a pattern; `ask` and `prompt` must be true or false. A check applies only when its `trigger` matches the scene's own words (purpose, place, what people do, what is there): then it is asked as `q_check_NN` in group `check` unless `ask` is false, and said in the prompt only when `prompt` is true. Its words pass the same lint as any prompt field. | A rule an untriggered scene carries is noise twice, in the prompt and as `not_applicable` in the review. Group `check` is counted apart from recall, because whether the generator was told changes what a pass means; rangsarn measures `prompt` true against false on five or more triggered scenes, fixed before generating, and leaves it false with fewer. |
+| Support capacity | an object's `support.by` naming another object's `id`, `width_m`; a person whose `position` is "on the <object>" | Warns when what rests or stands side by side on a declared supporter is wider than it: each thing its `width_m` times its `count`, a person 0.5 m standing and 0.6 m seated. Only above 100%, which cannot be; a set table is near full, so crowded is the reviewer's. `derive` reports `support_loads` with how many resting things were checkable. | A 0.5 m bund carried a buffalo and a man in rangsarn's scene. On our 16 client specs it checked 0 of 70, since none names a supporter by id: it covers what a spec declares, nothing more. |
 | Seat and table | objects named as a seat and as a table, `height_m` | Warns when a declared seat has no table 0.18 to 0.38 m above it. Bands include a street plastic stool, a folding table and a low floor table, all conventions, and a tuk-tuk and a motorcycle. A name is matched on its head noun, so "folding steel tables with plastic stools" is tables. | Whoever sits at it is drawn too low or too high for the table. |
 | Unseeable exclusion | `must_not_show[]` | Warns on an entry that names a provenance or an origin ("plants from outside Southeast Asia", "imported", "made in"). | No reviewer can see where a leaf was grown, so the question can only be answered `cannot_tell`. Name what such a thing would look like. |
 | Floor left at the camera's | `subjects[].position`, `ground_height_m` | Warns when a standing person's position puts them on a declared thing at least 0.2 m high ("on the landing", "on the stage") and their `ground_height_m` is 0. | Their eye line and their floor are then measured from the camera's floor, and they are grouped there with everything else. |
@@ -643,11 +645,19 @@ Three rules make the numbers mean something:
 A fixed question set finds only the failures someone already thought of. Two things keep
 the set growing from what is actually found:
 
-- **`q_anomalies` ends every review.** "Apart from everything asked above, is the image
-  free of anything a careful viewer would find wrong or implausible?", with each thing
-  listed in the evidence when the answer is no. The owner found clone faces in rangsarn's
-  run 03 that no question asked about and every reader missed; this is the question that
-  would have found them.
+- **`q_anomalies` opens every review**, and the instructions say to answer it before
+  reading the others: "Before reading any other question, look at the whole image and every
+  crop: is it free of anything a careful viewer would find wrong or implausible?", with each
+  thing and where it is listed in the evidence when the answer is no. The owner found clone
+  faces in rangsarn's run 03 that no question asked about and every reader missed. Asked
+  last, it answered no once in 28 reviewed pictures while seven known faults went unnamed,
+  its evidence opening "apart from the issues identified above": a residual of the
+  checklist, not a fresh look. It names what to look at by family (people, repeats, size
+  and distance, support and physics, light, text) with each family's `look_for` phrases,
+  and ends "and at anything else". Only classes a viewer can see without the brief carry
+  `look_for`; a framing one step wide or a swapped hand needs the spec, and its own
+  question asks it. A class added with a family and a `look_for` reaches the question
+  without a code change.
 - **`image-failure-classes.json` names every fault class** with its symptom, cause,
   prevention (a spec rule or prompt clause), detection (a question or rubric check) and
   regression (the contract-test section that keeps catching it). A class is closed only

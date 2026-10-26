@@ -1204,6 +1204,13 @@ check(
     f"only in example: {sorted(set(REVIEW['spec_answers']) - set(fresh['spec_answers']))[:4]}",
 )
 check(
+    "in the same order, with the same words",
+    [(k, v.get("_question")) for k, v in REVIEW["spec_answers"].items()]
+    == [(k, v.get("_question")) for k, v in fresh["spec_answers"].items()]
+    and REVIEW["_instructions"] == fresh["_instructions"],
+    str([k for k, v in REVIEW["spec_answers"].items() if fresh["spec_answers"].get(k, {}).get("_question") != v.get("_question")][:3]),
+)
+check(
     "and exactly the rubric checks the config now carries",
     set(REVIEW["plausibility"]) == set(fresh["plausibility"]),
     str(sorted(set(REVIEW["plausibility"]) ^ set(fresh["plausibility"]))[:4]),
@@ -2855,6 +2862,106 @@ check(
     any("face each other" in w for w in image_spec.validate_spec(facing_walls, WIDTH, HEIGHT, DEFAULTS)[1]),
 )
 check("a spec without an inventory behaves as before", "q_light_sources" not in {q["id"] for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))})
+
+print("C66 lit means true; names match whole words; sun from a lit wall counts")
+# Three findings from the lite session's port of d0e241a.
+loose = lit_room()
+loose["openings"][1]["lit"] = "false"
+loose_errors, loose_warn = image_spec.validate_spec(loose, WIDTH, HEIGHT, DEFAULTS)
+check("a lit that is not true or false is warned", any("not true or false" in w for w in loose_warn))
+check(
+    "and read as dark",
+    "the door in the back wall" not in [x for x in image_spec.compile_spec(loose, WIDTH, HEIGHT, DEFAULTS)["prompt"].split(". ") if "only light" in x][0],
+)
+outdoor = lit_room()
+outdoor["openings"][0]["lit"] = False
+outdoor["practicals"] = []
+outdoor["openings"].append({"id": "side_door", "kind": "door", "wall": "right", "state": "open", "lit": True})
+outdoor["lighting"]["key"]["source"] = "flat outdoor daylight"
+outdoor["lighting"]["key"]["direction"] = "front_left"
+check(
+    "a key that names no lit entry is refused even when a substring would match",
+    any("none of the lit openings" in e for e in image_spec.validate_spec(outdoor, WIDTH, HEIGHT, DEFAULTS)[0]),
+)
+sunlit = lit_room()
+sunlit["lighting"]["key"]["source"] = "low afternoon sun"
+sunlit["lighting"]["key"]["direction"] = "front_left"
+check(
+    "sun from the side a lit daylight window is on counts as that window",
+    not [e for e in image_spec.validate_spec(sunlit, WIDTH, HEIGHT, DEFAULTS)[0] if "none of the lit openings" in e],
+    str(image_spec.validate_spec(sunlit, WIDTH, HEIGHT, DEFAULTS)[0][:1]),
+)
+
+print("C67 physical checks by trigger; support capacity; a fresh look first")
+# Settled in debate with the rangsarn session.
+def checked(*entries):
+    spec = copy.deepcopy(EXAMPLE)
+    spec["physical_checks"] = list(entries)
+    derived = image_spec.derive(spec, WIDTH, HEIGHT)
+    return (
+        spec,
+        {q["id"]: q for q in image_spec.build_questions(spec, derived)},
+        image_spec.compile_spec(spec, WIDTH, HEIGHT, DEFAULTS)["prompt"],
+    )
+
+
+LABEL = {"check": "A printed label faces the person reading it", "trigger": r"\blabel\b"}
+BUFFALO = {"check": "A buffalo stands with all four hooves on the ground it is on", "trigger": r"\bbuffalo", "prompt": True}
+_, q67, p67 = checked(LABEL, BUFFALO)
+check("a triggered check is asked, in a group of its own", q67.get("q_check_01", {}).get("group") == "check", str([k for k in q67 if "check" in k]))
+check("but not said, unless prompt is true", LABEL["check"] not in p67)
+check("an untriggered check is neither asked nor said", len([k for k in q67 if k.startswith("q_check_")]) == 1 and "buffalo" not in p67.lower())
+_, q67b, p67b = checked(dict(LABEL, prompt=True, ask=False))
+check("prompt true says it; ask false does not ask it", LABEL["check"] in p67b and not [k for k in q67b if k.startswith("q_check_")])
+refuses("a trigger that is not a pattern is refused", "not a valid pattern", lambda s: s.update(physical_checks=[{"check": "x", "trigger": "("}]))
+refuses("ask must be true or false", "must be true or false", lambda s: s.update(physical_checks=[{"check": "x", "ask": "yes"}]))
+refuses("a check needs its words", "needs a check", lambda s: s.update(physical_checks=[{"trigger": "label"}]))
+
+
+def loaded(on_counter, step_width=None):
+    spec = copy.deepcopy(EXAMPLE)
+    for oid, width, count in on_counter:
+        spec["objects"].append({
+            "id": oid, "short_name": oid.replace("_", " "), "name": "woven " + oid.replace("_", " "), "count": count,
+            "material": "rattan", "state": "empty", "height_m": 0.2, "width_m": width,
+            "scale_anchor": "its rim meets the pharmacist's wrist", "support": {"kind": "rests_on", "by": "counter"},
+            "position": "on the counter, left of centre", "distance_m": 1.95, "plane": "midground",
+            "variation": "each weave a little different in tone",
+        })
+    if step_width:
+        spec["objects"].append({
+            "id": "step", "short_name": "step", "name": "wooden step", "count": 1, "material": "wood",
+            "state": "worn", "height_m": 0.2, "width_m": step_width, "scale_anchor": "it reaches the customer's ankle",
+            "support": {"kind": "stands_on", "by": "the tiled floor"}, "position": "right of centre", "distance_m": 1.5,
+            "plane": "foreground",
+        })
+        spec["subjects"][1]["position"] = "on the step, " + spec["subjects"][1]["position"]
+    errors, warnings = image_spec.validate_spec(spec, WIDTH, HEIGHT, DEFAULTS)
+    return errors, [w for w in warnings if "side by side" in w], image_spec.derive(spec, WIDTH, HEIGHT)["support_loads"]
+
+
+over_errors, over, over_loads = loaded([("basket", 0.45, 5), ("till", 0.5, 1)])
+check("things on a declared supporter wider than it are warned", bool(over) and "2.75 m in all" in over[0], str(over or over_errors[:1]))
+check("things that fit it are not", not loaded([("basket", 0.45, 2), ("till", 0.5, 1)])[1])
+check("a person standing on a declared supporter counts 0.5 m", bool(loaded([], step_width=0.4)[1]) and not loaded([], step_width=0.6)[1])
+check(
+    "derive reports what was checkable",
+    over_loads["on_declared_supporter"] == 2 and over_loads["resting"] == over_loads["on_declared_supporter"] + 3,  # the counter and two people
+    str({k: v for k, v in over_loads.items() if k != "loads"}),
+)
+
+first = image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))
+check("q_anomalies is asked first", first[0]["id"] == "q_anomalies", first[0]["id"])
+check("and names what a viewer can see without the brief", "people (two people with one face;" in first[0]["question"] and "framing" not in first[0]["question"],
+      first[0]["question"])
+check("the instructions say to answer it first", "Answer q_anomalies first" in image_spec.review_template(item, DEFAULTS)["_instructions"])
+saved_reference = image_spec.REFERENCE_DIR
+image_spec.REFERENCE_DIR = saved_reference / "missing"
+try:
+    bare = image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))[0]["question"]
+finally:
+    image_spec.REFERENCE_DIR = saved_reference
+check("without the library it asks with no vocabulary", "Look at" not in bare and bare.startswith("Before reading any other question"))
 
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}

@@ -164,6 +164,11 @@
     }
   },
   "spec_answers": {
+    "q_anomalies": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Before reading any other question, look at the whole image and every crop: is it free of anything a careful viewer would find wrong or implausible? Look at people (two people with one face; extra, missing or fused fingers; a face stretched by the lens), repeats (repeated things that are one pasted copy; stock tiled in identical rows; one item drawn twice, held and set down), size and distance (sizes that do not shrink with distance), support and physics (a thing with nothing holding it up; people or things standing on the wrong surface; food no dish on the table could give), light (a light or shadow with no source), text (lettering that is not a real script), and at anything else. If not, answer no and list each thing in the evidence, with where it is."
+    },
     "q_pharmacist": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
@@ -564,16 +569,11 @@
       "evidence": "<what you saw and in which crop>",
       "_question": "Is the image free of malformed or invented glyphs, the half-formed marks that read as lettering at a glance without being any real script?"
     },
-    "q_anomalies": {
-      "answer": "yes",
-      "evidence": "<what you saw and in which crop>",
-      "_question": "Apart from everything asked above, is the image free of anything a careful viewer would find wrong or implausible, such as two people with one face, stock tiled in identical rows, lettering that is not a real script, a shadow with no source or an object that could not stand? If not, answer no and list each thing in the evidence."
-    },
     "q_no_text": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
       "_question": "Is the image free of any legible text, numbers, logos or watermarks the spec did not ask for?"
     }
   },
-  "_instructions": "status is passed, failed or not_applicable; answer is yes or no. Every entry needs evidence naming the zone or crop you looked at and what you saw. Skip a question whose parent thing is absent from the image; when the parent fails on count or kind, still answer every question below it. Review the full image, then all 9 crops from review-crops."
+  "_instructions": "status is passed, failed or not_applicable; answer is yes or no. Every entry needs evidence naming the zone or crop you looked at and what you saw. Answer q_anomalies first, before reading the other questions. Skip a question whose parent thing is absent from the image; when the parent fails on count or kind, still answer every question below it. Review the full image, then all 9 crops from review-crops."
 }
