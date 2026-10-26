@@ -1080,7 +1080,24 @@ _HAND_WORDS = {
     "palms", "wrist", "wrists", "hold", "holds", "holding", "held", "grip", "grips",
     "gripping", "each", "both", "one", "two", "own", "lightly", "loosely", "firmly",
     "rests", "resting",
+    # Pronouns and trailing prepositions are not things: "holds her fork beside
+    # it" holds a fork.
+    "it", "its", "them", "this", "that", "these", "those", "him", "her", "his", "their",
+    "beside", "behind", "near", "next", "under", "above", "below", "against", "toward",
+    "towards", "across", "along", "around", "up", "down", "out", "off", "away",
 }
+
+
+def possessive(subject: dict[str, Any]) -> str:
+    """her, his or their, as the spec's own hands and pose text say it."""
+    text = " ".join(_text(subject.get(k)) for k in ("hands", "pose", "action")).lower()
+    hers = len(re.findall(r"\bher\b", text))
+    his = len(re.findall(r"\bhis\b", text))
+    if hers > his:
+        return "her"
+    if his > hers:
+        return "his"
+    return "their"
 
 
 def facing(subject: dict[str, Any]) -> str:
@@ -1121,7 +1138,9 @@ def held_things(hands: str) -> set[str]:
     nouns = set()
     for phrase in phrases:
         words = [w for w in re.findall(r"[a-z][a-z'-]+", phrase.lower()) if w not in _TRAIT_STOP]
-        if words and words[-1] not in _HAND_WORDS:
+        while words and words[-1] in _HAND_WORDS:
+            words.pop()
+        if words:
             nouns.add(words[-1].rstrip("s") if words[-1].endswith("s") and not words[-1].endswith("ss") else words[-1])
     return nouns
 
@@ -2782,8 +2801,9 @@ def build_clauses(
                 add(
                     "subject",
                     1,
-                    f"{_cap(noun)} has their back to the camera, so their own right hand is on "
-                    "the right of the picture and their left hand on the left",
+                    f"{_cap(noun)} has {possessive(subject)} back to the camera, so "
+                    f"{possessive(subject)} own right hand is on the right of the picture and "
+                    f"{possessive(subject)} left hand on the left",
                 )
         if _text(subject.get("pose")):
             add("subject", 2, f"Pose of {noun}: {_text(subject['pose'])}")
@@ -2827,7 +2847,7 @@ def build_clauses(
                 "object",
                 1,
                 f"{_cap(_noun(obj))} {'hold' if count > 1 else 'holds'} only what comes from "
-                f"{_and_list(sources)}, and nothing else",
+                f"{_and_list(sources)}",
             )
         if count > 1 and is_matched(obj):
             add(
@@ -3452,7 +3472,7 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 add(
                     f"{base}_hand_{side}",
                     "anatomy",
-                    f"Does {noun} hold {item} in their own {side} hand{where}?",
+                    f"Does {noun} hold {item} in {possessive(subject)} own {side} hand{where}?",
                     base,
                 )
             add(

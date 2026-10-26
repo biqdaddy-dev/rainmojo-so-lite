@@ -249,6 +249,10 @@ dishes its food comes from, and the review checks it holds nothing else. A brief
 same thing both in someone's hand and on the table is warned, since the picture would show it
 twice. Contract test **754 assertions**, passing here unchanged.
 
+Then `381b628`: small wording fixes in the new hand and dish sentences, which now say "her"
+or "his" rather than "their" where the brief does. Contract test **758 assertions**,
+passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

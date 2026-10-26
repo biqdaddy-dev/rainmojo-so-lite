@@ -780,6 +780,28 @@ final s, so "reading glasses" becomes "glasse" and "scissors" "scissor", and a p
 named again on the counter is not warned. The hand parser itself read eight phrasings right,
 both sides or none.
 
+THIRTIETH PORT, `381b628`, same version, three small fixes rangsarn found in `ded0d5e`: the
+`filled_from` clause drops its trailing negation, `held_things` drops trailing pronouns and
+prepositions back to the noun, so "holds her fork beside it" holds a fork, and `possessive()`
+puts her or his into the facing sentence and the hand questions. Two files byte-identical, 758
+assertions passing unchanged, the review example unchanged at 80. Regression 4 of 4, T4 green.
+Battery and corpus identical to a clean export of `381b628`, 16 of 19 clean, 21, 2, 4, every
+probe output unchanged. On the client briefs only theklinique moves, to "her own", as
+upstream says.
+
+Two findings, reported upstream, neither reaching the corpus beyond theklinique, which reads
+"her" correctly. `possessive()` counts every her and his in the hands, pose and action text,
+including the other person's: a male dentist whose text reads "his right hand holds the mouth
+mirror inside her mouth, his left hand holds her chin", action "examines her teeth", comes out
+"her", and so does "his right hand lifts her arm, his fingers under her elbow and her wrist";
+a male clinician with a female patient is an ordinary clinic brief. Counting only the
+possessive directly before a hand, "his right hand", "her fingers", would read the person's own.
+And `held_things` drops prepositions only from the end: "grips his phone near his ear" and
+"holds a pen behind his ear" both yield "ear", so a phone or pen said twice on the desk would
+not be warned; cutting the phrase at its first preposition keeps the thing held. The
+twenty-ninth port's finding is untouched: `facing()` still reads theklinique's practitioner,
+whose face the brief puts in frame, as facing away, and her prompt now says "her back".
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

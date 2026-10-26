@@ -2568,6 +2568,22 @@ check(
 )
 check("and one whose state does not is not", not doubled("wiped clean, with a glass jar of cotton buds at one end"))
 check("plural stock is not the held one drawn again", not doubled("a tray of clean spoons and forks at one end"))
+check("a pronoun is not a held thing", image_spec.held_things("holds her fork beside it") == {"fork"},
+      str(image_spec.held_things("holds her fork beside it")))
+check("the filled_from clause carries no negation", not image_spec.negations("holds only what comes from the counter"))
+hers = copy.deepcopy(EXAMPLE)
+hers["subjects"][1].update({"hands": "her spoon in the right hand and her fork in the left",
+                            "position": "right of centre, back to the camera"})
+hers_q = {q["id"]: q["question"] for q in image_spec.build_questions(hers, image_spec.derive(hers, WIDTH, HEIGHT))}
+check(
+    "the hand questions use the subject's own possessive",
+    "in her own right hand" in hers_q.get("q_customer_hand_right", ""),
+    hers_q.get("q_customer_hand_right", "(none)"),
+)
+check(
+    "and so does the facing sentence",
+    "has her back to the camera, so her own right hand" in image_spec.compile_spec(hers, WIDTH, HEIGHT, DEFAULTS)["prompt"],
+)
 check("nor is a word used as a modifier", not doubled("a spoon rest and a fork holder at one end"))
 
 print("C15 a thin client config still has a gate")
