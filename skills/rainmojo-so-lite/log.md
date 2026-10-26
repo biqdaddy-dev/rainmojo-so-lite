@@ -384,7 +384,7 @@ the contract test alone.
 
 SEVENTEENTH PORT, `6b2a3d8`, `0e0d9ec` and `ba30c4c`, same version. Every recorded reference
 may condition the generator, a reference-only source warning instead of being refused, by the
-owner's decision as relayed by the full edition; this reverses the per-image rights refusal
+owner's own decision, given directly in the full edition's session; this reverses the per-image rights refusal
 this edition argued for, and is ported as written. Height ratios only between things whose
 `height_m` is their upright measure; the standing eye-level line only for people on the
 camera's floor; likeness, distinct-faces and per-copy variation warnings and questions; and a
@@ -418,6 +418,29 @@ stock differs in wear and angle, is false for stock mounted at one tilt. A `vari
 silences it, so the cost is the advice text, reported upstream. Seven briefs, not the eight
 quoted upstream; the shipped examples raise none, and the eighth was likely the real-place
 example's fighters, which the same commit made distinct.
+
+EIGHTEENTH PORT, `6363533`, same version: a matched set by design is not a copy. Two of the
+seventeenth port's warnings told a solar array on one rail and a moulded pair of sculptures to
+differ in size and angle. `variation` now accepts "matched" (identical, uniform, alike by
+design, a matched set): no warning, a prompt clause saying the set is matched with each in its
+own place and light, and a question about place, light, shadow and perspective, never about
+difference. The warning for an unsaid variation offers "matched" and no longer prescribes size
+and angle. People cannot be matched, by the owner's rule, and are warned. Three files
+byte-identical, 418 assertions passing unchanged; the review example regenerates
+byte-identical, since its scene has no repeated object. Regression 4 of 4, T4 green: no
+lite-owned doc mentions variation, so nothing new to pin.
+
+On the client briefs the same thirteen warnings fire, reworded; no error, no prompt changes,
+since no brief says "matched" yet, and five question sets drop "angle". Declaring the solar
+array and the tigers matched silences both and compiles the intended clause. Two findings,
+reported upstream. A variation that opens with a matched word and then describes a difference,
+"identical model, one with a cracked corner", "all the same model, one bent", "alike by design
+but one repainted", is classed matched and the difference is dropped from prompt and question
+without a word; the match is on the opening words only. And people declared matched are warned
+but the prompt still writes "Each of the 2 differs: matched". Older, not from this commit: a
+counted name that is itself a collective, "pair of moulded tiger sculptures" at count 2, "row of
+framed photovoltaic panels" at count 5, compiles to "2 pair of" and "5 row of" in the prompt and
+the questions, which reads as four sculptures and five rows.
 
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones

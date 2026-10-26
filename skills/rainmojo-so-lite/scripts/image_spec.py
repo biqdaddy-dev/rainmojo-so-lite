@@ -922,6 +922,19 @@ CONTENTS_RE = re.compile(
 )
 
 
+# A variation that says the things are a set by design: a moulded pair, panels
+# on one rail, a row of one model of chair.
+MATCHED_RE = re.compile(
+    r"^\s*(?:a\s+)?(?:matched|identical|uniform|alike by design|a matched set|all the same)\b",
+    re.I,
+)
+
+
+def is_matched(entity: dict[str, Any]) -> bool:
+    """Whether a repeated thing is declared a matched set by design."""
+    return bool(MATCHED_RE.match(_text(entity.get("variation"))))
+
+
 def _trait_words(text: str) -> set[str]:
     return {w for w in re.findall(r"[a-z][a-z'-]+", text.lower()) if w not in _TRAIT_STOP}
 
@@ -2057,15 +2070,24 @@ def validate_spec(
                     )
     for kind, entity in _entities(spec):
         many = int(_num(entity.get("count")) or 1)
-        if many > 1 and not _text(entity.get("variation")):
+        if many < 2:
+            continue
+        if kind == "subject" and is_matched(entity):
+            warnings.append(
+                f"subject {_text(entity.get('id'))}: people cannot be a matched set. Say in "
+                "variation how their faces, ages and builds differ."
+            )
+        elif not _text(entity.get("variation")):
             what = (
-                "faces, ages and builds" if kind == "subject"
-                else "size, wear, ripeness, angle or what sits on each; even identical "
-                "stock differs in wear and angle"
+                "say in variation how their faces, ages and builds differ"
+                if kind == "subject"
+                else "say in variation how they differ (wear, ripeness, what sits on each), "
+                "or write \"matched\" when they are a set by design, such as a moulded pair "
+                "or panels on one rail"
             )
             warnings.append(
                 f"{kind} {_text(entity.get('id'))}: {many} of them from one description draws "
-                f"{many} copies. Say in variation how they differ: {what}."
+                f"{many} copies; {what}."
             )
 
     for value, eid, name in collisions(spec):
@@ -2464,7 +2486,14 @@ def build_clauses(
         kind = _text(support.get("kind"))
         line += f", {SUPPORT_PARTICIPLE.get(kind, kind.replace('_', ' '))} {by_name}"
         add("object", 1, line)
-        if count > 1 and _text(obj.get("variation")):
+        if count > 1 and is_matched(obj):
+            add(
+                "object",
+                1,
+                f"The {count} are a matched set, alike by design, each in its own place with "
+                "its own light and shadow",
+            )
+        elif count > 1 and _text(obj.get("variation")):
             add("object", 1, f"Each of the {count} differs: {_text(obj['variation'])}")
         if obj.get("extends_beyond_frame"):
             add(
@@ -3093,12 +3122,20 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 base,
             )
         if count > 1:
+            many_name = head if contents else _text(obj.get("name"))
             add(
                 f"{base}_distinct",
                 "stylistic",
-                f"Do the {count} {head if contents else _text(obj.get('name'))} each look like a "
-                "real one of their own, with small differences in wear, angle, position or "
-                "what sits on them, rather than one image repeated?",
+                (
+                    f"Are the {count} {many_name} a matched set that each sits in its own place, "
+                    "with its own light, shadow and perspective, rather than one image repeated?"
+                )
+                if is_matched(obj)
+                else (
+                    f"Do the {count} {many_name} each look like a real one of their own, with "
+                    "small differences in wear, position or what sits on them, rather than "
+                    "one image repeated?"
+                ),
                 base,
             )
         if _text(obj.get("size")) or _text(obj.get("scale_anchor")):

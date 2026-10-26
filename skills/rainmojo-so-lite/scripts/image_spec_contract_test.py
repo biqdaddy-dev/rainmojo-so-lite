@@ -2138,6 +2138,42 @@ check(
     image_spec.listed_contents("small ceramic cup of iced black coffee") == ("small ceramic cup of iced black coffee", []),
 )
 
+print("C46 a matched set by design is not a copy")
+# Found by the lite session: a solar array on one rail and a moulded pair of
+# tiger sculptures were told to differ in size and angle.
+pair = copy.deepcopy(EXAMPLE)
+pair["objects"][1].update({"name": "moulded tiger sculptures", "count": 2, "variation": "matched, a moulded pair"})
+pair_errors, pair_warn = image_spec.validate_spec(pair, WIDTH, HEIGHT, DEFAULTS)
+check("a matched pair is not warned as copies", not any("copies" in w for w in pair_warn), str(pair_warn)[:200])
+pair_q = {q["id"]: q for q in image_spec.build_questions(pair, image_spec.derive(pair, WIDTH, HEIGHT))}
+check(
+    "and is asked whether each sits in its own place, never whether they differ",
+    "matched set that each sits in its own place" in pair_q["q_medicine_box_distinct"]["question"]
+    and "differences" not in pair_q["q_medicine_box_distinct"]["question"],
+    pair_q["q_medicine_box_distinct"]["question"],
+)
+check(
+    "the prompt says it is matched by design",
+    "a matched set, alike by design" in image_spec.compile_spec(pair, WIDTH, HEIGHT, DEFAULTS)["prompt"],
+)
+unsaid = copy.deepcopy(pair)
+unsaid["objects"][1].pop("variation")
+unsaid_warn = image_spec.validate_spec(unsaid, WIDTH, HEIGHT, DEFAULTS)[1]
+check(
+    "with nothing said it is warned, and told it may write matched",
+    any("copies" in w and 'write "matched"' in w for w in unsaid_warn),
+    str(unsaid_warn)[:200],
+)
+for word in ("matched", "identical panels on one rail", "uniform", "alike by design", "a matched set"):
+    check(f"{word!r} declares a matched set", image_spec.is_matched({"variation": word}))
+check("a description of differences is not matched", not image_spec.is_matched({"variation": "one split, one newer"}))
+crowd = copy.deepcopy(EXAMPLE)
+crowd["subjects"][1].update({"count": 2, "variation": "matched"})
+check(
+    "people cannot be matched",
+    any("people cannot be a matched set" in w for w in image_spec.validate_spec(crowd, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

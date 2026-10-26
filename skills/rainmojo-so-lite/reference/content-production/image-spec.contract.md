@@ -184,8 +184,11 @@ refuse the brief:
   question that compares the face crops side by side. Anything with a count above one
   takes a `variation` field that the prompt carries ("one deeper and darker with age, one
   with a split rim"), is warned without one, and is asked whether each looks like a real
-  one of its own rather than one image repeated: even identical stock differs in wear and
-  angle.
+  one of its own rather than one image repeated. A set that is alike by design, a moulded
+  pair of sculptures or panels on one rail at one tilt, writes `variation: "matched"`: it
+  is not warned, the prompt says it is matched by design, and it is asked whether each
+  sits in its own place with its own light and perspective rather than whether they
+  differ. People cannot be matched.
 - **A count counts the thing.** A name that lists contents across its count ("3 round
   woven bamboo baskets of bananas, pomelos and mangoes") is counted as the baskets, and
   each content is asked on its own ("Does one of the round woven bamboo baskets hold

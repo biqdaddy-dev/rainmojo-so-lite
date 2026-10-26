@@ -178,6 +178,13 @@ distinct faces in the prompt and the review. Anything counted more than once ask
 copies differ. A count no longer counts what an object holds. Contract test **407
 assertions**, passing here unchanged; the shipped review example is now 79 questions.
 
+Then `6363533`: a set that is alike by design, a moulded pair or panels on one rail at one
+tilt, can say `variation: "matched"`. It is not warned as copies, the prompt calls it a matched
+set with each in its own place and light, and its review question asks about place, light and
+perspective, not about differences. The warning for a repeated thing with no variation now
+offers "matched" instead of asking for different sizes and angles. People cannot be a matched
+set. Contract test **418 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
