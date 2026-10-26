@@ -993,7 +993,8 @@ def anchor_posture_mismatch(anchor: str, person: dict[str, Any] | None) -> str:
     """
     if person is None:
         return ""
-    lowered = anchor.lower()
+    # "the pharmacist, seated, at the elbow": commas do not separate the two (the lite session).
+    lowered = re.sub(r"[,;]", " ", anchor.lower())
     posture = _text(person.get("posture") or "standing").lower()
     seated = posture in CHAIR_SEATED or posture in FLOOR_SEATED
     names = [n for n in (_text(person.get("id")).replace("_", " ").lower(), _text(person.get("short_name")).lower()) if n]
@@ -1009,11 +1010,51 @@ def anchor_posture_mismatch(anchor: str, person: dict[str, Any] | None) -> str:
     return ""
 
 
+GROUP_REFERENCE_RE = r"(?:(?:either|both|each|all|any|neither|one) of (?:them|the two|the people)|everyone|everybody)"
+
+
+def group_posture_mismatch(anchor: str, subjects: list[dict[str, Any]]) -> str:
+    """The posture "either of them standing" names when nobody is in it, or "".
+
+    A group reference is about every person in the scene (the sweep session,
+    biqdaddy's desk, where both people sat).
+    """
+    lowered = re.sub(r"[,;]", " ", anchor.lower())
+    people_in = [x for x in subjects if _text(x.get("kind") or "person") == "person"]
+    if not people_in:
+        return ""
+    seated = [
+        _text(x.get("posture") or "standing").lower() in CHAIR_SEATED | FLOOR_SEATED for x in people_in
+    ]
+    for word_re, nobody_in_it, said in (
+        (STANDING_WORD_RE, all(seated), "standing"),
+        (SEATED_WORD_RE, not any(seated), "seated"),
+    ):
+        if nobody_in_it and (
+            re.search(r"\b" + GROUP_REFERENCE_RE + r"\s+(?:\w+\s+){0,1}?" + word_re + r"\b", lowered)
+            or re.search(r"\b" + word_re + r"\s+(?:\w+\s+){0,1}?" + GROUP_REFERENCE_RE + r"\b", lowered)
+        ):
+            return said
+    return ""
+
+
+def anchor_wrong_pose(anchor: str, subjects: list[dict[str, Any]]) -> tuple[str, str]:
+    """(who, posture) when an anchor names a pose its person or group is not in."""
+    person = anchor_person(anchor, subjects)
+    single = anchor_posture_mismatch(anchor, person)
+    if single:
+        return _noun(person), single
+    group = group_posture_mismatch(anchor, subjects)
+    if group:
+        return "everyone in the scene", group
+    return "", ""
+
+
 def usable_anchor(spec: dict[str, Any], obj: dict[str, Any]) -> str:
     """The scale anchor, or "" when it puts its person in a pose they are not in."""
     anchor = _text(obj.get("scale_anchor"))
     people_in = [x for x in _list(spec.get("subjects")) if isinstance(x, dict)]
-    if anchor and anchor_posture_mismatch(anchor, anchor_person(anchor, people_in)):
+    if anchor and anchor_wrong_pose(anchor, people_in)[0]:
         return ""
     return anchor
 
@@ -1167,24 +1208,46 @@ MATCHED_RE = re.compile(
 )
 
 
-COLLECTIVE_PLURAL = {
-    "pair": "pairs", "row": "rows", "set": "sets", "stack": "stacks", "group": "groups",
-    "line": "lines", "pile": "piles", "rack": "racks", "bunch": "bunches", "cluster": "clusters",
-    "string": "strings", "box": "boxes", "crate": "crates", "basket": "baskets", "tray": "trays",
+# "<word> of <things>": an arrangement is one, and its count is its members (a
+# row of 3 scooters); a container is counted itself (3 boxes of mangoes). The
+# lite session: "3 rows of parked scooters" drew three rows where the brief
+# sized one scooter and meant three in one row.
+ARRANGEMENT_WORDS = {
+    "pair", "row", "line", "stack", "pile", "group", "set", "cluster", "string", "column",
+    "ring", "circle", "rank", "cluster",
 }
+CONTAINER_PLURAL = {
+    "box": "boxes", "crate": "crates", "basket": "baskets", "tray": "trays", "rack": "racks",
+    "bunch": "bunches", "bag": "bags", "sack": "sacks", "jar": "jars", "bucket": "buckets",
+}
+_COLLECTIVE_RE = re.compile(r"(?P<word>[a-z]+)\s+of\s+(?P<members>.+)$", re.I | re.S)
 
 
-def counted_name(count: int, name: str, one: bool = False) -> str:
-    """"2 pairs of moulded tigers", not "2 pair of" (the lite session).
+def counted_name(count: int, name: str, one: bool = False, each: bool = False) -> str:
+    """A counted name as the prompt says it, or as a question counts it.
 
-    A single thing is its bare name in the prompt, and "1 <name>" in a question
-    that asks for an exact count (one=True).
+    The prompt: "a row of 3 parked scooters", "a pair of moulded tigers",
+    "3 boxes of mangoes". A count question (one=True) counts the members: "3
+    parked scooters, in one row". each=True names the members for "do the ...
+    each": "3 parked scooters". A single thing is its bare name in the prompt
+    and "1 <name>" in a count question.
     """
     if count <= 1:
         return f"{count} {name}" if one else name
-    head = re.match(r"(?P<word>[a-z]+)(?P<rest>\s+of\b.*)$", name, re.I | re.S)
-    if head and head.group("word").lower() in COLLECTIVE_PLURAL:
-        return f"{count} {COLLECTIVE_PLURAL[head.group('word').lower()]}{head.group('rest')}"
+    match = _COLLECTIVE_RE.match(name)
+    word = match.group("word").lower() if match else ""
+    if word in ARRANGEMENT_WORDS:
+        members = match.group("members")
+        if one:
+            shape = ", as a pair" if word == "pair" and count == 2 else ", in pairs" if word == "pair" else f", in one {word}"
+            return f"{count} {members}{shape}"
+        if each:
+            return f"{count} {members}"
+        if word == "pair":
+            return f"a pair of {members}" if count == 2 else f"{count} {members}, in pairs"
+        return f"a {word} of {count} {members}"
+    if word in CONTAINER_PLURAL:
+        return f"{count} {CONTAINER_PLURAL[word]} of {match.group('members')}"
     return f"{count} {name}"
 
 
@@ -1318,6 +1381,147 @@ _HOLD_VERB = re.compile(
 )
 
 
+_OWN_HOLD = re.compile(
+    r"\b(?:holds?|holding|grips?|gripping|carries|carrying|cradles?|cradling|clutch(?:es|ing)?|"
+    r"pinch(?:es|ing)?|lifts?|lifting|raises?|raising|steadies|steadying|steady)\s+"
+    # "holds out a bunch of bananas": a particle is not the thing (rangsarn).
+    r"(?:(?:out|up|forward|aloft|back|open|high|down)\s+)?(?P<thing>.+)$",
+    re.I,
+)
+# The object ends at a preposition, a participle ("a fork resting on his plate"),
+# or "of" ("a ladle of broth" is the ladle).
+_STOP_AT = re.compile(
+    r"\s+(?:in|on|into|onto|with|through|along|under|over|by|at|against|to|from|toward|towards|"
+    r"above|below|between|beside|near|across|around|so|while|as|and|of|"
+    # A participle only when a preposition follows: "a fork resting on his plate",
+    # but "the large serving spoon" and "a frying pan" keep their gerund.
+    r"[a-z]+ing(?=\s+(?:on|in|at|by|against|beside|over|under|across|along|near|from|into|onto|"
+    r"toward|towards|above|below|between|inside|upon)\b)|[a-z]+ing\s*$|"
+    r"held|lying|laid|placed|propped|tucked|balanced|poised)\b.*$",
+    re.I,
+)
+# "tosses the vegetables with a steel spatula": the instrument is what the hand has.
+_WITH_INSTRUMENT = re.compile(r"\bwith\s+(?P<thing>(?:a|an|the|her|his|their)\s+.+)$", re.I)
+_PLAIN_ADJECTIVES = {
+    "long", "short", "thin", "thick", "large", "small", "big", "little", "wooden", "steel", "metal",
+    "plastic", "black", "white", "red", "old", "new", "worn", "heavy", "light",
+}
+# Touching a person is not holding an object: "holds the client's cheek taut".
+_BODY_THING = re.compile(
+    r"\b(?:cheek|cheeks|face|chin|jaw|shoulder|shoulders|arm|arms|hand|hands|wrist|elbow|back|head|"
+    r"hair|neck|knee|leg|foot|feet|fingers?|fingertips?|thumb|palm|lap|waist|hip)\b",
+    re.I,
+)
+# A part named for the whole: "the wok handle" is the wok in the hand.
+_PART_WORDS = {"handle", "handles", "rim", "edge", "lid", "stem", "base", "grip", "strap", "corner"}
+_HELD_STATE_WORDS = {
+    "upright", "low", "high", "open", "closed", "flat", "level", "still", "steady", "taut", "loose",
+    "tight", "up", "down", "out", "aloft", "ready", "forward", "back", "away", "close", "near", "far",
+    "high up", "sideways", "steadily", "horizontal", "vertical", "tilted", "angled",
+}
+
+
+_SIDE_BARE = re.compile(
+    r"^(?:the |her |his |their )?(?:left|right)(?:\s+hand)?\s+(?P<thing>(?:a|an|the|her|his|their|one)\s+.+)$",
+    re.I,
+)
+
+
+def own_held(hands: str) -> list[str]:
+    """The objects a hands field says this person holds, one noun each.
+
+    Stricter than held_things, which feeds a spec-side warning: this is the
+    expected list a reviewer's answer is scored against, so a word that is not a
+    held object ("taut", "top", a fingertip) would mark a correct answer short.
+    """
+    found: list[str] = []
+    for segment in _hand_segments(hands):
+        match = _OWN_HOLD.search(segment) or _WITH_INSTRUMENT.search(segment)
+        if match:
+            thing = match.group("thing")
+        else:
+            # "a spoon in her right hand", and a clause with no verb of its own,
+            # "her left a saucer" (the lite session).
+            tail = _SIDE_TAIL.match(segment)
+            bare = _SIDE_BARE.match(segment)
+            if tail:
+                thing = tail.group("item")
+            elif bare:
+                thing = bare.group("thing")
+            else:
+                continue
+        # "a pair of chopsticks": the members are what is held.
+        # A quantity word is the things themselves; a container (a ladle of broth)
+        # is the container (rangsarn: the bunch is the bananas).
+        arrangement = re.match(
+            r"(?:a|an|the|her|his|their)?\s*(?:pair|set|bunch|handful|bundle|stack|pile|bowlful|spoonful|"
+            r"armful|string|sheaf|fistful)\s+of\s+(?P<rest>.+)$",
+            thing,
+            re.I,
+        )
+        if arrangement:
+            thing = arrangement.group("rest")
+        phrase = _STOP_AT.sub("", thing).strip(" .")
+        if not phrase or _BODY_THING.search(phrase):
+            continue
+        words = [w for w in re.findall(r"[a-z][a-z'-]+", phrase.lower()) if w not in {"a", "an", "the", "her", "his", "their", "its", "one", "two"}]
+        if not words:
+            continue
+        # "holds the pen loosely", "the model upright": a manner or a state is not the thing.
+        while len(words) > 1 and (words[-1].endswith("ly") or words[-1] in _HELD_STATE_WORDS):
+            words.pop()
+        if words[-1].endswith("ly") or words[-1] in _HELD_STATE_WORDS:
+            continue
+        noun = words[-1]
+        if noun in _PART_WORDS:
+            # "the wok's long handle" is the wok; "the wok handle" too. A part with
+            # no owner said ("the long handle") names nothing countable.
+            owner = next((w[:-2] for w in words if w.endswith("'s")), "")
+            if owner:
+                noun = owner
+            elif len(words) > 1 and words[-2] not in _PLAIN_ADJECTIVES:
+                noun = words[-2]
+            else:
+                continue
+        noun = noun[:-2] if noun.endswith("'s") else noun
+        noun = noun[:-1] if noun.endswith("s") and not noun.endswith("ss") else noun
+        if noun not in found:
+            found.append(noun)
+    return found
+
+
+def own_things(spec: dict[str, Any], subject: dict[str, Any]) -> list[str]:
+    """What a person holds or has at their own place, as the spec gives it.
+
+    Their hands' held things, objects held by them, and objects positioned in
+    front of them or at their place. The expected list a per-person list answer
+    is compared with (rangsarn: the father's extra spoon).
+    """
+    sid = _text(subject.get("id"))
+    names = [n for n in (sid.replace("_", " ").lower(), _text(subject.get("short_name")).lower()) if n]
+    found = own_held(_text(subject.get("hands")))
+    for obj in _list(spec.get("objects")):
+        if not isinstance(obj, dict):
+            continue
+        support = obj.get("support") if isinstance(obj.get("support"), dict) else {}
+        position = _text(obj.get("position")).lower()
+        # "in front of the father", "at the father's place", or "in front of each
+        # family member"; "at the cook's left" says where, not whose (rangsarn).
+        at_place = bool(re.search(r"\b(?:in front of|before|at the place of)\s+(?:each|every)\b", position)) or any(
+            re.search(r"\b(?:in front of|before)\s+(?:the\s+)?" + re.escape(n) + r"\b", position)
+            or re.search(r"\bat\s+(?:the\s+)?" + re.escape(n) + r"'s\s+place\b", position)
+            for n in names
+        )
+        # A place setting rests on something; a counter in front of a cook stands
+        # on the floor and is furniture, never hers (rangsarn).
+        at_place = at_place and _text(support.get("kind")) == "rests_on"
+        if (_text(support.get("kind")) == "held_by" and _text(support.get("by")) == sid) or at_place:
+            thing = detect_as(obj)
+            if thing and thing not in found:
+                found.append(thing)
+    return found
+
+
 def held_things(hands: str) -> set[str]:
     """The nouns of what a hands field says is held: "a spoon", "the carton"."""
     phrases = list(hand_items(hands).values()) + [m.group("item") for m in _HOLD_VERB.finditer(hands)]
@@ -1385,8 +1589,10 @@ def _hand_segments(hands: str) -> list[str]:
 
 
 VERBLESS_RE = re.compile(
+    # A preposition or an adjective, or a participle: "holding a cup" and
+    # "resting on the table" need "is" too (the lite session).
     r"^(?:in|on|at|over|under|beneath|by|beside|against|behind|across|around|near|inside|"
-    r"along|upon|between|flat|raised|open|empty|loose|still|out|up|down)\b",
+    r"along|upon|between|flat|raised|open|empty|loose|still|out|up|down|[a-z]+ing)\b",
     re.I,
 )
 
@@ -2304,11 +2510,12 @@ def validate_spec(
             key=lambda item: item[0],
         )
         referent = anchor_person(anchor, subjects)
-        wrong_pose = anchor_posture_mismatch(anchor, referent)
+        who, wrong_pose = anchor_wrong_pose(anchor, subjects)
         if wrong_pose:
+            actual = "seated" if wrong_pose == "standing" else "standing"
             warnings.append(
-                f"object {_text(obj.get('id'))}: scale_anchor measures {_noun(referent)} "
-                f"{wrong_pose}, but they are {_text(referent.get('posture') or 'standing')}. "
+                f"object {_text(obj.get('id'))}: scale_anchor measures {who} "
+                f"{wrong_pose}, but they are {actual}. "
                 "Nobody can draw or check that pose, so the anchor is left out of the prompt "
                 "and the review. Anchor to where it meets them as posed (seated: lap, elbow, "
                 "chest, shoulder, chin), or to a thing beside it."
@@ -4387,6 +4594,25 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                     f"Is it the {side} hand of {who}, {pronoun} own {side}{where}, {verb}?",
                     base,
                 )
+            mine = own_things(spec, subject)
+            if count == 1 and len(mine) >= 2:
+                # Listed without the expected number, which would anchor the
+                # look; fewer listed than expected is scored incomplete.
+                add(
+                    f"{base}_own_things",
+                    "logic",
+                    f"Hands first, then the place in front of them: list in the evidence every "
+                    f"utensil and object {noun} holds or has as their own, each one separately. Is "
+                    "each of them in only one place, held or set down, never both?",
+                    base,
+                    verify_with="list",
+                    measure={
+                        "kind": "own_things",
+                        "entity": sid,
+                        "expected": mine,
+                        "fewer_listed": "incomplete",
+                    },
+                )
             add(
                 f"{base}_hands_count",
                 "anatomy",
@@ -4477,8 +4703,11 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             add(
                 f"{base}_contents",
                 "logic",
-                f"Does {noun} hold only what could come from {_and_list(sources)}, with no food "
-                "or other content that none of them could provide?",
+                # Identity, not possibility: "could come from" was answered yes on a
+                # fried rice the dishes never held (rangsarn's anomaly-first test).
+                f"Is every food or other content in {noun} one of these, as served from it: "
+                f"{_and_list(sources)}? Name anything in it that is none of them, or that is "
+                "cooked together rather than served beside.",
                 base,
             )
         for index, item in enumerate(contents, start=1):
@@ -4494,13 +4723,13 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 f"{base}_distinct",
                 "stylistic",
                 (
-                    f"Are the {counted_name(count, many_name)} a matched set that each sits in its own "
+                    f"Are the {counted_name(count, many_name, each=True)} a matched set that each sits in its own "
                     "place, with its own light, shadow and perspective, rather than one image repeated"
                     + (f", and is this so: {matched_difference(obj)}?" if matched_difference(obj) else "?")
                 )
                 if is_matched(obj)
                 else (
-                    f"Do the {counted_name(count, many_name)} each look like a real one of their own, with "
+                    f"Do the {counted_name(count, many_name, each=True)} each look like a real one of their own, with "
                     "small differences in wear, position or what sits on them, rather than "
                     "one image repeated?"
                 ),

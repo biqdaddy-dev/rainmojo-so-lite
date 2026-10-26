@@ -1021,6 +1021,35 @@ A3's participles, "...that holding a coffee cup?". The posture rule raised no fa
 phrasings, "an egg standing on end beside the pharmacist" and "stands upright by" among them; it
 misses "the pharmacist, seated, at the elbow" and "as she sits", so it errs silent.
 
+THIRTY-NINTH PORT, `963e292` to the full edition's final `d6a7468`, same version, one commit on
+`2ebaaa2`: `bfceed1` (the garlic bowl in F-wrong-floor), `6a2d868` (a counted arrangement counts
+its members, "a row of 5 framed photovoltaic panels", and a participle hand clause gets "is"),
+`725c462` (group references in scale anchors), `1a865a7` (commas no longer hide an anchor's pose),
+`c3ebfa2` (plate contents asked as identity, and `q_<id>_own_things` with `own_held` and
+`own_things`), and `3462358`, `deefa53`, `97e7397` and `d6a7468`, which rework `own_held` on real
+hand texts after rangsarn found five of six expected lists wrong. `c3ebfa2` was first called final
+and then retracted; its port, `a5daaea`, was never pushed and is folded in here. Four files
+byte-identical, the review example regenerated here and unchanged at 82. 939 assertions passing
+unchanged, as on the full edition's export; regression 4 of 4, T4 green,
+no lite doc touched. Battery and corpus identical to a clean export of `c3ebfa2`, 17 of 20 clean,
+21, 2, 4. The findings reproducer reports 0 open of 14 on both editions.
+
+On the client briefs validation and warnings are unchanged. The prompt moves on bangla and both
+sustainmap briefs, to "a pair of moulded tiger sculptures", "a row of 3 parked scooters" and "a
+row of 5" and "of 4 framed photovoltaic panels", their count and distinct questions with them,
+and the pulseth vendor gains `q_vendor_own_things`, expecting the ladle and the wok, which is
+right. The delta first showed `q_anomalies` changed on every brief: that was the harness, whose
+copy of the old module sat in a scratch folder with no failure library beside it and so asked
+the question without its vocabulary. Pointed at the same library, both modules write it the same.
+
+Three findings on `c3ebfa2`'s `own_held`, reported upstream and fixed by `d6a7468`, none having
+reached the corpus: "a spoon in her right hand and a fork in her left" yielded nothing, now spoon
+and fork; "holds a cup of tea" expected "tea", now the cup; "her left a saucer" dropped the
+saucer, now kept. One smaller finding at `d6a7468`, reported: "spoonful" and "bowlful" sit in the
+quantity list, so "holds a spoonful of rice" expects rice and "holds a bowlful of soup" expects
+soup, where the hand holds the spoon and the bowl. "bunch of bananas", "pile of plates" and
+"stack of menus" read right.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

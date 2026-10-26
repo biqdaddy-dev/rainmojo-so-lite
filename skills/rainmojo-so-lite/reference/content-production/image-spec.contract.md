@@ -644,6 +644,19 @@ Three rules make the numbers mean something:
   that no real brief reaches has been tested by nothing: it is reported as untested, not
   as passing.
 
+### Two questions that ask for a list, not a judgement
+
+A yes/no lets a reviewer stop at the first plausible reading. In rangsarn's anomaly-first test, fried rice with egg was
+answered yes to "could it come from the dishes", and nobody counted the father's third spoon. So:
+
+- **`q_<id>_contents`** asks identity, not possibility: "Is every food or other content in the plate one of these, as
+  served from it: …? Name anything in it that is none of them, or that is cooked together rather than served beside."
+- **`q_<id>_own_things`**, for a person with two or more things held or set at their place, asks the reviewer to list
+  them, hands first, then the place in front of them, without saying how many. The expected list (their hands' held
+  objects, objects held by them, objects positioned at their place) goes only to `measure`, and a comparison that finds
+  fewer listed than expected scores it `incomplete`, not passed. Its yes/no asks whether each thing is in one place
+  only, held or set down, never both.
+
 ## Learning from faults
 
 A fixed question set finds only the failures someone already thought of. Two things keep

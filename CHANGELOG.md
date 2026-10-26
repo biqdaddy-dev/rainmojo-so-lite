@@ -298,6 +298,12 @@ longer refused; a brief can give a style reference image with its rights recorde
 of known faults records what was tried against each one. Contract test **922 assertions**,
 passing here unchanged.
 
+Then `bfceed1` to `d6a7468`: a row or a pair is now counted by what is in it, "a row of 5 solar
+panels" rather than "5 rows"; hand questions read as whole sentences; a review asks whether each
+plate holds only food from the dishes on the table, and lists what each person holds or has at
+their place, so a spoon drawn twice is caught. Contract test **939 assertions**, passing here
+unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

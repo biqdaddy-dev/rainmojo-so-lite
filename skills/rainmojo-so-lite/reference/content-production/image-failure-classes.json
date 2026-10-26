@@ -248,7 +248,7 @@
       "symptom": "People and things on different surfaces drawn on one floor, or one floor drawn as several.",
       "look_for": "people or things standing on the wrong surface",
       "cause": "A raised landing, stage or ring left at the camera's floor in the brief.",
-      "found_by": "rangsarn runs 01 to 02 (landing, boat)",
+      "found_by": "rangsarn runs 01 to 02 (landing, boat); q_anomalies in rangsarn's anomaly-first test (garlic bowl on the grate, kitchen10)",
       "prevention": [
         "ground_height_m",
         "warning for a person on a raised declared thing at height 0"
@@ -276,6 +276,13 @@
           "kind": "restructure",
           "text": "no free surface left: a pot on the other burner, the bowls on a steel tray at the far end of the counter",
           "runs": 0,
+          "effective": "unmeasured"
+        },
+        {
+          "case": "garlic bowl on the burner grate",
+          "kind": "state",
+          "text": "found by q_anomalies, off the known-fault list, in rangsarn's anomaly-first test (kitchen10, crop r3c3); the same free-surface prior as the bowls on the hob, and no prevention tried yet",
+          "runs": 1,
           "effective": "unmeasured"
         }
       ]

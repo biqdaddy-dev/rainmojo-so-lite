@@ -2585,7 +2585,7 @@ plates["objects"][1]["filled_from"] = ["counter"]
 plates_q = {q["id"]: q["question"] for q in image_spec.build_questions(plates, image_spec.derive(plates, WIDTH, HEIGHT))}
 check(
     "a thing filled from declared sources is asked to hold only what they provide",
-    "hold only what could come from the counter" in plates_q.get("q_medicine_box_contents", ""),
+    "one of these, as served from it: the counter" in plates_q.get("q_medicine_box_contents", ""),
     plates_q.get("q_medicine_box_contents", "(none)"),
 )
 check(
@@ -3078,7 +3078,16 @@ _matched_q = {q["id"]: q["question"] for q in image_spec.build_questions(_matche
 check("D1 a matched set keeps the difference it names", "matched set" in _matched_prompt and "one with a cracked corner" in _matched_prompt)
 check("and the review asks it", "one with a cracked corner" in _matched_q.get("q_medicine_box_distinct", ""), _matched_q.get("q_medicine_box_distinct", ""))
 refuses("D2 people are never a matched set", "never a matched set", lambda s: s["subjects"][1].update(count=2, variation="matched"))
-check("D3 a counted collective is plural", image_spec.counted_name(2, "pair of moulded tigers") == "2 pairs of moulded tigers" and image_spec.counted_name(3, "row of scooters") == "3 rows of scooters")
+check(
+    "D3 a counted arrangement counts its members: one row of 3, not 3 rows",
+    image_spec.counted_name(3, "row of parked scooters") == "a row of 3 parked scooters"
+    and image_spec.counted_name(2, "pair of moulded tigers") == "a pair of moulded tigers"
+    and image_spec.counted_name(3, "row of parked scooters", one=True) == "3 parked scooters, in one row"
+    and image_spec.counted_name(3, "row of parked scooters", each=True) == "3 parked scooters",
+)
+check("and a container is counted itself", image_spec.counted_name(3, "box of mangoes") == "3 boxes of mangoes")
+check("A3 a participle hand clause gets its verb", all("that is holding" in q or "that is resting" in q for q in _hand_qs("her left hand holding a coffee cup, her right hand resting on the table")),
+      str(_hand_qs("her left hand holding a coffee cup, her right hand resting on the table")))
 check("but a count of one in a question keeps its number", image_spec.counted_name(1, "pale wood counter", one=True) == "1 pale wood counter")
 _lib = json.loads((ROOT / "reference" / "content-production" / "image-failure-classes.json").read_text(encoding="utf-8"))
 check("D4 F-unwanted-text cites the sections that test text", "C9c" not in next(c["regression"] for c in _lib["classes"] if c["id"] == "F-unwanted-text"))
@@ -3134,6 +3143,19 @@ check("an anchor in a pose its person is not in is warned", any("side_table" in 
 check("and left out of the prompt", "mid-thigh of the customer standing" not in image_spec.compile_spec(_pose, WIDTH, HEIGHT, DEFAULTS)["prompt"])
 _pose_q = {q["id"]: q["question"] for q in image_spec.build_questions(_pose, image_spec.derive(_pose, WIDTH, HEIGHT))}
 check("and out of its scale question", "standing" not in _pose_q.get("q_side_table_scale", "standing"), _pose_q.get("q_side_table_scale", ""))
+_both = _seated_with("its top sits at about the mid-thigh of either of them standing", 0.71)
+_both["subjects"][0].update(posture="seated", pose="seated behind the counter on a high stool")
+_both["camera"]["height_m"] = round(
+    (image_spec.eye_height(_both["subjects"][0]) + image_spec.eye_height(_both["subjects"][1])) / 2, 2
+)
+check(
+    "a group reference is about everyone: 'either of them standing' when both sit is warned",
+    any("side_table" in w and "everyone in the scene standing" in w for w in image_spec.validate_spec(_both, WIDTH, HEIGHT, DEFAULTS)[1]),
+    str([w for w in image_spec.validate_spec(_both, WIDTH, HEIGHT, DEFAULTS)[1] if "side_table" in w]),
+)
+check("and kept out of the prompt", "either of them standing" not in image_spec.compile_spec(_both, WIDTH, HEIGHT, DEFAULTS)["prompt"])
+check("commas do not hide the pose", image_spec.anchor_posture_mismatch("its top meets the customer, standing, at mid-thigh", {"id": "customer", "posture": "seated"}) == "standing")
+check("but not when one of them stands", not image_spec.group_posture_mismatch("the mid-thigh of either of them standing", [{"posture": "seated"}, {"posture": "standing"}]))
 check("a posture word about a thing is not about a person", not image_spec.anchor_posture_mismatch("about the size of an egg standing on end", None))
 
 print("C71 a style reference, checked as a likeness is")
@@ -3150,6 +3172,68 @@ check("reference_only warns", any("reference_only" in w for w in image_spec.vali
 _plural = copy.deepcopy(_bowls)
 _plural["objects"][-1]["short_name"] = "bowls"
 check("a plural short name after Each takes 'of the'", "Each of the bowls is about a tenth as wide as the" in image_spec.compile_spec(_plural, WIDTH, HEIGHT, DEFAULTS)["prompt"])
+
+print("C72 plate contents asked as identity; what each person has, listed")
+# rangsarn's anomaly-first test: fried rice "could come from" the dishes, and the
+# father's extra spoon went uncounted.
+_meal = copy.deepcopy(EXAMPLE)
+_meal["objects"].extend([
+    {"id": "curry", "short_name": "curry", "name": "bowl of green curry", "count": 1, "material": "glazed stoneware",
+     "state": "half full", "height_m": 0.08, "width_m": 0.18, "scale_anchor": "about as wide as the pharmacist's hand is long",
+     "support": {"kind": "rests_on", "by": "counter"}, "position": "on the counter, left of centre", "distance_m": 2.0, "plane": "midground"},
+    {"id": "plate", "short_name": "plate", "name": "plate of rice", "count": 1, "material": "white melamine",
+     "state": "rice with a spoonful of curry beside it", "height_m": 0.03, "width_m": 0.24, "filled_from": ["curry"],
+     "scale_anchor": "about as wide as the pharmacist's forearm is long", "support": {"kind": "rests_on", "by": "counter"},
+     "position": "on the counter in front of the pharmacist", "distance_m": 2.0, "plane": "midground"},
+])
+_meal["subjects"][0]["hands"] = "her right hand holds a spoon, her left hand holds a fork"
+_meal_q = {q["id"]: q for q in image_spec.build_questions(_meal, image_spec.derive(_meal, WIDTH, HEIGHT))}
+check(
+    "plate contents are asked as identity, with cooked-together named",
+    "one of these, as served from it" in _meal_q["q_plate_contents"]["question"]
+    and "cooked together rather than served beside" in _meal_q["q_plate_contents"]["question"]
+    and "could come from" not in _meal_q["q_plate_contents"]["question"],
+    _meal_q["q_plate_contents"]["question"],
+)
+_own = _meal_q.get("q_pharmacist_own_things", {})
+check("a person with two or more things is asked to list them, hands first", _own.get("question", "").startswith("Hands first, then the place in front of them"), str(_own)[:200])
+check("without being told how many", not re.search(r"\b(?:2|3|two|three|exactly)\b", _own.get("question", "")))
+check("the expected list goes to the comparison, and fewer is incomplete",
+      _own.get("measure", {}).get("expected") == ["spoon", "fork", "box", "plate"] and _own["measure"].get("fewer_listed") == "incomplete",
+      str(_own.get("measure")))
+check(
+    "the expected list holds objects, not body parts, parts or adjectives",
+    image_spec.own_held("her right hand holds a long steel ladle in the wok and her left grips the wok handle through a folded cloth") == ["ladle", "wok"]
+    and image_spec.own_held("her right hand grips the handpiece with the thumb along its top, her left hand holds the client cheek taut with two fingertips") == ["handpiece"]
+    and image_spec.own_held("his right hand holds the model upright, his left hand holds the pen loosely") == ["model", "pen"],
+    str(image_spec.own_held("her right hand grips the handpiece with the thumb along its top, her left hand holds the client cheek taut with two fingertips")),
+)
+_rs = {
+    "his right hand holds a spoon with rice near his mouth; his left hand holds a fork resting on his plate": ["spoon", "fork"],
+    "her right hand holds her spoon resting on her plate; her left hand holds her fork beside the plate": ["spoon", "fork"],
+    "her right hand tosses the vegetables with a steel spatula; her left hand holds the wok's long handle": ["spatula", "wok"],
+    "her right hand lifts a ladle of broth from the pot; her left hand holds a bowl": ["ladle", "bowl"],
+    "her right hand holds the omelette's large serving spoon over the girl's plate; her left hand rests on her folded knees": ["spoon"],
+    "her right hand holds the large serving spoon in the bowl; her left hand steadies her plate": ["spoon", "plate"],
+    "his right hand holds a pair of chopsticks over the bowl": ["chopstick"],
+    "a spoon in her right hand and a fork in her left": ["spoon", "fork"],
+    "her right hand holds a cup of tea, her left a saucer": ["cup", "saucer"],
+    "raises a glass of water": ["glass"],
+    "her right hand holds out a bunch of bananas by its stem toward the buyer; her left hand rests on the boat's gunwale": ["banana"],
+}
+_rs_got = {k: image_spec.own_held(k) for k in _rs}
+check("rangsarn's hand texts give the things in the hands", all(_rs_got[k] == v for k, v in _rs.items()),
+      str({k[:40]: v for k, v in _rs_got.items() if v != _rs[k]}))
+_place = copy.deepcopy(_meal)
+_place["objects"][-1].update(position="one at the table edge in front of each family member")
+check("a place set in front of each person is everyone's", "plate" in image_spec.own_things(_place, _place["subjects"][1]))
+_left = copy.deepcopy(_meal)
+_left["objects"][-1].update(position="on the counter at the pharmacist's left")
+_counter = copy.deepcopy(EXAMPLE)
+_counter["objects"][0]["position"] = "across the lower third, in front of the pharmacist"
+check("furniture in front of a person is not their place: it stands, a setting rests", "counter" not in image_spec.own_things(_counter, _counter["subjects"][0]))
+check("'at her left' says where, not whose", "plate" not in image_spec.own_things(_left, _left["subjects"][0]))
+check("one thing held is not listed", "q_pharmacist_own_things" not in {q["id"] for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))})
 
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
