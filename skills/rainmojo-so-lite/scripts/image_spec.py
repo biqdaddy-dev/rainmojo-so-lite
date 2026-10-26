@@ -626,6 +626,21 @@ def spec_required(item: dict[str, Any], config: dict[str, Any]) -> bool:
 HORIZON_FROM_BOTTOM = {"upper_third": 2 / 3, "middle": 0.5, "lower_third": 1 / 3}
 
 
+def horizon_band(camera: dict[str, Any]) -> float | None:
+    """Where the horizon row sits in the frame, from the bottom edge, or None.
+
+    A level camera puts it through the frame centre even when a wall hides it,
+    so an indoor scene with the horizon not visible still has a known frame
+    (the lite session's finding: indoor scenes are where most cut figures are).
+    """
+    band = HORIZON_FROM_BOTTOM.get(_text(camera.get("horizon")))
+    if band is None and _text(camera.get("tilt") or "level") == "level" and _text(
+        camera.get("horizon")
+    ) == "not_visible":
+        band = 0.5
+    return band
+
+
 def _lowest_visible(
     camera: dict[str, Any],
     subject: dict[str, Any],
@@ -641,7 +656,7 @@ def _lowest_visible(
     person's distance sits the horizon's share of the frame height below it.
     None when the horizon is not in the frame or the distance is unknown.
     """
-    band = HORIZON_FROM_BOTTOM.get(_text(camera.get("horizon")))
+    band = horizon_band(camera)
     distance = _num(subject.get("distance_m"))
     if band is None or not distance or not focal or not visible:
         return None
@@ -1741,23 +1756,36 @@ def validate_spec(
     # 0.86 m lens at a medium shot with the horizon in the middle cuts off the
     # head; only the frame's width was checked (found checking the lite session's
     # low-angle case).
-    band = HORIZON_FROM_BOTTOM.get(horizon)
+    band = horizon_band(camera)
     if (
         photographic and focal and cam_height is not None and band is not None
         and tilt in {"", "level"} and width and height
     ):
         for subject in people(spec):
-            if _text(subject.get("id")) != focus_on:
-                continue
             d = _num(subject.get("distance_m"))
             stature = _num(subject.get("height_m"))
             if not d or not stature:
                 continue
             _, frame_h = frame_at(d, focal, width / height)
             top = cam_height + frame_h * (1 - band)
+            bottom = cam_height - frame_h * band
             feet = ground_height(subject)
             pose_kind = _text(subject.get("posture") or "standing").lower()
             head = feet + (EYE_ABSOLUTE_M[pose_kind] / 0.93 if pose_kind in EYE_ABSOLUTE_M else stature)
+            # A person the frame cannot hold at their distance: wholly below its
+            # bottom edge or above its top. A child at 2.2 m sat entirely below a
+            # frame whose bottom was at 1.13 m (the lite session's probe scene).
+            if head < bottom - 0.02 or feet > top + 0.02:
+                warnings.append(
+                    f"subject {_text(subject.get('id'))}: at {d:g} m the frame spans "
+                    f"{bottom:.2f} to {top:.2f} m above the floor, and {_noun(subject)} "
+                    f"({feet:.2f} to {head:.2f} m) lies wholly "
+                    + ("below" if head < bottom - 0.02 else "above")
+                    + " it, so the picture cannot show them. Move them, or the camera."
+                )
+                continue
+            if _text(subject.get("id")) != focus_on:
+                continue
             if head > top + 0.05:
                 warnings.append(
                     f"spec.camera: with the lens at {cam_height:g} m, the horizon across the "

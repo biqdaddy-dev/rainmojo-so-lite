@@ -2392,6 +2392,31 @@ check(
     not any("is out of the picture" in w for w in image_spec.validate_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)[1]),
 )
 
+print("C53 a level camera's frame is known indoors, and a person outside it is warned")
+# Two findings from the lite session's port of 457f9cc.
+indoor53 = copy.deepcopy(EXAMPLE)
+indoor53["camera"].update({"height_m": 0.86, "angle": "low", "horizon": "not_visible"})
+check(
+    "a level indoor camera too low for the focus person's head is warned",
+    any("is out of the picture" in w for w in image_spec.validate_spec(indoor53, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+check("a level camera with the horizon hidden has its frame centred on the lens", image_spec.horizon_band({"tilt": "level", "horizon": "not_visible"}) == 0.5)
+check("a tilted one does not", image_spec.horizon_band({"tilt": "up", "horizon": "not_visible"}) is None)
+outside53 = copy.deepcopy(EXAMPLE)
+outside53["subjects"].append(dict(copy.deepcopy(EXAMPLE["subjects"][1]), id="child", short_name="child",
+                                  description="a small child", height_m=1.02, distance_m=2.2))
+check(
+    "a declared person wholly below the frame is warned",
+    any("lies wholly below it" in w and "child" in w for w in image_spec.validate_spec(outside53, WIDTH, HEIGHT, DEFAULTS)[1]),
+    str([w for w in image_spec.validate_spec(outside53, WIDTH, HEIGHT, DEFAULTS)[1] if "wholly" in w][:1]),
+)
+inside53 = copy.deepcopy(outside53)
+inside53["subjects"][-1]["height_m"] = 1.6
+check(
+    "the same person tall enough to reach into the frame is not",
+    not any("lies wholly" in w for w in image_spec.validate_spec(inside53, WIDTH, HEIGHT, DEFAULTS)[1]),
+)
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

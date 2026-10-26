@@ -224,6 +224,10 @@ now both name the same visible part of the body, and only one the frame actually
 brief whose camera is so low that the main person's head falls outside the picture is now
 warned. Contract test **688 assertions**, passing here unchanged.
 
+Then `e92bb52`: the framing checks now also work indoors, where a wall hides the horizon, and
+a brief that places a person where the picture cannot show them at all, wholly below or above
+the frame, is warned. Contract test **693 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

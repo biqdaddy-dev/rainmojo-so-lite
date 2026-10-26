@@ -636,6 +636,40 @@ and the review asks whether the horizon passes above the head of a child who can
 picture. The new field makes that a one-line rule: a declared person with a lowest visible
 fraction of 1 or more is not in the frame.
 
+TWENTY-FIFTH PORT, `e92bb52`, same version: a level camera's frame is known indoors, and a
+person outside it is warned. `horizon_band` places the horizon row at the frame centre for a
+level camera with the horizon not visible, and both `_lowest_visible` and the head-cut
+warning use it; every declared person is checked against the frame at their own distance and
+warned when they lie wholly below or above it. Three files byte-identical, 693 assertions
+passing unchanged, the review example unchanged at 80. Regression 4 of 4, T4 green. On the
+client briefs validation, warnings and prompts are unchanged, as upstream says. Battery and
+corpus identical to a clean export of `e92bb52`, 16 of 19 clean.
+
+The guards, run by hand against `457f9cc`: the indoor 0.86 m lens is silent there and warned
+here, and the 1.02 m child at 2.2 m is silent there and warned here. Both C53 child fixtures
+are refused by `validate_spec` on both versions, though, with the plane-order error the C50
+teenager had: copying the foreground customer and placing the copy at 2.2 m behind the
+midground pharmacist. With the plane set to midground the scene is valid and the guard gives
+the same answer both ways, so the rule is right and the fixtures need the plane and a validity
+check. The same copy pattern has now produced an invalid fixture twice.
+
+The battery moved for the wrong reason. `realism_probe.py` went from 21, 2, 4 to 21, 3, 3, and
+the new WARNED was the case "a 1.02 m child and a 1.62 m adult", whose point is the horizon
+derivation: it was warned because its child stood wholly below the frame, which says nothing
+about the derivation, and the probe's verdict counts any warning. The scene was the impossible
+one the twenty-fourth port found. Both probes now place the child at 3.4 m, where the frame's
+bottom is at 0.88 m and the top of the child is in it, standing by the shelving with hands at
+the sides, since a child 1.5 m behind the counter cannot grip it. The scene is valid and
+unwarned on `457f9cc`, `e92bb52` and this edition, the case is MISSED again for its own
+reason, 21, 2, 4, and probe 2 still finds the crossing above the child's head and the adult's.
+
+One finding, reported upstream, a limit rather than a regression: a seated child is not
+caught. The geometry gives every seated person the adult seated eye height, 1.23 m on a chair,
+"whatever the stature", so a seated 1.02 m child is placed with a head at 1.32 m, inside a
+frame whose bottom is at 1.10 m, and the wholly-below warning does not fire, where the child's
+real head is well below that edge. ANSUR II is an adult survey; a seated eye height scaled by
+stature below adult height would close it.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New
