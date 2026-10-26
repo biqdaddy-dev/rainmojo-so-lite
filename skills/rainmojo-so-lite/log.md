@@ -497,6 +497,42 @@ indoor scene declared `horizon: not_visible`, the prompt names a horizon three t
 looks-down sentence used to as well, so this is not new, but "eye line" would not invite a
 window or a skyline.
 
+TWENTY-FIRST PORT, `a57d0ef`, same version: the viewpoint sentence knows the tilt, and an
+unseen horizon is an eye-level line. It fixes the twentieth port's three findings and one more
+of their shape: an eye-level camera tilted down "tips slightly down toward them" instead of
+being called level; with the horizon out of frame the camera sentences say "eye-level line";
+the contract and the comment over `GROUP_ORDER` give the real order, opening, locale, then
+subjects; and the camera-at-eye-height sentence names only the people on the camera's floor,
+as its question has since `0e0d9ec`. Three files byte-identical, 615 assertions passing
+unchanged, review example unchanged at 80. Regression 4 of 4, T4 green, no lite doc touched.
+
+The test's word-boundary regex was checked in bytes, since the full edition's first draft of
+it lost `\b` to a heredoc: the committed file holds a backslash and a b, and no backspace
+byte. C50 was then run against `fce4562`'s module, the twin that must fail: the tilt and the
+indoor checks fail there as they should, but the eye-height check passes on the old code too.
+It asserts that "eye height of the older customer" is absent, and the old sentence said "the
+standing people" and never named anyone, so it is absent either way. Its fixture, the customer
+raised 0.8 m, is also refused by `validate_spec`. The fix itself is right and reachable: with
+the customer raised 0.3 or 0.5 m, both valid, the sentence names the pharmacist alone.
+
+On the client briefs validation is unchanged. Five indoor prompts go from two or three
+"horizon" mentions to none, bangmod, biqdaddy, doctorjay, inlingua and theklinique, and the two
+with a visible horizon keep theirs, as upstream says; three more now name the people in the
+eye-height sentence. Battery and corpus identical to a clean export of `a57d0ef`, 16 of 19
+clean.
+
+Two findings, reported upstream. A fifth of the same shape, on a real brief: pulseth's prompt
+says the camera is "a little above the eyes of the vendor, so the horizon passes just above
+their heads", then "the camera stands at the eye height of the vendor and the two walkers, so
+that horizon line crosses their eyes". The lens is at 1.6 m and the vendor's head top at
+1.55 m, so the first is true and the second is not; the eye-height sentence names every
+floor-standing person, including one its own crossing puts below the line. It was wrong
+before this commit too, as "the standing people", but now it names the vendor. And the
+validator's eye-level band still averages in people off the camera's floor: a level camera at
+the floor people's eye height is refused once someone stands on a 0.8 m platform, the question
+narrowed at `0e0d9ec` and the prompt here, the validator not yet. Whether that is intended is
+upstream's call.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

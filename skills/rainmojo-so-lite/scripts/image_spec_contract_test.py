@@ -2255,6 +2255,41 @@ check(
     local_prompt[:300],
 )
 
+print("C50 the viewpoint sentence knows the tilt, and an unseen horizon is an eye-level line")
+# Three findings from the lite session's port of fce4562.
+def _prompt_of(spec):
+    return " ".join(c["text"] for c in image_spec.build_clauses(
+        spec, image_spec.derive(spec, WIDTH, HEIGHT), WIDTH, HEIGHT, image_spec.policy_from_config(DEFAULTS)))
+
+
+tipped = seated_scene(angle="eye_level", tilt="down", height_m=1.36, horizon="above_frame")
+tipped_text = _prompt_of(tipped)
+check(
+    "eye level and tilted down is not called level",
+    "The camera is level" not in tipped_text and "tips slightly down" in tipped_text,
+    str([x for x in tipped_text.split(". ") if "camera" in x.lower()][:2]),
+)
+indoor = seated_scene(angle="eye_level", tilt="level", height_m=1.5, horizon="not_visible")
+indoor_own = " ".join(
+    c["text"] for c in image_spec.build_clauses(
+        indoor, image_spec.derive(indoor, WIDTH, HEIGHT), WIDTH, HEIGHT, image_spec.policy_from_config(DEFAULTS))
+    if c["group"] in {"opening", "camera"}
+)
+check(
+    "an indoor scene with no horizon in frame: the compiler's camera sentences never name one",
+    not re.search(r"\bhorizon\b", indoor_own, re.I) and "eye-level line" in indoor_own,
+    str([x for x in indoor_own.split(". ") if "horizon" in x.lower()][:2]),
+)
+check("a horizon in frame is still a horizon", "horizon" in _prompt_of(EXAMPLE).lower())
+raised50 = copy.deepcopy(EXAMPLE)
+raised50["subjects"][1]["ground_height_m"] = 0.8
+raised_text = _prompt_of(raised50)
+check(
+    "the eye-height sentence names only the people on the camera's floor",
+    "eye height of the older customer" not in raised_text,
+    str([x for x in raised_text.split(". ") if "eye height" in x][:1]),
+)
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

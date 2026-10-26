@@ -2298,15 +2298,15 @@ DEFAULT_AVOID = [
     "people or objects whose size does not match their distance",
 ]
 
-# Output order of the clause groups. The picture's subject and action come first
-# because every model weights the opening of a prompt most heavily; the physics
-# closing line comes last so it is never the clause a length limit cuts.
-# The locale follows the opening: facts a common-world prior would override,
-# garments, hats, species marks, how a shop is organised, lost to that prior when
-# they came late (rangsarn's independent audit of 20 pictures).
 # Above this much clearance over a head, a camera sees the top of it.
 LOOKS_DOWN_CLEARANCE_M = 0.5
 
+# Output order of the clause groups. The opening (medium, purpose, viewpoint,
+# scene) comes first because every model weights the start of a prompt most; the
+# locale follows it, because garments, hats, species marks and how a shop is
+# organised lost to the common-world prior when they came late (rangsarn's
+# independent audit of 20 pictures); then the subjects and their action. The
+# physics closing line comes last so it is never the clause a length limit cuts.
 GROUP_ORDER = (
     "opening",
     "locale",
@@ -2443,12 +2443,27 @@ def build_clauses(
             )
         else:
             names = _and_list([_entity_name(spec, crossing["id"]) for crossing in lowered[:3]])
-            add(
-                "opening",
-                1,
-                f"The camera is level and a little above the eyes of {names}, so the horizon "
-                "passes just above their heads while their faces are seen straight on",
+            line = (
+                "the horizon" if _text(camera.get("horizon")) in HORIZON_IN_FRAME
+                else "the eye-level line"
             )
+            if tilted_down:
+                # Eye level and tilted down: a slight tip toward them, not "level"
+                # (the lite session's finding on fce4562).
+                add(
+                    "opening",
+                    1,
+                    f"The camera is a little above the eyes of {names} and tips slightly "
+                    f"down toward them, so {line} passes just above their heads while "
+                    "their faces are seen nearly straight on",
+                )
+            else:
+                add(
+                    "opening",
+                    1,
+                    f"The camera is level and a little above the eyes of {names}, so {line} "
+                    "passes just above their heads while their faces are seen straight on",
+                )
     scene = f"The scene is {_text(location.get('place'))} in {_text(location.get('locale'))}"
     if _text(location.get("time_of_day")):
         scene += f", {_text(location['time_of_day']).replace('_', ' ')}"
@@ -2579,16 +2594,21 @@ def build_clauses(
                 f"The horizon and eye-level line sit across the {horizon.replace('_', ' ')} of the frame, "
                 "parallel edges converge to vanishing points on that line, and verticals stay vertical",
             )
+        floor_standing = [person for person in standing_people(spec) if on_camera_floor(person)]
+        # A horizon the spec puts out of frame is called the eye-level line, so the
+        # word does not invite a window or a skyline into an indoor picture.
+        line = "That horizon line" if horizon in HORIZON_IN_FRAME else "The eye-level line"
         if (
             derived.get("camera_at_eye_height")
-            and _text(camera.get("horizon")) in HORIZON_IN_FRAME
-            and standing_people(spec)
+            and horizon in HORIZON_IN_FRAME
+            and floor_standing
         ):
             add(
                 "camera",
                 2,
-                "The camera stands at the eye height of the standing people, so that "
-                "horizon line crosses their eyes",
+                "The camera stands at the eye height of "
+                + _and_list([_noun(person) for person in floor_standing])
+                + ", so that horizon line crosses their eyes",
             )
         else:
             for crossing in derived.get("horizon_crossings", [])[:2]:
@@ -2602,13 +2622,13 @@ def build_clauses(
                         "whole figure is seen from below",
                     )
                 elif crossing["above_head"]:
-                    add("camera", 2, f"That horizon line passes above the head of {name}")
+                    add("camera", 2, f"{line} passes above the head of {name}")
                 else:
                     percent = round(crossing["fraction_of_height_from_feet"] * 100)
                     add(
                         "camera",
                         2,
-                        f"That horizon line crosses {name} about {percent} per cent of the "
+                        f"{line} crosses {name} about {percent} per cent of the "
                         "way up from the feet",
                     )
         soft = derived.get("outside_focus", [])

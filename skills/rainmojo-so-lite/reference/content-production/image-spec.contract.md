@@ -332,9 +332,11 @@ little above seated eyes is said as what it is: the horizon passes just above th
 while their faces are seen straight on. The audit found the contradiction in rangsarn's
 river market; it was in three of our own client prompts too.
 
-Every clause carries a group and a priority tier. Groups come out in a fixed order, subject
-and action first because every model weights the opening of a prompt most heavily, and the
-physics line last so a length limit never cuts it.
+Every clause carries a group and a priority tier. Groups come out in a fixed order: the
+opening, then the locale, then the subjects and their action, because every model weights
+the start of a prompt most heavily, and the physics line last so a length limit never
+cuts it. Where the spec puts the horizon outside the frame, the prompt calls it the
+eye-level line, so an indoor picture is not invited to grow a window or a skyline.
 
 - Tier 1 is the picture: medium, scene, each subject's identity, action and hands, each
   object with its size and support, the camera, the horizon, the key light and its shadow

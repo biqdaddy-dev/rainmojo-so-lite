@@ -200,6 +200,12 @@ shops are laid out, now come straight after the opening of the prompt, where a g
 least likely to replace them with a generic image. Contract test **611 assertions**, passing
 here unchanged.
 
+Then `a57d0ef`: a camera at eye level that tips down toward seated people is described as
+tipping down, not as level. Indoor pictures with no horizon in view no longer mention a
+horizon in the prompt, which could invite a window or a skyline; they say "eye-level line".
+The camera-at-eye-height sentence names only the people standing on the camera's own floor.
+Contract test **615 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
