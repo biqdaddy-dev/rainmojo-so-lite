@@ -1107,14 +1107,17 @@ findings reproducer at 0 of 14. On the client briefs prompts are unchanged and t
 added, both the collisions the sweep saw: papayiw's pen "across the lower right of the notebook"
 and drivehub's terminal canopy, which the quiet area is described around.
 
-FORTY-SECOND PORT, `3c7dab3` to `8ef6916`, same version, one commit on `3d18662`. The owner
+FORTY-SECOND PORT, `3c7dab3` to `a8ec844`, same version, one commit on `3d18662`. The owner
 decided, as relayed by the full edition, that a config naming no `target_model` sends its
 exclusions inline: the sweep found that none of the 8 client configs sets one, and the hosts they
 run on draw with gpt-image, which has no negative field, so production was losing every exclusion
 there. In the shared module `compile_spec` now falls back to `inline_constraints`, and a drawing's
 closing medium line comes after the Constraints block, where an inline block had taken the last
-line from it. The image-spec files are byte-identical to `8ef6916`, the review example unchanged
-at 82; 953 assertions passing, as on the full edition's export.
+line from it. Then `a8ec844`: a registry that cannot be read is named as the cause, rather than
+reported as a model it does not list; here, with the registry file moved away, the error names
+its path. The image-spec files are byte-identical to `a8ec844`, the review example unchanged at
+82; 954 assertions passing, as on the full edition's export. The port of `8ef6916` alone,
+`2a4c70b`, was never pushed and is folded in.
 
 Mirrored by hand in this edition's own files: `compile_specs` warns with the new text and falls
 back to `inline_constraints`, and the selftest expects that target, an empty `negative_prompt`

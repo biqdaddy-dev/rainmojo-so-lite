@@ -652,7 +652,14 @@ def target_model_policy(config: dict[str, Any]) -> dict[str, Any]:
     name = _text(policy_from_config(config)["spec"].get("target_model"))
     if not name:
         return {}
-    entry = model_registry().get(name)
+    registry = model_registry()
+    if not registry:
+        # A missing or unreadable file is not an unknown model (the sweep session).
+        raise ValueError(
+            f"images.spec.target_model is {name!r}, but {MODEL_REGISTRY_PATH} could not be "
+            "read or lists no models. Restore the registry file beside the module."
+        )
+    entry = registry.get(name)
     if not isinstance(entry, dict):
         raise ValueError(
             f"images.spec.target_model {name!r} is not in image-model-registry.json. "

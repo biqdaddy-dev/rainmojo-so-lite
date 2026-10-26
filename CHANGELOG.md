@@ -314,10 +314,11 @@ so they were dropped; the model's own setting now decides, and a brief that name
 warned. The quiet-area warning now also catches a thing placed beside something that sits in the
 quiet area. Contract test **951 assertions**, passing here unchanged.
 
-Then `8ef6916`: when a brief's settings do not name the image model, the things to keep out of
+Then `8ef6916` and `a8ec844`: when a brief's settings do not name the image model, the things to keep out of
 the picture are now written into the prompt itself, which is what the image model on Codex and
 ChatGPT needs, so they are no longer lost. Briefs for Gemini or FLUX should name their model.
-Contract test **953 assertions**, passing here unchanged.
+A missing model list is now named as the cause. Contract test **954 assertions**, passing here
+unchanged.
 
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch

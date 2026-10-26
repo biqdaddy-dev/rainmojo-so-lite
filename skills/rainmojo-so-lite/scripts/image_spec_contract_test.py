@@ -3283,6 +3283,16 @@ _gem = copy.deepcopy(DEFAULTS)
 _gem["images"]["spec"]["target_model"] = "gemini-image"
 check("a Gemini client describes the positive state only", image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, _gem, "")["target"] == "none")
 check("with neither set, the fallback is inline (owner decision)", image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS, "")["target"] == "inline_constraints")
+_saved_registry = image_spec.MODEL_REGISTRY_PATH
+image_spec.MODEL_REGISTRY_PATH = _saved_registry.with_name("missing-registry.json")
+try:
+    image_spec.target_model_policy(_gpt)
+    _registry_error = ""
+except ValueError as exc:
+    _registry_error = str(exc)
+finally:
+    image_spec.MODEL_REGISTRY_PATH = _saved_registry
+check("a registry that cannot be read is named as the cause, not the model", "could not be read" in _registry_error and "is not in" not in _registry_error, _registry_error)
 check("an explicit target still wins", image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, _gpt, "none")["target"] == "none")
 
 print("C15 a thin client config still has a gate")
