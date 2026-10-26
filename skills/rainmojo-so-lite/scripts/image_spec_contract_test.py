@@ -3317,6 +3317,28 @@ check("a hanging projector is ratio-ready", image_spec.ratio_ready({"support": {
 check("a wide platform people stand on is not", not image_spec.ratio_ready({"support": {"kind": "stands_on", "by": "the hall floor"}, "height_m": 1.1, "width_m": 6.1}, False))
 check("nor a row of desks", not image_spec.ratio_ready({"support": {"kind": "stands_on", "by": "the floor"}, "height_m": 0.75, "width_m": 1.2, "count": 6}, False))
 
+print("C76 a restrictive palette contradicted inside the spec is warned")
+# rangsarn: "plain spines of different heights, colours and thicknesses" beside "one amber wash only".
+_narrow = copy.deepcopy(EXAMPLE)
+_narrow["style"]["color_palette"] = "one amber wash only, on cream"
+_narrow["location"]["locale_details"] = list(_narrow["location"].get("locale_details", [])) + [
+    "the books on the shelf have plain spines of different heights, colours and thicknesses"
+]
+_last = f"location.locale_details[{len(_narrow['location']['locale_details']) - 1}]"
+_narrow_conf = image_spec.palette_conflicts(_narrow)
+check("a field asking for many colours under a restrictive palette is warned", any(c.startswith(_last) and "colours" in c for c in _narrow_conf), str(_narrow_conf))
+check("the warning reaches validate", any("limits the colours" in w for w in image_spec.validate_spec(_narrow, WIDTH, HEIGHT, DEFAULTS)[1]))
+_named = copy.deepcopy(_narrow)
+_named["location"]["locale_details"][-1] = "a teal blanket over the chair"
+check("and so is a named colour the palette does not hold", any(c.startswith(_last) and "teal" in c for c in image_spec.palette_conflicts(_named)))
+_inside = copy.deepcopy(_narrow)
+_inside["location"]["locale_details"][-1] = "an amber wool blanket over the chair"
+check("a colour inside the palette is not", not any(c.startswith(_last) for c in image_spec.palette_conflicts(_inside)))
+_charcoal = copy.deepcopy(EXAMPLE)
+_charcoal["style"]["color_palette"] = "warm oak desk, charcoal and off-white clothing"
+check("a photograph's charcoal suit is not a monochrome drawing", not image_spec.restrictive_palette(_charcoal))
+check("a palette that describes restricts nothing", not image_spec.restrictive_palette(EXAMPLE) and not image_spec.palette_conflicts(EXAMPLE))
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

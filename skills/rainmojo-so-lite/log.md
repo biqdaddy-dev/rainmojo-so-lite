@@ -1169,6 +1169,29 @@ green at 70, the selftest unchanged, since its fixture's reference has no palett
 corpus identical to a clean export of `f6c4ea9`, 17 of 20 clean, 21, 2, 4, the findings
 reproducer at 0 of 14; no client brief carries a style reference, so the corpus does not move.
 
+FORTY-FIFTH PORT, `f6c4ea9` to `096e3d2`, same version, one commit on `5b910e9`. A palette that
+restricts, a drawn monochrome look or one that says "only", "limited to" or "duotone", now warns
+on any field that asks for several colours or names one the palette does not hold
+(`restrictive_palette`, `palette_conflicts`): in rangsarn's interior, coloured book spines beat
+one amber wash in every arm. The image-spec files are byte-identical to `096e3d2`, the review
+example unchanged at 82; 966 assertions passing, as on the full edition's export.
+
+`a8b818c`'s guidance that a style reference is a subject-free crop of approved art, never a full
+master, lives in the full edition's seo-image-production SKILL. This edition's SKILL.md has no
+such section, but since the forty-third port it tells the host to attach style references, so the
+advice belongs beside it: written as its own paragraph before the viewpoint advice, in lite's
+words. It is an observed result, 6 of 6 scenes leaking a master's subject against 0 of 3 with a
+crop, not a rule the compiler enforces, so T4 has nothing to pin.
+
+Checked on the shipped example: its own palette does not restrict, so it is not warned; with "warm
+neutrals only: sand, cream, walnut" the shelving's sage green and the pharmacist's navy are
+flagged, as they should be. One small finding, reported upstream: `palette_conflicts` does not use
+the exemption `decolour` gained at `6f20657`, so "iced green tea" is flagged as asking for green
+and "a can of Red Bull" for red. It reaches only a restrictive palette, which no client brief
+has. Regression 4 of 4, T4 green at 70, the selftest unchanged. Battery and corpus identical to a
+clean export of `096e3d2`, 17 of 20 clean, 21, 2, 4, the findings reproducer at 0 of 14; the
+corpus does not move.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

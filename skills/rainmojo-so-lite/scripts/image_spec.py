@@ -515,6 +515,51 @@ STYLE_LOCK_OWN_PALETTE = (
 )
 
 
+RESTRICTIVE_PALETTE_RE = re.compile(r"\b(?:only|limited to|restricted to|duotone|two-tone)\b", re.I)
+MULTICOLOUR_RE = re.compile(
+    r"\b(?:(?:different|assorted|mixed|many|various|varied|bright|vivid|contrasting)\s+(?:[\w-]+,?\s+(?:and\s+)?){0,3}?colou?rs?|"
+    r"colou?rful|multi-?colou?red|rainbow|every colou?r|a (?:clean )?band of colou?r|each (?:a|in a) different colou?r)\b",
+    re.I,
+)
+
+
+def restrictive_palette(spec: dict[str, Any]) -> bool:
+    """Whether the palette limits the colours, rather than describing some."""
+    style = spec.get("style") if isinstance(spec.get("style"), dict) else {}
+    look_words = " ".join(_text(style.get(k)) for k in ("look", "color_palette"))
+    # Monochrome is a drawn style's word: "charcoal" or "graphite grey" in a
+    # photograph's palette describes a suit or a pencil, not the picture.
+    photographic = _text(spec.get("medium") or "photograph") in PHOTOGRAPHIC_MEDIA
+    monochrome = not photographic and bool(MONOCHROME_RE.search(look_words))
+    return monochrome or bool(RESTRICTIVE_PALETTE_RE.search(_text(style.get("color_palette"))))
+
+
+def palette_conflicts(spec: dict[str, Any]) -> list[str]:
+    """Fields that ask for colours a restrictive palette does not hold."""
+    if not restrictive_palette(spec):
+        return []
+    style = spec.get("style") if isinstance(spec.get("style"), dict) else {}
+    allowed = {w.lower() for w in re.findall(r"[a-z]+", " ".join(_text(style.get(k)) for k in ("look", "color_palette")).lower())}
+    location = spec.get("location") if isinstance(spec.get("location"), dict) else {}
+    fields = [(f"location.locale_details[{i}]", _text(d)) for i, d in enumerate(_list(location.get("locale_details")))]
+    for kind in ("objects", "subjects"):
+        for entity in _list(spec.get(kind)):
+            if isinstance(entity, dict):
+                for key in ("name", "material", "state", "wardrobe", "appearance"):
+                    if _text(entity.get(key)):
+                        fields.append((f"{kind[:-1]} {_text(entity.get('id'))}.{key}", _text(entity.get(key))))
+    found = []
+    for where, text in fields:
+        many = MULTICOLOUR_RE.search(text)
+        named = sorted({
+            m.group(0).lower() for m in re.finditer(r"\b(?:" + _COLOURS + r")\b", text, re.I)
+            if m.group(0).lower() not in allowed
+        })
+        if many or named:
+            found.append(f"{where}: " + (f"{many.group(0)!r}" if many else ", ".join(named)))
+    return found
+
+
 def spec_sets_palette(spec: dict[str, Any]) -> bool:
     """Whether the spec names its own colours: a palette, or a monochrome look."""
     style = spec.get("style") if isinstance(spec.get("style"), dict) else {}
@@ -2644,6 +2689,16 @@ def validate_spec(
     location_sources = [
         r for r in _list((location_reference or {}).get("sources")) if isinstance(r, dict)
     ] if isinstance(location_reference, dict) else []
+    conflicts = palette_conflicts(spec)
+    if conflicts:
+        warnings.append(
+            "style.color_palette limits the colours, but these fields ask for others: "
+            + "; ".join(conflicts[:6])
+            + ". A statement about the whole picture loses to the colours of the things in it "
+            "(rangsarn's interior: coloured book spines beat one amber wash in every arm), so "
+            "give each thing a colour inside the palette."
+        )
+
     style_ref = style_reference(spec)
     if style_ref:
         # Approved brand art or a lock sheet, checked as a likeness is (owner,

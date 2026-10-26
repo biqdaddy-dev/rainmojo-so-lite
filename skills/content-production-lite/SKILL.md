@@ -134,6 +134,12 @@ python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compi
      part of a thing that lies there ("the lower right of" a centred notebook), and
      warns more softly when the quiet area is described around the thing itself.
 
+   A style reference is a subject-free crop of approved art, never a full master.
+   A full master's subject leaks into the picture: lotus leaves from a brand
+   image's pond appeared in 6 of 6 generated scenes, and in 0 of 3 with a crop of
+   its empty wash. Keep frames and borders out of the crop unless the picture wants
+   them, and say in `style.reference.origin` what it was cut from.
+
    A viewpoint that must hold is written as something the camera sees, not as an
    instruction. An angle stated as an instruction failed 4 of 4 times; a near
    thing only that viewpoint can show held 2 of 2 (for a low lens, the underside
