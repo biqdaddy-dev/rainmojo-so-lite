@@ -243,6 +243,12 @@ people's eye level is now described, and checked, as seen from above, and a scen
 both just below and far below the lens describes each group as it is. Contract test **709
 assertions**, passing here unchanged.
 
+Then `ded0d5e`: when a brief says what each hand holds, the review checks each hand on its
+own, so a spoon and fork held the wrong way round is caught. A dish can say which shared
+dishes its food comes from, and the review checks it holds nothing else. A brief that puts the
+same thing both in someone's hand and on the table is warned, since the picture would show it
+twice. Contract test **754 assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

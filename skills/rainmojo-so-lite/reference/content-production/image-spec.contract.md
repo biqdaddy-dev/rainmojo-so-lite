@@ -125,6 +125,7 @@ distance and the conditioning rights, and are vouched for by the contract test a
 | Raised or lowered floor | `ground_height_m` | Never refused. It is relative to the camera's own floor and added to eye height and to an object's top, so a fighter on a 1.2 m ring and a spectator at ringside cross the horizon at different points on their bodies; it is negative for someone below that floor, such as vendors in a boat under the landing the camera stands on. | Getting it wrong is how a picture ends up with a fighter whose eye line matches a spectator's. |
 | Eye level | `camera.angle`, `height_m`, people's posture | `angle: eye_level` with the lens more than 0.35 m from the mean eye height of the people in frame, or 0.15 m when nobody in frame is standing. Seated eye height is 1.23 m on a chair and 0.78 m on the floor (`floor_seated`, `cross_legged`) for a 1.65 m adult (ANSUR II sitting eye height); the body's share scales with stature and a 0.45 m chair seat does not, so a seated 1.02 m child's eyes are at 0.93 m, not an adult's 1.23 m. A posture the geometry does not know is warned, because that person's eye line is then not checked. | Eye level is a height, and a seated eye line is the only one in a desk or restaurant scene. |
 | Hard light in diffuse weather | `lighting.key.quality`, `location.weather` | A hard key with overcast, rain, fog, mist, haze or snow in the weather, unless the weather also says the sky is clear or sunny ("a clear sunny morning, a light haze in the distant canopy" is hard sun). | An overcast sky is the light source, and it is the size of the sky. |
+| Said twice | a subject's `hands`, an object's `state` and `material` | Warns when an object's state names, as a single thing of its own, what a person's hands already hold ("a spoon and fork on each" beside hands holding a spoon and a fork). Plural stock ("a tray of empty cups") and a word used as a modifier ("the handpiece cable") do not count. | The generator draws it twice: run 05 and 06 put a third utensil on a plate. |
 | Head or person out of frame | `camera.height_m`, `horizon`, `focal_length_mm`, each person's `distance_m` | Warns when, with a level camera, the frame's top edge at the focus person's distance falls below the top of their head, and when any declared person lies wholly below or above the frame at their distance. With the horizon not visible, a level camera still puts the horizon row at the frame centre, so indoor scenes are checked too. | A level camera puts the horizon row at the lens height, so the horizon band and the frame height there fix what of the person is shown; a 0.86 m lens at a medium shot with the horizon in the middle cuts off the head while the shot type says waist up. |
 | Face distance | `camera.focal_length_mm`, nearest person's `distance_m` | The nearest person is closer than 0.9 m on any lens, or 1.0 m at 28 mm and 1.2 m at 20 mm. | The nose renders `(d + 0.10) / d` times the scale of the ears, set by distance alone; a long lens up close only crops into it, and a wide lens adds its own stretch toward the edges. |
 | Located imperfection | `realism.imperfections[]` | A photograph with fewer than two (the client's `min_imperfections`); an entry under four words is warned as too short to place. | An unplaced flaw is decoration. A placed one ("a scuff on the counter edge by the till") is what reads as a photograph rather than a render. |
@@ -172,6 +173,16 @@ refuse the brief:
 - **Scale is judged in real size.** Every scale question says to judge real sizes, not
   how large each looks at its distance: run 04 compared a near buyer with far shutters
   as drawn.
+- **Hands are asked one at a time.** When a hands field names both sides ("a spoon in
+  the right hand and a fork in the left"), each hand gets its own question from the
+  person's own side, with the picture side stated when the spec says which way they
+  face; a person with their back to the camera is told in the prompt that their own
+  right hand is on the right of the picture. "A utensil in each hand" passed a spoon and
+  fork held the wrong way round in rangsarn's run 05.
+- **Contents come from their source.** An object may declare `filled_from`, the ids it
+  takes its contents from; the prompt says it holds only what they provide and the
+  review asks it. Run 05 drew fried rice on plates served from three dishes that could
+  not make it.
 - **A child question is skipped only when its parent thing is absent.** When the parent
   fails on count or kind, every question below it is still answered: run 04 skipped the
   missing steam and serving spoons because the dish was on a plate, not in a bowl.

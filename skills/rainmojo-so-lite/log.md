@@ -748,6 +748,38 @@ level and a little above both of them and asked straight on of both; here the pr
 looks-down sentence for the vendor and the level sentence for the customer, and each person's
 viewpoint question agrees with the sentence that names them. Nothing new to report.
 
+TWENTY-NINTH PORT, `ded0d5e`, same version: hands one at a time, contents from their source,
+nothing said twice, from the owner's reading of rangsarn's run 05. When a hands field names
+both sides each hand is asked on its own, `q_<id>_hand_left` and `_right`, with the picture
+side from `facing()`, and a person facing away is told their own right hand is on the right
+of the picture; an object may declare `filled_from`, compiled into a prompt clause and a
+`q_<id>_contents` question, unknown ids refused; and an object whose state names, as a single
+thing of its own, what a hand holds is warned. The failure library has 24 classes, 11 open.
+Four files byte-identical, 754 assertions passing unchanged, the review example unchanged at
+80. Regression 4 of 4, T4 green; the lite docs say nothing about sides of the body. Battery and
+corpus identical to a clean export of `ded0d5e`, 16 of 19 clean, 21, 2, 4, every probe output
+unchanged since the last port. On the client briefs validation and warnings are unchanged, the
+held-thing warning fires on none, and only theklinique moves, as upstream says.
+
+Read rather than counted, theklinique's move is a false positive, and it is the corpus's only
+case. `facing()` reads its practitioner as facing away because her position says "leaning in
+from behind the head of the bed", which is where she stands; her pose is "shoulders square to
+the client face" and the brief's own composition puts "her masked face on the right third", so
+the camera sees her face. The prompt now tells the generator she has her back to the camera,
+and the two new hand questions name the picture sides a face-on picture would mirror, so a
+correct picture answers them no. The pattern is wider than this brief: `FACING_AWAY_RE` matches
+a bare "from behind" and "turned away" anywhere in position, pose, description or gaze, and of
+six ordinary phrases for a person facing the camera, five came out away: "looking out from
+behind the counter", "lit from behind by the shop window", "head turned away from the glare",
+"turned away from the shelves", "stepping out from behind the screen". A backlit pharmacist
+facing the lens, with a pen in one hand and a slip in the other, compiles "has their back to
+the camera". Reported upstream: the away words want the camera or lens as their object, "back
+to the camera", "facing away from the camera", "seen from behind", and a camera word should win
+over a bare "from behind". Smaller, also reported: `held_things` singularises by dropping a
+final s, so "reading glasses" becomes "glasse" and "scissors" "scissor", and a pair held and
+named again on the counter is not warned. The hand parser itself read eight phrasings right,
+both sides or none.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

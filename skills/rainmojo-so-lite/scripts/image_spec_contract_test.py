@@ -2502,6 +2502,74 @@ check(
     image_spec.camera_looks_down({"angle": "eye_level", "tilt": "level"}, {"above_head": True, "above_head_by_m": 0.1}) is False,
 )
 
+print("C57 run 05: one hand at a time, contents from their source, nothing said twice")
+# Three faults the owner found in rangsarn's run 05 that every reader missed.
+check(
+    "both phrasings of two hands are read",
+    image_spec.hand_items("a spoon in the right hand and a fork in the left") == {"right": "a spoon", "left": "a fork"}
+    and image_spec.hand_items("right hand holds a spoon, left hand holds a fork") == {"right": "a spoon", "left": "a fork"},
+)
+check("one hand's action is not split", image_spec.hand_items("both hands cup the bowl") == {})
+
+
+def diner(position):
+    spec = copy.deepcopy(EXAMPLE)
+    spec["subjects"][1].update({"hands": "a spoon in the right hand and a fork in the left", "position": position})
+    return spec
+
+
+away = diner("right of centre, nearer the camera, back to the camera")
+away_q = {q["id"]: q["question"] for q in image_spec.build_questions(away, image_spec.derive(away, WIDTH, HEIGHT))}
+check(
+    "each hand is asked on its own, from the person's side, with the picture side when they face away",
+    "right hand, which is on the right of the picture" in away_q.get("q_customer_hand_right", "")
+    and "left hand, which is on the left of the picture" in away_q.get("q_customer_hand_left", ""),
+    str({k: v for k, v in away_q.items() if "_hand_" in k}),
+)
+toward = diner("right of centre, facing the camera")
+toward_q = {q["id"]: q["question"] for q in image_spec.build_questions(toward, image_spec.derive(toward, WIDTH, HEIGHT))}
+check(
+    "and the sides swap for someone facing the camera",
+    "right hand, which is on the left of the picture" in toward_q.get("q_customer_hand_right", ""),
+    toward_q.get("q_customer_hand_right", ""),
+)
+away_text = image_spec.compile_spec(away, WIDTH, HEIGHT, DEFAULTS)["prompt"]
+check(
+    "the prompt binds hands to picture sides for someone with their back to the camera",
+    "own right hand is on the right of the picture" in away_text,
+)
+
+plates = copy.deepcopy(EXAMPLE)
+plates["objects"][1]["filled_from"] = ["counter"]
+plates_q = {q["id"]: q["question"] for q in image_spec.build_questions(plates, image_spec.derive(plates, WIDTH, HEIGHT))}
+check(
+    "a thing filled from declared sources is asked to hold only what they provide",
+    "hold only what could come from the counter" in plates_q.get("q_medicine_box_contents", ""),
+    plates_q.get("q_medicine_box_contents", "(none)"),
+)
+check(
+    "and the prompt says so",
+    "only what comes from the counter" in image_spec.compile_spec(plates, WIDTH, HEIGHT, DEFAULTS)["prompt"],
+)
+refuses("filled_from must name declared things", "filled_from 'nowhere' is not a known id",
+        lambda spec: spec["objects"][1].update({"filled_from": ["nowhere"]}))
+
+
+def doubled(state):
+    spec = diner("right of centre, nearer the camera")
+    spec["objects"][0]["state"] = state
+    return [w for w in image_spec.validate_spec(spec, WIDTH, HEIGHT, DEFAULTS)[1] if "draws it twice" in w]
+
+
+check(
+    "an object whose state names what a hand already holds is warned",
+    any('"spoon"' in w and '"fork"' in w for w in doubled("a spoon and fork laid on each place")),
+    str(doubled("a spoon and fork laid on each place")),
+)
+check("and one whose state does not is not", not doubled("wiped clean, with a glass jar of cotton buds at one end"))
+check("plural stock is not the held one drawn again", not doubled("a tray of clean spoons and forks at one end"))
+check("nor is a word used as a modifier", not doubled("a spoon rest and a fork holder at one end"))
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

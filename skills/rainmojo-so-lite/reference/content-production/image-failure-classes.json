@@ -375,6 +375,57 @@
       "prevention_effective": false,
       "note": "Observed in run 01 with a valid shot_type.",
       "status": "open"
+    },
+    {
+      "id": "F-hand-swap",
+      "symptom": "What each hand holds is swapped: a spoon left and a fork right where the spec says the reverse.",
+      "cause": "Left and right are the person's own, and a person facing away puts them on the picture's same sides; a question about both hands at once passes 'a utensil in each hand'.",
+      "found_by": "owner, rangsarn run 05 (family dinner)",
+      "prevention": [
+        "prompt binds hands to picture sides for a person with their back to the camera"
+      ],
+      "detection": [
+        "q_<id>_hand_<side>"
+      ],
+      "regression": [
+        "C57"
+      ],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
+    },
+    {
+      "id": "F-food-from-nowhere",
+      "symptom": "A plate or bowl holds food that none of the declared dishes could produce.",
+      "cause": "Nothing tied the containers' contents to their source.",
+      "found_by": "owner, rangsarn run 05 (fried rice from three shared dishes)",
+      "prevention": [
+        "filled_from on the container, carried into the prompt"
+      ],
+      "detection": [
+        "q_<id>_contents"
+      ],
+      "regression": [
+        "C57"
+      ],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
+    },
+    {
+      "id": "F-duplicated-by-contradiction",
+      "symptom": "An item is drawn twice, held in a hand and lying on a plate.",
+      "cause": "The spec named the same item in a subject's hands and in an object's state.",
+      "found_by": "owner, rangsarn run 05 and 06 (a third utensil on the father's plate)",
+      "prevention": [
+        "warning when an object's state or material names what a hand holds"
+      ],
+      "detection": [
+        "q_anomalies"
+      ],
+      "regression": [
+        "C57"
+      ],
+      "prevention_effective": "unmeasured",
+      "status": "closed"
     }
   ]
 }

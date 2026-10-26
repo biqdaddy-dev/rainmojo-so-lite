@@ -1054,6 +1054,78 @@ def listed_contents(name: str) -> tuple[str, list[str]]:
     return match.group("head").strip(), items
 
 
+# Which way a person faces, from the words the spec uses for it.
+FACING_AWAY_RE = re.compile(
+    r"\b(?:back (?:three-quarters )?to the (?:lens|camera)|facing away|seen from behind|"
+    r"from behind|back three-quarters|turned away)\b",
+    re.I,
+)
+FACING_CAMERA_RE = re.compile(
+    r"\b(?:facing the (?:lens|camera)|toward the (?:lens|camera)|towards the (?:lens|camera)|"
+    r"into the (?:lens|camera)|faces the (?:lens|camera))\b",
+    re.I,
+)
+_HAND_IN_SIDE = re.compile(
+    r"(?P<item>[a-z][\w' -]*?)\s+in\s+(?:the |her |his |their )?(?P<side>left|right)(?:\s+hand)?\b",
+    re.I,
+)
+_SIDE_HOLDS = re.compile(
+    r"\b(?P<side>left|right)\s+hand\s+(?:holds|holding|grips|gripping|has|with|carries|carrying)\s+"
+    r"(?P<item>[a-z][\w' -]*?)(?=,|;|\.|\s+and\b|\s+while\b|$)",
+    re.I,
+)
+# Words in a hands field that are about the hand, not about what it holds.
+_HAND_WORDS = {
+    "hand", "hands", "left", "right", "finger", "fingers", "thumb", "thumbs", "palm",
+    "palms", "wrist", "wrists", "hold", "holds", "holding", "held", "grip", "grips",
+    "gripping", "each", "both", "one", "two", "own", "lightly", "loosely", "firmly",
+    "rests", "resting",
+}
+
+
+def facing(subject: dict[str, Any]) -> str:
+    """'away', 'camera' or '' from what the spec says about this person."""
+    text = " ".join(_text(subject.get(k)) for k in ("position", "pose", "description", "gaze"))
+    if FACING_AWAY_RE.search(text):
+        return "away"
+    if FACING_CAMERA_RE.search(text):
+        return "camera"
+    return ""
+
+
+def hand_items(hands: str) -> dict[str, str]:
+    """What each hand holds, when the hands field names both sides."""
+    found: dict[str, str] = {}
+    for part in re.split(r",|;|\band\b|\bwhile\b", hands):
+        match = _HAND_IN_SIDE.search(part.strip())
+        if match:
+            item = re.sub(r"^(?:holds?|holding|grips?|with)\s+", "", match.group("item").strip(), flags=re.I)
+            found.setdefault(match.group("side").lower(), item)
+    for match in _SIDE_HOLDS.finditer(hands):
+        found.setdefault(match.group("side").lower(), match.group("item").strip())
+    return found if {"left", "right"} <= set(found) else {}
+
+
+_HOLD_VERB = re.compile(
+    r"\b(?:holds?|holding|grips?|gripping|carries|carrying|cradles?|cradling|clutch(?:es|ing)?)\s+"
+    r"(?:a |an |the |her |his |their |one |two )?(?P<item>[a-z][\w'-]*"
+    r"(?:\s(?!in\b|on\b|at\b|by\b|with\b|over\b|under\b|against\b|to\b|toward\b|towards\b|"
+    r"into\b|from\b|through\b|and\b|or\b|while\b)[a-z][\w'-]*){0,4})",
+    re.I,
+)
+
+
+def held_things(hands: str) -> set[str]:
+    """The nouns of what a hands field says is held: "a spoon", "the carton"."""
+    phrases = list(hand_items(hands).values()) + [m.group("item") for m in _HOLD_VERB.finditer(hands)]
+    nouns = set()
+    for phrase in phrases:
+        words = [w for w in re.findall(r"[a-z][a-z'-]+", phrase.lower()) if w not in _TRAIT_STOP]
+        if words and words[-1] not in _HAND_WORDS:
+            nouns.add(words[-1].rstrip("s") if words[-1].endswith("s") and not words[-1].endswith("ss") else words[-1])
+    return nouns
+
+
 def people_count(spec: dict[str, Any]) -> int:
     total = 0
     for subject in _list(spec.get("subjects")):
@@ -2243,6 +2315,43 @@ def validate_spec(
                 f"{many} copies; {what}."
             )
 
+    known_ids = {_text(entity.get("id")) for _, entity in _entities(spec)}
+    for obj in objects:
+        for ref in _list(obj.get("filled_from")):
+            if _text(ref) not in known_ids:
+                errors.append(
+                    f"object {_text(obj.get('id'))}: filled_from {ref!r} is not a known id."
+                )
+    # An item a hand holds and an object's state also names gets drawn twice: a
+    # plate's state said "a spoon and fork on each" while each person held them
+    # (rangsarn run 05).
+    for subject in subjects:
+        held = held_things(_text(subject.get("hands")))
+        if not held:
+            continue
+        for obj in objects:
+            own = _trait_words(" ".join(_text(obj.get(k)) for k in ("name", "short_name", "id")))
+            text = " ".join(_text(obj.get(k)) for k in ("state", "material")).lower()
+            # Only where the word is a single thing of its own: "the handpiece
+            # cable" is a cable, and "boxes" on a shelf or "a tray of empty cups"
+            # are stock, not the held one drawn again.
+            twice = sorted(
+                noun for noun in held - own
+                if re.search(
+                    r"\b" + re.escape(noun) + r"(?=\s*(?:[,.;]|$)|\s+(?:and|or|on|in|at|by|"
+                    r"with|laid|lying|resting|beside|next|placed|set)\b)",
+                    text,
+                )
+            )
+            if twice:
+                warnings.append(
+                    f"object {_text(obj.get('id'))}: its state names "
+                    + ", ".join(f'"{w}"' for w in twice)
+                    + f", which the hands of {_noun(subject)} already hold. If it is the same "
+                    "one, say it once, in the hands or on the object, or the generator draws it "
+                    "twice; if there are more of them, give the object their count."
+                )
+
     for value, eid, name in collisions(spec):
         errors.append(
             f"spec.must_not_show {value!r} forbids {name!r}, which the spec also puts in "
@@ -2667,6 +2776,15 @@ def build_clauses(
         add("subject", 1, f"{actor} {_text(subject.get('action'))}")
         if _text(subject.get("hands")):
             add("subject", 1, f"Hands of {noun}: {_text(subject['hands'])}")
+            if hand_items(_text(subject["hands"])) and facing(subject) == "away":
+                # Left and right are the person's own; with their back to the
+                # camera they fall on the same sides of the picture (run 05).
+                add(
+                    "subject",
+                    1,
+                    f"{_cap(noun)} has their back to the camera, so their own right hand is on "
+                    "the right of the picture and their left hand on the left",
+                )
         if _text(subject.get("pose")):
             add("subject", 2, f"Pose of {noun}: {_text(subject['pose'])}")
         if _text(subject.get("gaze")):
@@ -2700,6 +2818,17 @@ def build_clauses(
         kind = _text(support.get("kind"))
         line += f", {SUPPORT_PARTICIPLE.get(kind, kind.replace('_', ' '))} {by_name}"
         add("object", 1, line)
+        sources = [
+            _entity_name(spec, _text(eid)) for eid in _list(obj.get("filled_from")) if _text(eid)
+        ]
+        if sources:
+            # Plates held fried rice no shared dish could make (rangsarn run 05).
+            add(
+                "object",
+                1,
+                f"{_cap(_noun(obj))} {'hold' if count > 1 else 'holds'} only what comes from "
+                f"{_and_list(sources)}, and nothing else",
+            )
         if count > 1 and is_matched(obj):
             add(
                 "object",
@@ -3306,6 +3435,26 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 f"Do the hands of {noun} do this: {_text(subject['hands'])}?",
                 base,
             )
+            # "A utensil in each hand" passed a spoon and fork held the wrong way
+            # round (rangsarn run 05). Each hand is asked on its own, from the
+            # person's own side.
+            way = facing(subject)
+            for side, item in sorted(hand_items(_text(subject["hands"])).items()):
+                picture_side = (
+                    side if way == "away"
+                    else ("right" if side == "left" else "left") if way == "camera"
+                    else ""
+                )
+                where = (
+                    f", which is on the {picture_side} of the picture"
+                    if picture_side else ", whichever side of the picture that falls on"
+                )
+                add(
+                    f"{base}_hand_{side}",
+                    "anatomy",
+                    f"Does {noun} hold {item} in their own {side} hand{where}?",
+                    base,
+                )
             add(
                 f"{base}_hands_count",
                 "anatomy",
@@ -3389,6 +3538,17 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                 "expected": count,
             },
         )
+        sources = [
+            _entity_name(spec, _text(eid)) for eid in _list(obj.get("filled_from")) if _text(eid)
+        ]
+        if sources:
+            add(
+                f"{base}_contents",
+                "logic",
+                f"Does {noun} hold only what could come from {_and_list(sources)}, with no food "
+                "or other content that none of them could provide?",
+                base,
+            )
         for index, item in enumerate(contents, start=1):
             add(
                 f"{base}_holds_{index:02d}",
