@@ -2471,8 +2471,35 @@ check(
 )
 check(
     "one function decides both",
-    image_spec.camera_looks_down({"angle": "eye_level", "tilt": "down"}, {"above_head": True, "above_head_by_m": 2.0}) is False
+    image_spec.camera_looks_down({"angle": "eye_level", "tilt": "down"}, {"above_head": True, "above_head_by_m": 0.3}) is False
     and image_spec.camera_looks_down({"angle": "high", "tilt": "level"}, {"above_head": True, "above_head_by_m": 0.1}) is True,
+)
+
+print("C56 an eye-level label is the standing people's; a head far below is seen from above")
+# Found by the lite session porting 86cf0d1: a floor-seated vendor 0.74 m below
+# an eye-level lens was told "level and a little above the eyes".
+vendor56 = copy.deepcopy(EXAMPLE)
+vendor56["camera"].update({"focal_length_mm": 35, "shot_type": "medium_wide", "horizon": "not_visible"})
+vendor56["subjects"].append(dict(copy.deepcopy(EXAMPLE["subjects"][1]), id="vendor", short_name="vendor",
+                                 description="a vendor sitting on the floor", height_m=1.55, distance_m=3.0,
+                                 posture="floor_seated", plane="background"))
+check("the vendor scene is valid", not image_spec.validate_spec(vendor56, WIDTH, HEIGHT, DEFAULTS)[0],
+      str(image_spec.validate_spec(vendor56, WIDTH, HEIGHT, DEFAULTS)[0][:1]))
+text56, q56 = _viewpoint(vendor56)
+vendor_q = q56.get("q_viewpoint_vendor", {})
+check(
+    "the review asks whether she is seen from above",
+    vendor_q.get("measure", {}).get("expected") == "from_above",
+    str(vendor_q.get("question", "(none)"))[:120],
+)
+check(
+    "and the prompt says the camera looks down on her, not that it is a little above her eyes",
+    "higher than the vendor and looks down" in text56 and "a little above the eyes of the vendor" not in text56,
+    str([x for x in text56.split(". ") if "vendor" in x][:2]),
+)
+check(
+    "a head just below an eye-level lens is still seen straight on",
+    image_spec.camera_looks_down({"angle": "eye_level", "tilt": "level"}, {"above_head": True, "above_head_by_m": 0.1}) is False,
 )
 
 print("C15 a thin client config still has a gate")

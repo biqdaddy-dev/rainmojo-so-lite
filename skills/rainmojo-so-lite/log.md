@@ -729,6 +729,25 @@ her head barely visible. Both are false for that picture, and it is a common one
 the floor or in a boat with buyers standing. The eye-level veto would hold if it applied only
 within the clearance, so that more than 0.5 m above a head looks down whatever the angle says.
 
+TWENTY-EIGHTH PORT, `963cc7d`, same version: an eye-level label is the standing people's, and
+a head far below is seen from above. `camera_looks_down` returns true whenever the lens is more
+than 0.5 m above a head, whatever the angle, so the eye-level exemption holds only within that
+clearance; and the opening writes both sentences when a scene has both groups, where one
+looking-down person used to silence the other. Two files byte-identical, 709 assertions
+passing unchanged, the review example unchanged at 80. Regression 4 of 4, T4 green; no lite
+doc touches it. On the client briefs validation, warnings, prompts and questions are all
+byte-identical. Battery and corpus identical to a clean export of `963cc7d`, 16 of 19 clean,
+21, 2, 4, every probe output unchanged since the last port.
+
+Checked on the twenty-seventh port's own scene, the floor-seated vendor at 3.0 m in the
+midground: on `86cf0d1` the prompt calls the camera level and a little above her eyes and the
+question asks straight on; here the prompt says it is higher than her and looks down, and the
+question asks from above. And on a scene with both groups, a standing pharmacist, a customer
+on a stool 0.11 m below the lens and the vendor 0.64 m below it: `86cf0d1` called the camera
+level and a little above both of them and asked straight on of both; here the prompt writes the
+looks-down sentence for the vendor and the level sentence for the customer, and each person's
+viewpoint question agrees with the sentence that names them. Nothing new to report.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

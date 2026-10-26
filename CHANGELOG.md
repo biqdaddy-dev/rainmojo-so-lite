@@ -238,6 +238,11 @@ when the prompt said the camera is level with their face seen straight on; it as
 the face is seen nearly straight on, as the prompt does. Contract test **705 assertions**,
 passing here unchanged.
 
+Then `963cc7d`: someone sitting on the floor well below a camera held at the standing
+people's eye level is now described, and checked, as seen from above, and a scene with people
+both just below and far below the lens describes each group as it is. Contract test **709
+assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

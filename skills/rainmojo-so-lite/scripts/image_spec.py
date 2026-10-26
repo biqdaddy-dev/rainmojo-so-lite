@@ -2464,12 +2464,16 @@ def camera_looks_down(camera: dict[str, Any], crossing: dict[str, Any]) -> bool:
     """
     if not crossing.get("above_head"):
         return False
+    # Far enough above a head, the camera sees its top whatever the angle label:
+    # eye level is the standing people's, and a vendor sitting on the floor 0.74 m
+    # below the lens is seen from above (the lite session's finding on 86cf0d1).
+    if crossing.get("above_head_by_m", 0) > LOOKS_DOWN_CLEARANCE_M:
+        return True
     if _text(camera.get("angle")) == "eye_level":
         return False
     return (
         _text(camera.get("tilt")) in {"down", "straight_down"}
         or _text(camera.get("angle")) in HIGH_ANGLES
-        or crossing.get("above_head_by_m", 0) > LOOKS_DOWN_CLEARANCE_M
     )
 
 # Output order of the clause groups. The opening (medium, purpose, viewpoint,
@@ -2600,6 +2604,7 @@ def build_clauses(
         # of the head: the looks-down picture needs a tilt or real height, and never
         # sits beside an eye-level angle (rangsarn's audit, eval-t13).
         looking_down = [c for c in lowered if camera_looks_down(camera, c)]
+        just_above = [c for c in lowered if not camera_looks_down(camera, c)]
         if looking_down:
             names = _and_list([_entity_name(spec, c["id"]) for c in looking_down[:3]])
             add(
@@ -2608,8 +2613,8 @@ def build_clauses(
                 f"The camera is higher than {names} and looks down: the tops of the head and "
                 "shoulders are visible and the ground is seen spreading away behind them",
             )
-        else:
-            names = _and_list([_entity_name(spec, crossing["id"]) for crossing in lowered[:3]])
+        if just_above:
+            names = _and_list([_entity_name(spec, crossing["id"]) for crossing in just_above[:3]])
             line = (
                 "the horizon" if _text(camera.get("horizon")) in HORIZON_IN_FRAME
                 else "the eye-level line"
