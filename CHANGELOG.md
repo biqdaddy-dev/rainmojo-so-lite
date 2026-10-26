@@ -326,6 +326,11 @@ with each image and the guide says to attach them. Hanging things such as a proj
 scale are now sized against what is beside them. Contract test **957 assertions**, passing here
 unchanged.
 
+Then `f6c4ea9`: when a brief gives both a style reference image and its own colours, the
+picture now takes only the drawing style from the reference and the colours from the brief, and
+the brief is warned that the reference's own colours may still pull. Contract test **960
+assertions**, passing here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.

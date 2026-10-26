@@ -3169,13 +3169,29 @@ print("C71 a style reference, checked as a likeness is")
 _styled = copy.deepcopy(EXAMPLE)
 _styled["style"]["reference"] = {"path": "brand/ink-style-v2.png", "rights": "client_owned", "origin": "approved channel brand art v2"}
 check("a style reference with path, rights and origin is valid", not image_spec.validate_spec(_styled, WIDTH, HEIGHT, DEFAULTS)[0])
-check("the prompt takes its style, never its subject", image_spec.STYLE_LOCK in image_spec.compile_spec(_styled, WIDTH, HEIGHT, DEFAULTS)["prompt"])
+check(
+    "the prompt takes its style, never its subject (the example sets its own palette)",
+    image_spec.STYLE_LOCK_OWN_PALETTE in image_spec.compile_spec(_styled, WIDTH, HEIGHT, DEFAULTS)["prompt"],
+)
 check("and it is listed with the images the generator is fed", {"role": "style", "path": "brand/ink-style-v2.png", "rights": "client_owned"} in image_spec.conditioning_references(_styled))
 refuses("its origin is required", "style.reference.origin is required", lambda s: s["style"].update(reference={"path": "x.png", "rights": "client_owned"}))
 refuses("and its rights", "style.reference.rights must be one of", lambda s: s["style"].update(reference={"path": "x.png", "rights": "found online", "origin": "x"}))
 check("reference_only warns", any("reference_only" in w for w in image_spec.validate_spec(
     {**copy.deepcopy(EXAMPLE), "style": {**EXAMPLE["style"], "reference": {"path": "x.png", "rights": "reference_only", "origin": "lock sheet v1"}}},
     WIDTH, HEIGHT, DEFAULTS)[1]))
+_own = copy.deepcopy(_styled)
+_own["style"]["color_palette"] = "one amber wash on cream"
+_own_errors, _own_warn = image_spec.validate_spec(_own, WIDTH, HEIGHT, DEFAULTS)
+check(
+    "a spec with its own palette takes only line, texture and finish from the reference",
+    image_spec.STYLE_LOCK_OWN_PALETTE in image_spec.compile_spec(_own, WIDTH, HEIGHT, DEFAULTS)["prompt"]
+    and image_spec.STYLE_LOCK not in image_spec.compile_spec(_own, WIDTH, HEIGHT, DEFAULTS)["prompt"],
+)
+check("and is warned that the image still carries its colours", any("still carries its own colours" in w for w in _own_warn))
+_nopal = copy.deepcopy(_styled)
+_nopal["style"].pop("color_palette", None)
+check("without its own palette, the reference gives the palette too", image_spec.STYLE_LOCK in image_spec.compile_spec(_nopal, WIDTH, HEIGHT, DEFAULTS)["prompt"]
+      and not any("still carries" in w for w in image_spec.validate_spec(_nopal, WIDTH, HEIGHT, DEFAULTS)[1]))
 _plural = copy.deepcopy(_bowls)
 _plural["objects"][-1]["short_name"] = "bowls"
 check("a plural short name after Each takes 'of the'", "Each of the bowls is about a tenth as wide as the" in image_spec.compile_spec(_plural, WIDTH, HEIGHT, DEFAULTS)["prompt"])

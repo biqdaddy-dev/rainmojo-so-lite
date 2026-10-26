@@ -505,6 +505,21 @@ STYLE_LOCK = (
     "Draw it in the style of the style reference image, taking only its line, texture, "
     "palette and finish; the subject, layout and lettering all come from this description"
 )
+# When the spec sets its own palette, the more specific source wins: the
+# reference gives line, texture and finish, and the spec's colours stand alone.
+# The brand art's rose and teal beat "one amber wash" in every rangsarn arm.
+STYLE_LOCK_OWN_PALETTE = (
+    "Draw it in the style of the style reference image, taking only its line, texture "
+    "and finish; the colours, the subject, the layout and the lettering all come from "
+    "this description"
+)
+
+
+def spec_sets_palette(spec: dict[str, Any]) -> bool:
+    """Whether the spec names its own colours: a palette, or a monochrome look."""
+    style = spec.get("style") if isinstance(spec.get("style"), dict) else {}
+    look_words = " ".join(_text(style.get(k)) for k in ("look", "color_palette"))
+    return bool(_text(style.get("color_palette"))) or bool(MONOCHROME_RE.search(look_words))
 IDENTITY_LOCK = (
     "the face, bone structure, eye shape and colour, nose, mouth, jawline, skin "
     "tone and every identifying mark stay exactly as they are in the reference "
@@ -2647,6 +2662,13 @@ def validate_spec(
             )
         elif style_rights == "reference_only":
             warnings.append(f"spec.style.reference {_text(style_ref.get('path'))!r} {REFERENCE_ONLY_NOTE}")
+        if spec_sets_palette(spec):
+            warnings.append(
+                "spec.style.reference: the spec also sets its own colours, so the prompt takes "
+                "only line, texture and finish from the reference. The reference image still "
+                "carries its own colours; if they differ from the spec's, use a swatch in the "
+                "spec's palette, or drop the colour words."
+            )
     for subject in subjects:
         sid = _text(subject.get("id"))
         own = subject_reference(subject)
@@ -3829,7 +3851,7 @@ def build_clauses(
 
     # style, locale, invariants ----------------------------------------------
     if _text(style_reference(spec).get("path")):
-        add("style", 1, STYLE_LOCK)
+        add("style", 1, STYLE_LOCK_OWN_PALETTE if spec_sets_palette(spec) else STYLE_LOCK)
     for field in ("color_palette", "mood", "texture"):
         if _text(style.get(field)):
             add("style", 3, f"{field.replace('_', ' ').capitalize()}: {_text(style[field])}")

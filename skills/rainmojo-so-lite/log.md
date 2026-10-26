@@ -1156,6 +1156,19 @@ Regression 4 of 4. Battery and corpus identical to a clean export of `a1f19dc`, 
 questions returning, the whiteboard against the projector on ecc and the bag roll, scale and
 spirit house on rotkubkhao, as upstream says.
 
+FORTY-FOURTH PORT, `a1f19dc` to `f6c4ea9`, same version, one commit on `fb89da8`, shared files
+only. When a spec with a style reference also sets its own colours, a `color_palette` or a
+monochrome look, the style clause takes only line, texture and finish from the reference, and the
+spec is warned that the reference image still carries its own colours; in rangsarn's A/B the
+brand art's palette beat the spec's "one amber wash" in every interior arm. Three files
+byte-identical, the review example unchanged at 82; 960 assertions passing, as on the full
+edition's export. Checked both ways on the shipped example: with its palette the narrower clause
+and the warning, with the palette removed the full clause and no warning. The lite docs mention
+the style reference only as an image to attach, so nothing in them moves. Regression 4 of 4, T4
+green at 70, the selftest unchanged, since its fixture's reference has no palette. Battery and
+corpus identical to a clean export of `f6c4ea9`, 17 of 20 clean, 21, 2, 4, the findings
+reproducer at 0 of 14; no client brief carries a style reference, so the corpus does not move.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New
