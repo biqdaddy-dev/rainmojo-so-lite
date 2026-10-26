@@ -1123,10 +1123,10 @@ def compile_specs(
     # gpt-image clients lost their exclusions to a field it does not have.
     prompt_target = target or str(policy.get("prompt_target") or "")
     target_warning = (
-        "images.spec.target_model is not set, so exclusions go to negative_prompt. "
-        "Most current generators have no such field and drop it: set target_model to "
-        "the generator this host uses (openai-gpt-image on Codex and ChatGPT, "
-        "gemini-image on Gemini), or prompt_target explicitly."
+        "images.spec.target_model is not set, so exclusions go inline in the prompt, as "
+        "gpt-image on Codex and ChatGPT needs. On a Gemini or FLUX host, whose vendors "
+        "advise describing the positive state only, set target_model (gemini-image, flux), "
+        "or prompt_target explicitly."
         if not prompt_target and not image_spec.target_model_policy(config)
         else ""
     )
@@ -1175,7 +1175,7 @@ def compile_specs(
     return {
         "compiled_at": content_pipeline.now_iso(),
         "slug": slug,
-        "target": compiled_target or prompt_target or "negative_prompt",
+        "target": compiled_target or prompt_target or "inline_constraints",
         "compiled": compiled,
         "skipped": skipped,
         "package": str(package),

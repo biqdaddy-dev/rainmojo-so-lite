@@ -354,7 +354,7 @@ def run(image_format: str = "WEBP") -> None:
             any("target_model is not set" in w for w in entry["warnings"])
             for entry in compiled["compiled"]
         ), compiled["compiled"][0]["warnings"]
-        assert compiled["target"] == "negative_prompt", compiled["target"]
+        assert compiled["target"] == "inline_constraints", compiled["target"]
         manifest = content_pipeline.load_json(package / "image-manifest.json")
         for item in manifest["items"]:
             assert item["prompt"].startswith("A realistic editorial photograph"), (
@@ -362,8 +362,11 @@ def run(image_format: str = "WEBP") -> None:
             )
             assert "five fingers" in item["prompt"], item["prompt"][-120:]
             assert "contact shadow" in item["prompt"], item["prompt"][-120:]
-            assert not image_spec.negations(item["prompt"]), item["prompt"]
-            assert item["negative_prompt"], item["id"]
+            # Unset target: the exclusions go inline (owner decision, 2026-10-26),
+            # in a Constraints block after the scene, which stays free of negation.
+            assert not item["negative_prompt"] and "Constraints: no " in item["prompt"], item["id"]
+            scene = item["prompt"].split("Constraints:", 1)[0]
+            assert not image_spec.negations(scene), scene
             assert item["spec_compiled"]["questions"], item["id"]
             assert not image_spec.freshness_errors(item), item["id"]
 

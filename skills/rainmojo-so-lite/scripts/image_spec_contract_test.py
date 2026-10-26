@@ -221,11 +221,13 @@ for needle, label in (
     ("five fingers", "hands"),
 ):
     check(f"prompt states the {label}", needle in prompt, prompt[:200])
+negative = image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS, "negative_prompt")
 check(
     "the avoid list is separate for a model that takes one",
-    compiled["negative_prompt"] and "extra, missing or fused fingers" in compiled["negative_prompt"],
-    compiled["negative_prompt"][:120],
+    negative["negative_prompt"] and "extra, missing or fused fingers" in negative["negative_prompt"],
+    negative["negative_prompt"][:120],
 )
+check("unset, the exclusions go inline (owner decision)", compiled["target"] == "inline_constraints" and "Constraints: no " in compiled["prompt"])
 inline = image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS, "inline_constraints")
 check(
     "a model whose vendor prescribes inline exclusions gets a Constraints block",
@@ -262,8 +264,8 @@ refuses(
 )
 check(
     "exclusions still travel, through must_not_show",
-    "pills loose on the counter" in compiled["negative_prompt"],
-    compiled["negative_prompt"][:120],
+    "pills loose on the counter" in negative["negative_prompt"],
+    negative["negative_prompt"][:120],
 )
 check(
     "the negation detector reads the words that matter",
@@ -2752,6 +2754,11 @@ check(
     ink_prompt.rstrip(" .").endswith("drawn as black ink line art on cream paper with one warm wash, in that palette only"),
     ink_prompt[-160:],
 )
+check(
+    "and stays last after an inline Constraints block",
+    "Constraints: no " in ink_prompt and ink_prompt.index("Constraints: no ") < ink_prompt.index("Every part of the picture is drawn as"),
+    ink_prompt[-200:],
+)
 check("it carries no colour temperature in kelvin", not re.search(r"[0-9]+ ?K[.,; ]", ink_prompt), ink_prompt[:200])
 check("its light is described within the style's tones", "shown only in the tones of black ink line art" in ink_text)
 check("a colour fill is left out of a monochrome drawing", "Fill:" not in ink_text)
@@ -3275,7 +3282,7 @@ check("a gpt-image client compiles its exclusions inline", image_spec.compile_sp
 _gem = copy.deepcopy(DEFAULTS)
 _gem["images"]["spec"]["target_model"] = "gemini-image"
 check("a Gemini client describes the positive state only", image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, _gem, "")["target"] == "none")
-check("with neither set, the fallback is negative_prompt", image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS, "")["target"] == "negative_prompt")
+check("with neither set, the fallback is inline (owner decision)", image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS, "")["target"] == "inline_constraints")
 check("an explicit target still wins", image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, _gpt, "none")["target"] == "none")
 
 print("C15 a thin client config still has a gate")

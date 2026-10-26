@@ -1107,6 +1107,28 @@ findings reproducer at 0 of 14. On the client briefs prompts are unchanged and t
 added, both the collisions the sweep saw: papayiw's pen "across the lower right of the notebook"
 and drivehub's terminal canopy, which the quiet area is described around.
 
+FORTY-SECOND PORT, `3c7dab3` to `8ef6916`, same version, one commit on `3d18662`. The owner
+decided, as relayed by the full edition, that a config naming no `target_model` sends its
+exclusions inline: the sweep found that none of the 8 client configs sets one, and the hosts they
+run on draw with gpt-image, which has no negative field, so production was losing every exclusion
+there. In the shared module `compile_spec` now falls back to `inline_constraints`, and a drawing's
+closing medium line comes after the Constraints block, where an inline block had taken the last
+line from it. The image-spec files are byte-identical to `8ef6916`, the review example unchanged
+at 82; 953 assertions passing, as on the full edition's export.
+
+Mirrored by hand in this edition's own files: `compile_specs` warns with the new text and falls
+back to `inline_constraints`, and the selftest expects that target, an empty `negative_prompt`
+and "Constraints: no " in each prompt. This selftest also holds the scene description free of
+negation, a check the full edition's does not make, and an inline block puts "no" into every
+prompt; the rule is about the description, so the check now reads the prompt up to its
+Constraints block. On all 14 compilable client specs the scene part carries no negation. SKILL.md
+gains the line that an unset target goes inline and that a Gemini or FLUX host should name its
+model, and D11 pins it: the sentence is there, an unset config compiles inline with no negative
+prompt, and a named Gemini model keeps the exclusions out of the prompt. The fallback case and
+the selftest fail on the previous module and `image_production.py`. T4 is at 67 checks.
+Regression 4 of 4. Battery and corpus identical to a clean export of `8ef6916`, 17 of 20 clean,
+21, 2, 4, the findings reproducer at 0 of 14; every compilable client spec compiles inline.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

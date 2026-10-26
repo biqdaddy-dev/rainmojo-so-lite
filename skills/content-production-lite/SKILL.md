@@ -158,9 +158,12 @@ python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compi
      warning, above six tenths it is refused.
 
    Set `images.spec.target_model` to the generator in use. `image-model-registry.json`
-   then decides where exclusions go and what prompt length is worth sending. Most
-   current generators have no negative-prompt field at all, so an empty
-   `negative_prompt` is the normal result, not a failure.
+   then decides where exclusions go and what prompt length is worth sending. Left
+   unset, they go inline in the prompt, which is right for gpt-image on Codex and
+   ChatGPT; on a Gemini or FLUX host, name the model, since those vendors advise
+   describing the positive state only. Most current generators have no
+   negative-prompt field at all, so an empty `negative_prompt` is the normal
+   result, not a failure.
 4. Generate from the compiled prompt exactly as written, save the raw asset under
    `images/raw/`, approve it with `review-source`, then run `process`.
 5. Cut the optimized image into the review grid and open the blank review. A whole

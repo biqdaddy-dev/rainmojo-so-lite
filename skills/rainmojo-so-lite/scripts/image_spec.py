@@ -3920,7 +3920,10 @@ def compile_spec(
     spec_policy = policy["spec"]
     if not target and model.get("prompt_target"):
         target = _text(model["prompt_target"])
-    target = TARGET_ALIASES.get(target or "negative_prompt", target or "negative_prompt")
+    # Unset, the exclusions go inline: no client names its generator, and the
+    # hosts they run on (Codex, ChatGPT) draw with gpt-image, which has no
+    # negative field (owner decision, 2026-10-26).
+    target = TARGET_ALIASES.get(target or "inline_constraints", target or "inline_constraints")
     if target not in PROMPT_TARGETS:
         raise ValueError("target must be one of " + ", ".join(sorted(PROMPT_TARGETS)) + ".")
     derived = derive(spec, width, height)
@@ -3961,9 +3964,16 @@ def compile_spec(
     kept, dropped = _budget(clauses, max_words)
     order = {group: index for index, group in enumerate(GROUP_ORDER)}
     kept.sort(key=lambda clause: order.get(clause["group"], len(order)))
-    prompt = " ".join(clause["text"] for clause in kept)
+    # A drawing's medium is said last, after any inline Constraints block: said
+    # once at the opening it was lost in run 10, and an inline block appended
+    # after it took the last line away again (found making inline the default).
+    medium_last = [c for c in kept if c["group"] == "closing" and c["text"].startswith("Every part of the picture is drawn as")]
+    body = [c for c in kept if c not in medium_last]
+    prompt = " ".join(clause["text"] for clause in body)
     if constraints:
         prompt = f"{prompt} {constraints}"
+    if medium_last:
+        prompt = f"{prompt} " + " ".join(c["text"] for c in medium_last)
     if dropped:
         warnings.append(
             f"prompt was trimmed to the {max_words}-word budget; "

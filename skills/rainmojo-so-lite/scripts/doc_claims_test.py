@@ -471,6 +471,27 @@ check(
     gpt.get("target") == "inline_constraints" and not gpt["negative_prompt"].strip(),
     f"target {gpt.get('target')!r}, negative_prompt words {len(gpt['negative_prompt'].split())}",
 )
+# Left unset, they go inline (owner decision, 2026-10-26, the full edition's 8ef6916);
+# on a Gemini host, naming the model keeps them out of the prompt.
+check(
+    "the docs say an unset target sends the exclusions inline",
+    said("Left unset, they go inline in the prompt"),
+)
+unset = image_spec.compile_spec(copy.deepcopy(EXAMPLE), WIDTH, HEIGHT, CONFIG, CONFIG["images"]["spec"].get("prompt_target") or "")
+check(
+    "with no target_model the exclusions are inline, with no negative prompt",
+    unset.get("target") == "inline_constraints" and not unset["negative_prompt"].strip()
+    and "Constraints: no " in unset["prompt"],
+    f"target {unset.get('target')!r}, negative_prompt words {len(unset['negative_prompt'].split())}",
+)
+gemini_config = copy.deepcopy(CONFIG)
+gemini_config["images"]["spec"]["target_model"] = "gemini-image"
+gemini = image_spec.compile_spec(copy.deepcopy(EXAMPLE), WIDTH, HEIGHT, gemini_config, CONFIG["images"]["spec"].get("prompt_target") or "")
+check(
+    "and naming a Gemini model keeps them out of the prompt",
+    "Constraints:" not in gemini["prompt"],
+    f"target {gemini.get('target')!r}",
+)
 
 print("D6 the claims this edition once made and the code does not honour stay gone")
 for stale in (
