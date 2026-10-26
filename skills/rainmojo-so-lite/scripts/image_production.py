@@ -1273,6 +1273,101 @@ def write_review_crops(
     }
 
 
+def _file_config(config_path: str | Path | None, target_model: str | None) -> dict[str, Any]:
+    """Plugin defaults, an optional config merged over them, and the named generator."""
+    config = content_pipeline.load_json(image_spec.DEFAULTS_PATH)
+    if config_path:
+        config = content_pipeline.deep_merge(config, content_pipeline.load_json(Path(config_path)))
+    if target_model:
+        config.setdefault("images", {}).setdefault("spec", {})["target_model"] = target_model
+    return config
+
+
+def _cut_crops(image_path: Path, out_dir: Path, stem: str, grid: int, scale: float) -> list[Path]:
+    """The reviewer's grid of magnified crops, written as <stem>-r<row>c<col>.png."""
+    if grid < 1:
+        raise RuntimeError("images.plausibility.zoom_grid must be at least 1.")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for stale in sorted(out_dir.glob(f"{stem}-r*c*.png")):
+        stale.unlink()
+    written: list[Path] = []
+    with Image.open(image_path) as image:
+        image.load()
+        width, height = image.size
+        for row in range(grid):
+            for col in range(grid):
+                box = (
+                    int(col * width / grid),
+                    int(row * height / grid),
+                    int(min((col + 1) * width / grid, width)),
+                    int(min((row + 1) * height / grid, height)),
+                )
+                crop = image.crop(box)
+                if scale > 1.0:
+                    crop = crop.resize(
+                        (max(1, int(crop.width * scale)), max(1, int(crop.height * scale))),
+                        Image.LANCZOS,
+                    )
+                target = out_dir / f"{stem}-r{row + 1}c{col + 1}.png"
+                crop.save(target, format="PNG")
+                written.append(target)
+    return written
+
+
+def review_crops_file(
+    image_path: str | Path,
+    out_dir: str | Path,
+    config_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Cut one image file into the reviewer's crops, outside any article package."""
+    image_path = Path(image_path)
+    if not image_path.exists():
+        raise RuntimeError(f"image is missing: {image_path}")
+    plaus = image_spec.policy_from_config(_file_config(config_path, None))["plausibility"]
+    grid = int(plaus.get("zoom_grid", 3))
+    scale = float(plaus.get("crop_scale", 2.0))
+    written = _cut_crops(image_path, Path(out_dir), image_path.stem, grid, scale)
+    return {
+        "image": str(image_path),
+        "image_sha256": sha256_file(image_path),
+        "grid": grid,
+        "crop_scale": scale,
+        "crops": [str(path) for path in written],
+    }
+
+
+def review_template_file(
+    spec_path: str | Path,
+    width: int,
+    height: int,
+    target_model: str | None = None,
+    target: str | None = None,
+    config_path: str | Path | None = None,
+    image_path: str | Path | None = None,
+    image_id: str | None = None,
+) -> dict[str, Any]:
+    """The blank plausibility review for one spec file, outside any article package.
+
+    The spec is compiled exactly as compile-spec-file compiles it, so the
+    questions are the ones the generator's prompt was built with.
+    """
+    data = content_pipeline.load_json(Path(spec_path))
+    spec = data["spec"] if isinstance(data.get("spec"), dict) else data
+    config = _file_config(config_path, target_model)
+    result = image_spec.compile_spec(spec, width, height, config, target or "")
+    item = {
+        "id": image_id or Path(spec_path).stem,
+        "spec": spec,
+        "prompt": result["prompt"],
+        "negative_prompt": result["negative_prompt"],
+        "spec_compiled": image_spec.compile_record(spec, result, content_pipeline.now_iso()),
+    }
+    template = image_spec.review_template(item, config)
+    if image_path:
+        template["image_sha256"] = sha256_file(Path(image_path))
+    return template
+
+
 def compile_spec_file(
     spec_path: str | Path,
     width: int,
@@ -1289,11 +1384,7 @@ def compile_spec_file(
     """
     data = content_pipeline.load_json(Path(spec_path))
     spec = data["spec"] if isinstance(data.get("spec"), dict) else data
-    config = content_pipeline.load_json(image_spec.DEFAULTS_PATH)
-    if config_path:
-        config = content_pipeline.deep_merge(config, content_pipeline.load_json(Path(config_path)))
-    if target_model:
-        config.setdefault("images", {}).setdefault("spec", {})["target_model"] = target_model
+    config = _file_config(config_path, target_model)
     errors, warnings = image_spec.validate_spec(spec, width, height, config)
     report: dict[str, Any] = {"spec": str(spec_path), "valid": not errors, "errors": errors, "warnings": warnings}
     if errors:
@@ -1322,6 +1413,23 @@ def command_compile_spec_file(args: argparse.Namespace) -> int:
     else:
         print(text)
     return 0 if report["valid"] else 1
+
+
+def command_review_crops_file(args: argparse.Namespace) -> int:
+    print(json.dumps(review_crops_file(args.image, args.out_dir, args.config), ensure_ascii=False, indent=2))
+    return 0
+
+
+def command_review_template_file(args: argparse.Namespace) -> int:
+    template = review_template_file(
+        args.spec, args.width, args.height, args.target_model, args.target, args.config, args.image, args.image_id
+    )
+    text = json.dumps(template, ensure_ascii=False, indent=2)
+    if args.out:
+        Path(args.out).write_text(text + "\n", encoding="utf-8")
+    else:
+        print(text)
+    return 0
 
 
 def command_compile_spec(args: argparse.Namespace) -> int:
@@ -1460,6 +1568,30 @@ def build_parser() -> argparse.ArgumentParser:
     spec_file.add_argument("--config", help="A JSON config merged over the plugin defaults (its images section).")
     spec_file.add_argument("--out", help="Write the report here instead of printing it.")
     spec_file.set_defaults(func=command_compile_spec_file)
+
+    crops_file = sub.add_parser(
+        "review-crops-file",
+        help="Cut one image file into the reviewer's magnified crops, outside any article package.",
+    )
+    crops_file.add_argument("--image", required=True)
+    crops_file.add_argument("--out-dir", required=True)
+    crops_file.add_argument("--config", help="A JSON config merged over the plugin defaults (zoom_grid, crop_scale).")
+    crops_file.set_defaults(func=command_review_crops_file)
+
+    review_file = sub.add_parser(
+        "review-template-file",
+        help="Write the blank review for one spec file, compiled as compile-spec-file compiles it.",
+    )
+    review_file.add_argument("--spec", required=True)
+    review_file.add_argument("--width", type=int, required=True)
+    review_file.add_argument("--height", type=int, required=True)
+    review_file.add_argument("--target-model")
+    review_file.add_argument("--target", choices=sorted(image_spec.PROMPT_TARGETS | set(image_spec.TARGET_ALIASES)))
+    review_file.add_argument("--config")
+    review_file.add_argument("--image", help="The generated image, to record its sha256 in the review.")
+    review_file.add_argument("--image-id", help="The id to write into the review; defaults to the spec file's name.")
+    review_file.add_argument("--out")
+    review_file.set_defaults(func=command_review_template_file)
 
     review_template = sub.add_parser(
         "review-template",

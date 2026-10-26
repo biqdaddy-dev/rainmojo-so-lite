@@ -4,21 +4,31 @@
 
 ### สิ่งที่ผู้ใช้จะเห็น
 
-- ทุกภาพถ่ายต้องระบุ "ตำหนิที่วางไว้" อย่างน้อยสองจุด เช่น รอยขูดที่ขอบเคาน์เตอร์ตรงใกล้แคชเชียร์
-  หรือผมหลุดลงมาข้างขวา เพราะสิ่งนี้คือสิ่งที่ทำให้ภาพอ่านได้ว่าเป็นภาพถ่าย ไม่ใช่ภาพเรนเดอร์
-- บรีฟห้ามใช้คำเปรียบเทียบอย่าง "มือเหมือนนักเปียโน" แล้ว เพราะโมเดลจะวาดสิ่งที่เอาไปเปรียบ
-  เปียโนจะโผล่เข้ามาในภาพจริง ๆ
-- เพิ่มตัวอย่างบรีฟสำหรับสถานที่จริงเต็มรูปแบบ (`image-spec.real-place.example.json`)
-  และ `spec-template --reference` สร้างโครงบล็อกอ้างอิงสถานที่ให้ ซึ่งก่อนหน้านี้ไม่มีใครรู้ว่ามีอยู่
-- รูปที่ใช้เป็นต้นแบบป้อนโมเดลต้องมีแถวสิทธิ์ของตัวเองทีละภาพ รวมถึงรูปใบหน้าคนที่ใช้อ้างอิง
+- ทุกภาพที่ปลั๊กอินสร้างต้องมีใบสั่งถ่ายภาพที่ระบุระยะ ขนาด กล้อง แสง และผู้คนตามจริง
+  ระบบตรวจว่าใบสั่งขัดกับฟิสิกส์หรือเหตุผลหรือไม่ก่อนสร้าง แล้วเขียน prompt ให้เองจากใบสั่งนั้น
+- ก่อนนำภาพไปใช้ ผู้ตรวจต้องตอบคำถามทีละข้อจากภาพที่ขยายเป็นช่อง ๆ เช่น สัดส่วนกับคน มือ เงา
+  สิ่งที่ค้ำวัตถุ เส้นขอบฟ้า และสิ่งผิดปกติอื่น ภาพที่ตอบว่าไม่ผ่านต้องสร้างใหม่หรือแก้ใบสั่ง
+- สิ่งที่ห้ามมีในภาพและรูปอ้างอิง (สถานที่จริง หน้าคน สไตล์แบรนด์) ส่งถึงโมเดลสร้างภาพจริงแล้ว
+  รวมถึงบน Codex และ ChatGPT และลูกค้าที่ใช้ระบบของตัวเองเรียกตรวจและสร้าง prompt ทีละไฟล์ได้
 
 ### Under the hood
 
-`image_spec.py`, `image_spec_contract_test.py`, `image-spec.example.json` and the new
-`image-spec.real-place.example.json` are byte-identical to the full edition at `f632e00` on
-`feat/dp-014-image-plausibility`; `image_production.py` takes that commit's
-`spec-template --reference` flag. The contract test runs here unchanged at **169
-assertions** and `regression.py` is 3/3.
+This is the first release since 2.3.1: 2.4.0, 2.5.0 and 2.6.0 below were never tagged, and
+everything in them ships here. As shipped, `image_spec.py`, `image_spec_contract_test.py`,
+`image-spec.contract.md`, `image-spec.real-place.example.json`,
+`image-failure-classes.json` and `image-plausibility-review.example.json` are
+byte-identical to the full edition's `feat/dp-014-image-plausibility` at `ffb7cbe`. The
+contract test runs here unchanged at **977 assertions**, `regression.py` is 4 of 4, and
+`doc_claims_test.py`, which holds every behavioural claim in this edition's own docs to the
+code, has 76 checks. This edition's own `image_production.py`, `defaults.json`, selftest and
+SKILL.md carry two production fixes by hand: exclusions now reach the generator on every
+host, and recorded reference images reach it at all. It also gains `compile-spec-file`,
+`review-crops-file` and `review-template-file` for a client whose content runs through its
+own adapter.
+
+The paragraphs below record each port in the order it landed. The first, at `f632e00`, had a
+contract test of 169 assertions and `regression.py` at 3 of 3; `image_production.py` took
+that commit's `spec-template --reference` flag.
 
 `image-plausibility-review.example.json` is regenerated from this edition's own
 `defaults.json` and `review_template` and comes out byte-identical to the full edition's,
@@ -348,6 +358,11 @@ brief on its own, for a client whose articles run through their own pipeline, an
 prompt, the reference images to attach and the review questions. The guide adds that line-art
 and ink styles depend on the image model more than on the wording. Contract test **977
 assertions**, passing here unchanged.
+
+Then `01926a5` and `ffb7cbe`: `review-crops-file` and `review-template-file` cut the review
+crops and write the blank review from files, for a client on its own adapter, mirrored here by
+hand; a contract-test check is renamed. Contract test **977 assertions**, passing here
+unchanged.
 
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch

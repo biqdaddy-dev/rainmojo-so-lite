@@ -117,6 +117,12 @@ python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compi
 python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compile-spec-file --spec <spec.json> --width <px> --height <px> --target-model openai-gpt-image --out <report.json>
 ```
 
+   The review half works the same way for such a client: `review-crops-file --image
+   <generated.png> --out-dir <dir>` cuts the reviewer's magnified crops, and
+   `review-template-file` (the same arguments as `compile-spec-file`, plus `--image`
+   to record the image's sha256) writes the blank review with the questions the
+   prompt was compiled with.
+
    A contradiction stops the compile and names it: a horizon that disagrees with
    the camera tilt, a shot type that disagrees with the lens and the distance,
    shadows that disagree with the key light, an object with no support, a standing

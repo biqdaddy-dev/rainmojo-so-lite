@@ -18,10 +18,13 @@ and packaging, docs, infrastructure.
 - [2026-10-11] chore - v2.3.0 cross-host agent standard met: `.claude-plugin`, `.codex-plugin`, `gemini-extension.json` and the `platforms/` overlays built with agentpack.
 - [2026-10-13] fix - v2.3.1 repository moved to biqdaddy-dev: the manifests, the marketplace entry and the README install commands point at https://github.com/biqdaddy-dev/rainmojo-so-lite (DP-002).
 - [2026-10-25] feature - v2.4.0 image shot spec, physics and logic validation and the plausibility gate, ported from the full edition's DP-014 (DP-015, หมวด: image pipeline, ชม. แผน 5): every generated image now carries a shot spec with real distances, sizes, camera, one key light and a support for every object; `image_spec.py` validates the physics and logic of the brief, derives the geometry it implies (frame width, field of view, depth of field, apparent-size ratios, the fraction of each standing figure the horizon must cross), compiles it into the prompt and avoid list, and builds the reviewer's atomic questions. The prompt is never typed by hand: a hand-edited prompt or a spec changed after compilation is refused. New `image-model-registry.json` carries per-generator capability data so the compiler knows which models have a negative-prompt field at all. The 30-item plausibility rubric is ordered on measured failure prevalence (functional 58.7 per cent, anatomical 51.4, stylistic 39.0, physics 9.17) and asks the physics checks across pairs of entities, because generated frames are consistent object by object and inconsistent between objects.
-
+- [2026-10-25] feature - v2.5.0 realism checks on the image spec (DP-016, หมวด: image pipeline, ชม. แผน 3): a 25-case realism battery against a scene that validated cleanly moved the spec from 12 caught, 1 warned, 12 missed to 20 caught, 3 warned, 3 missed. `scale_anchor` is now checked against the person it names, using the standard stature fractions of Drillis and Contini (1966); seated and kneeling figures get the eye line that `standing_people` had excluded them from, stated in head heights; the focus subject of a whole-subject shot must fit the frame in width as well as height; a clouded sky cannot cast a crisp shadow and a fill with the key's power and hardness is refused as a second key; the object load limit counts declared items; and `support.by` for `held_by` no longer accepts an object id, which was a plain bug with an error message that contradicted it.
+- [2026-10-26] chore - v2.6.0 re-port of image_spec.py from the full edition, restoring byte-parity (DP-016, หมวด: image pipeline, ชม. แผน 1): `image_spec.py` and `image_spec_contract_test.py` taken verbatim from `ad2e1ad` on the full edition's `feat/dp-014-image-plausibility`, after the main session reproduced every battery finding in its own tree and implemented all of them there. The file now carries this edition's realism fixes plus the full edition's reference block for real places, `ground_height_m` for raised subjects, `eye_line_people`, `fits_in_frame`, and the framing-against-angle question split. The contract test runs here unchanged at 135 assertions, so parity is proven rather than assumed, and the regenerated review example drops from 73 spec questions to 68.
 - [2026-10-26] chore - v2.7.0 re-port from f632e00, carrying the six findings this edition reported (DP-016, หมวด: image pipeline, ชม. แผน 1): `image_spec.py`, `image_spec_contract_test.py`, `image-spec.example.json` and the new `image-spec.real-place.example.json` taken byte-identical from the full edition, plus the `spec-template --reference` flag in `image_production.py`. The contract test runs here unchanged at 169 assertions and `regression.py` is 3/3. The regenerated review example comes out byte-identical to the full edition's while being built from this edition's own defaults and generator, and the contract test now asserts it against the compiler so it cannot drift again. Upstream carries all six findings, three of which were bugs that refused correct briefs, plus `spec.realism.imperfections` and four lint rules.
 
 ## [2026-10-26] chore - v2.7.0 re-port from f632e00 (DP-016)
+
+Closed with PR #6 (biqdaddy-dev/rainmojo-so-lite#6), shipping in v2.7.0. หมวด: image pipeline. Started 2026-10-25 (the v2.5.0 row), finished when PR #6 merges, which is the owner's call. Planned 5 hours across its three rows (3, 1 and 1); actual 7.8 hours of active work and 5300k tokens, measured from this session's transcript as the PR description states: gaps of ten minutes or less between events, and input, output and cache writes, a lower bound by one compaction call.
 
 The review loop ran twice: this edition ported `ad2e1ad`, proved parity, and reported six
 findings against it; the full edition fixed all six and this edition ported `f632e00` and
@@ -1249,6 +1252,28 @@ command does not exist and both fail. T4 is at 76 checks.
 Regression 4 of 4. Battery and corpus identical to a clean export of `9ac142c`, 17 of 20 clean,
 21, 2, 4, the findings reproducer at 0 of 14; the corpus output is unchanged since the last port.
 
+FORTY-NINTH PORT, `9ac142c` to `ffb7cbe`, same version, and the release paperwork for 2.7.0.
+Mirrored by hand, `01926a5`: `review-crops-file` cuts the reviewer's grid of magnified crops from
+an image file, named `<stem>-r<row>c<col>.png` with the image's sha256, and `review-template-file`
+compiles a spec exactly as `compile-spec-file` does and writes the blank review; the selftest
+cuts a fixture image and checks the review's questions are the compile's, and fails on the old
+`image_production.py`; SKILL.md gains the paragraph after the compile-spec-file block. Run by
+hand, the shipped example gives nine crops and a review of 82 questions carrying the same
+sha256. One small finding, reported upstream: `--image-id` is documented as the id written into
+the review, but `review_template()` writes no item id, so the option changes nothing in the
+output; both editions behave alike. Shared, `ffb7cbe` renames one C71 check; the contract test
+is byte-identical, 977 assertions.
+
+The release paperwork, checked against what the branch ships. The 2.7.0 user section had four
+bullets, describing only the first 2.7.0 port, and one of them, that each reference image needs a
+rights row of its own or is refused, was reversed by the owner's decision at `6b2a3d8`. No tag
+exists after v2.3.1, so 2.7.0 is the first release since and ships everything in 2.4.0 to 2.6.0
+too; the section now has three plain bullets for the whole of it, and the opening of Under the
+hood states the shipped state. In this log, DP-016's v2.5.0 and v2.6.0 rows sat in the body
+above their own detail entries instead of in Contents; they are moved there in date order, and
+the DP-015 and DP-016 detail entries now open with their closing record: category, start date,
+planned and actual hours, tokens, the PR and the version.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New
@@ -1258,8 +1283,6 @@ other verdict, because a validator that raises on a live spec gives the caller n
 all rather than a wrong one. This was prompted by the sweep session hitting two live states
 that crashed the validator, and it goes in before those fixes land rather than after, so the
 battery can see them when they arrive.
-
-- [2026-10-26] chore - v2.6.0 re-port of image_spec.py from the full edition, restoring byte-parity (DP-016, หมวด: image pipeline, ชม. แผน 1): `image_spec.py` and `image_spec_contract_test.py` taken verbatim from `ad2e1ad` on the full edition's `feat/dp-014-image-plausibility`, after the main session reproduced every battery finding in its own tree and implemented all of them there. The file now carries this edition's realism fixes plus the full edition's reference block for real places, `ground_height_m` for raised subjects, `eye_line_people`, `fits_in_frame`, and the framing-against-angle question split. The contract test runs here unchanged at 135 assertions, so parity is proven rather than assumed, and the regenerated review example drops from 73 spec questions to 68.
 
 ## [2026-10-26] chore - v2.6.0 re-port from the full edition (DP-016)
 
@@ -1299,8 +1322,6 @@ where upstream uses a symmetric tolerance; and it resolved the anchor's referent
 declining to check when several people were in frame and none was named. Nothing it caught
 is lost, and the differences are recorded in the report to the main session rather than
 re-litigated here.
-
-- [2026-10-25] feature - v2.5.0 realism checks on the image spec (DP-016, หมวด: image pipeline, ชม. แผน 3): a 25-case realism battery against a scene that validated cleanly moved the spec from 12 caught, 1 warned, 12 missed to 20 caught, 3 warned, 3 missed. `scale_anchor` is now checked against the person it names, using the standard stature fractions of Drillis and Contini (1966); seated and kneeling figures get the eye line that `standing_people` had excluded them from, stated in head heights; the focus subject of a whole-subject shot must fit the frame in width as well as height; a clouded sky cannot cast a crisp shadow and a fill with the key's power and hardness is refused as a second key; the object load limit counts declared items; and `support.by` for `held_by` no longer accepts an object id, which was a plain bug with an error message that contradicted it.
 
 ## [2026-10-25] feature - v2.5.0 realism checks on the image spec (DP-016)
 
@@ -1371,6 +1392,8 @@ are unchanged: root `plugin.json` version drift, and `images.spec.target_model` 
 `prompt_target` through `compile-spec`.
 
 ## [2026-10-25] feature - v2.4.0 image shot spec and plausibility gate (DP-015)
+
+Closed with PR #6 (biqdaddy-dev/rainmojo-so-lite#6), shipping in v2.7.0, together with DP-016. หมวด: image pipeline. Started 2026-10-25, finished when PR #6 merges, which is the owner's call. Planned 5 hours; actual 0.3 hours and 270k tokens, measured as for DP-016.
 
 Trigger: the owner asked for the prompt and image logic of every rainmojo-so edition to
 check people and objects for physical and logical correctness, with camera angle and

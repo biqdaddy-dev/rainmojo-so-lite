@@ -3194,7 +3194,7 @@ check(
 check("and is warned that the image still carries its colours", any("still carries its own colours" in w for w in _own_warn))
 _nopal = copy.deepcopy(_styled)
 _nopal["style"].pop("color_palette", None)
-check("without its own palette, the reference gives the palette too", image_spec.STYLE_LOCK in image_spec.compile_spec(_nopal, WIDTH, HEIGHT, DEFAULTS)["prompt"]
+check("without its own palette, the style reference also sets the palette", image_spec.STYLE_LOCK in image_spec.compile_spec(_nopal, WIDTH, HEIGHT, DEFAULTS)["prompt"]
       and not any("still carries" in w for w in image_spec.validate_spec(_nopal, WIDTH, HEIGHT, DEFAULTS)[1]))
 _plural = copy.deepcopy(_bowls)
 _plural["objects"][-1]["short_name"] = "bowls"

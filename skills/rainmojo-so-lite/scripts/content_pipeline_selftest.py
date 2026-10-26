@@ -531,6 +531,21 @@ def check_compile_spec_file() -> None:
         bad.write_text(json.dumps(broken), encoding="utf-8")
         refused = image_production.compile_spec_file(bad, 1200, 630)
         assert not refused["valid"] and refused["errors"] and "prompt" not in refused, refused
+        # The review half, from files.
+        picture = Path(tmp) / "cover-01.png"
+        Image.new("RGB", (1200, 630), (90, 60, 40)).save(picture)
+        crops = image_production.review_crops_file(picture, Path(tmp) / "crops")
+        assert len(crops["crops"]) == crops["grid"] ** 2 and crops["image_sha256"], crops
+        assert all(Path(c).name.startswith("cover-01-r") for c in crops["crops"]), crops["crops"][:2]
+        with Image.open(crops["crops"][0]) as first:
+            assert first.width == int((1200 / crops["grid"]) * crops["crop_scale"]), first.size
+        review = image_production.review_template_file(
+            example, 1200, 630, "openai-gpt-image", image_path=picture
+        )
+        assert set(review["spec_answers"]) == {q["id"] for q in report["questions"]}, (
+            "questions differ from the compile"
+        )
+        assert review["image_sha256"] == crops["image_sha256"]
 
 
 def main() -> None:
