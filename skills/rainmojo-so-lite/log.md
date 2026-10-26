@@ -860,6 +860,34 @@ does not open with a verb. Also still open: `FACING_AWAY_RE` keeps a bare "turne
 "head turned away from the glare" and "turned away from the shelves" still read as a back to
 the camera.
 
+THIRTY-THIRD PORT, `0330de1`, same version: backs to the camera, whole hand clauses, and whose
+hand in a group, three defects the sweep found in `00bf8dc`'s per-hand questions. The facing
+pattern takes the plural and "seen, viewed or shot from behind"; a hand clause runs from one
+side word or named member to the next, so an "and" inside it stays, and one that names a finger
+is asked as "whose"; a group's question names the member the hands text names. Three files
+byte-identical, the review example regenerated here and byte-identical at 82 questions. 784
+assertions passing unchanged, regression 4 of 4, T4 green. Battery and corpus identical to a
+clean export of `0330de1`, 16 of 19 clean, 21, 2, 4, probe 2 with nothing missing.
+
+On the client briefs validation is unchanged and every per-hand question now reads as a whole
+sentence, as upstream says: bangmod's "whose thumb and index finger pinch the edge of a clear
+aligner tray", biqdaddy's "that lies open and flat beside the sheet", "the man among the
+waiting visitors". Two prompts gain the side-binding sentence, the Bangla visitors and the
+pulseth walkers, and both are true: their briefs say "side by side with their backs to the
+camera".
+
+Findings, reported upstream. The side-binding sentence is written for one person, so for these
+two groups it reaches the generator as "The waiting visitors has his back to the camera, so his
+own right hand is on the right of the picture", for a man and a woman, and "The two walkers has
+her back to the camera"; a group needs "have their backs" and "their own right hands". The
+clause pronoun is now the first her, his or their in the clause, which undoes the possessive fix
+for a clause that does not open with one: "the left hand rests on her shoulder, his right hand
+holds the stethoscope to her back" asks of one man "her own left" and "his own right". The
+person-level `possessive()` reads him right and would be the better fallback. Still open from
+the last two ports: a verbless clause asks "that in her lap?", "that on the steering wheel?",
+"that holding a coffee cup?", "that flat on her cheek?"; and a bare "turned away" still means a
+back to the camera, so "head turned away from the glare" does.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

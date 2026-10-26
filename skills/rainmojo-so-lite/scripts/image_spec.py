@@ -1059,8 +1059,8 @@ FACING_AWAY_RE = re.compile(
     # "from behind the head of the bed" is where someone stands, not which way
     # they face (the lite session's finding on theklinique), so bare "from
     # behind" does not count.
-    r"\b(?:back (?:three-quarters )?to the (?:lens|camera)|facing away|seen from behind|"
-    r"back three-quarters|turned away)\b",
+    r"\b(?:backs? (?:three-quarters )?to the (?:lens|camera)|facing away|"
+    r"(?:seen|viewed|shot) from behind|backs? three-quarters|turned away)\b",
     re.I,
 )
 FACING_CAMERA_RE = re.compile(
@@ -1163,6 +1163,83 @@ _SIDE_CLAUSE = re.compile(
 )
 
 
+_MEMBER = r"(?:the (?:man|woman|boy|girl|child|older one|younger one|other)|he|she)"
+_BODY_PART = re.compile(
+    r"^(?:thumb|thumbs|index finger|middle finger|ring finger|little finger|fingers|"
+    r"fingertips?|palm|knuckles)\b",
+    re.I,
+)
+_SIDE_LEAD = re.compile(
+    r"^(?:(?P<member>" + _MEMBER + r")(?:'s)?\s+)?(?:(?:the|her|his|their)\s+)?"
+    r"(?P<side>left|right)(?:\s+hand)?\s+(?P<rest>.+)$",
+    re.I,
+)
+_SIDE_TAIL = re.compile(
+    r"^(?:(?P<member>" + _MEMBER + r")\s+)?(?:(?:holds?|holding|carr(?:ies|ying)|grips?|gripping|has|with)\s+)?"
+    r"(?P<item>.+?)\s+in\s+(?:the |her |his |their )?(?P<side>left|right)(?:\s+hand)?\s*$",
+    re.I,
+)
+
+
+def _hand_segments(hands: str) -> list[str]:
+    """Clauses that each begin at a side word or a named member.
+
+    "and" splits only where a new side or member begins, or right after a side
+    word ("a spoon in the right hand and a fork in the left"); inside a clause it
+    stays ("between thumb and two fingers").
+    """
+    out: list[str] = []
+    for piece in re.split(r",|;|\bwhile\b", hands):
+        piece = piece.strip(" .")
+        if not piece:
+            continue
+        cuts = [0]
+        for match in re.finditer(r"\s+and\s+", piece):
+            before = piece[: match.start()]
+            after = piece[match.end():]
+            if re.match(r"(?:(?:the|her|his|their)\s+)?(?:left|right)\b|" + _MEMBER + r"\b", after, re.I) or re.search(
+                r"\b(?:left|right)(?:\s+hand)?$", before, re.I
+            ):
+                cuts.append(match.start())
+                cuts.append(match.end())
+        cuts.append(len(piece))
+        for start, end in zip(cuts[0::2], cuts[1::2]):
+            segment = piece[start:end].strip(" .")
+            if segment:
+                out.append(segment)
+    return out
+
+
+def hand_clause_parts(hands: str) -> list[dict[str, str]]:
+    """Each side-named clause: side, what it does, whose hand, which pronoun."""
+    parts: list[dict[str, str]] = []
+    for segment in _hand_segments(hands):
+        if not re.search(r"\b(?:left|right)\b", segment, re.I):
+            continue
+        pronoun = re.search(r"\b(her|his|their)\b", segment, re.I)
+        lead = _SIDE_LEAD.match(segment)
+        if lead and not re.search(r"\s+in\s+(?:the |her |his |their )?(?:left|right)(?:\s+hand)?\s*$", segment, re.I):
+            rest = lead.group("rest").strip()
+            parts.append({
+                "side": lead.group("side").lower(),
+                "doing": rest,
+                "whose": bool(_BODY_PART.match(rest)),
+                "member": (lead.group("member") or "").lower(),
+                "pronoun": pronoun.group(1).lower() if pronoun else "",
+            })
+            continue
+        tail = _SIDE_TAIL.match(segment)
+        if tail:
+            parts.append({
+                "side": tail.group("side").lower(),
+                "doing": f"holds {tail.group('item').strip()}",
+                "whose": False,
+                "member": (tail.group("member") or "").lower(),
+                "pronoun": pronoun.group(1).lower() if pronoun else "",
+            })
+    return parts
+
+
 def hand_clauses(hands: str) -> dict[str, str]:
     """What each named hand does, as a verb phrase: "holds a mirror", "rests on the arm".
 
@@ -1171,24 +1248,8 @@ def hand_clauses(hands: str) -> dict[str, str]:
     hand, a hand resting on a lap and a cup in the wrong hand.
     """
     found: dict[str, str] = {}
-    for part in re.split(r",|;|\band\b|\bwhile\b", hands):
-        part = part.strip(" .")
-        if not part:
-            continue
-        clause = _SIDE_CLAUSE.match(part)
-        if clause:
-            found.setdefault(clause.group("side").lower(), clause.group("rest").strip())
-            continue
-        held = _HAND_IN_SIDE.search(part)
-        if held:
-            # "the woman carries a plastic cup in her right hand": the item starts
-            # after the verb, not at the start of the clause.
-            item = re.split(
-                r"\b(?:holds?|holding|carr(?:ies|ying)|grips?|gripping|has|with)\b",
-                held.group("item"),
-                flags=re.I,
-            )[-1].strip()
-            found.setdefault(held.group("side").lower(), f"holds {item}")
+    for part in hand_clause_parts(hands):
+        found.setdefault(part["side"], part["doing"])
     return found
 
 
@@ -3521,7 +3582,10 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
             # round (rangsarn run 05). Each hand is asked on its own, from the
             # person's own side.
             way = facing(subject)
-            for side, doing in sorted(hand_clauses(_text(subject["hands"])).items()):
+            group = int(_num(subject.get("count")) or 1) > 1
+            seen: dict[str, int] = {}
+            for part in hand_clause_parts(_text(subject["hands"])):
+                side = part["side"]
                 picture_side = (
                     side if way == "away"
                     else ("right" if side == "left" else "left") if way == "camera"
@@ -3531,11 +3595,22 @@ def build_questions(spec: dict[str, Any], derived: dict[str, Any]) -> list[dict[
                     f", which is on the {picture_side} of the picture"
                     if picture_side else ", whichever side of the picture that falls on"
                 )
+                # In a group, say whose hand: "the man among the waiting visitors"
+                # (the sweep session's finding).
+                if group and part["member"] and part["member"] not in {"he", "she"}:
+                    who = f"{part['member']} among {noun}"
+                elif group:
+                    who = f"one of {noun}"
+                else:
+                    who = noun
+                pronoun = part["pronoun"] or possessive(subject)
+                verb = f"whose {part['doing']}" if part["whose"] else f"that {part['doing']}"
+                seen[side] = seen.get(side, 0) + 1
+                qid = f"{base}_hand_{side}" + (f"_{seen[side]}" if seen[side] > 1 else "")
                 add(
-                    f"{base}_hand_{side}",
+                    qid,
                     "anatomy",
-                    f"Is it the {side} hand of {noun}, {possessive(subject)} own {side}{where}, "
-                    f"that {doing}?",
+                    f"Is it the {side} hand of {who}, {pronoun} own {side}{where}, {verb}?",
                     base,
                 )
             add(

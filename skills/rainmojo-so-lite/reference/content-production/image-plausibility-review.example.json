@@ -207,7 +207,7 @@
     "q_pharmacist_hand_right": {
       "answer": "yes",
       "evidence": "<what you saw and in which crop>",
-      "_question": "Is it the right hand of the pharmacist, her own right, whichever side of the picture that falls on, that index finger points at the label on its front?"
+      "_question": "Is it the right hand of the pharmacist, her own right, whichever side of the picture that falls on, whose index finger points at the label on its front?"
     },
     "q_pharmacist_hands_count": {
       "answer": "yes",

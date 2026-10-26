@@ -2666,6 +2666,38 @@ check(
     "This is a photograph of a real place" in image_spec.compile_spec(EXAMPLE, WIDTH, HEIGHT, DEFAULTS)["prompt"],
 )
 
+print("C61 backs to the camera, whole clauses, and the member whose hand it is")
+# Three defects the sweep session found in 00bf8dc's per-hand questions.
+check("their backs to the camera is facing away", image_spec.facing({"pose": "side by side with their backs to the camera"}) == "away")
+check("viewed from behind is too", image_spec.facing({"position": "viewed from behind"}) == "away")
+parts = image_spec.hand_clause_parts("his right hand holds a resin nose model upright between thumb and two fingers")
+check(
+    "an and inside a clause stays in it",
+    len(parts) == 1 and parts[0]["doing"].endswith("between thumb and two fingers"),
+    str(parts),
+)
+pinch = image_spec.hand_clause_parts("her right thumb and index finger pinch the edge of a tray and her left index finger steadies the jaw")
+check(
+    "a clause naming a finger is asked as whose, and a new side starts a new clause",
+    [p["side"] for p in pinch] == ["right", "left"] and all(p["whose"] for p in pinch)
+    and pinch[0]["doing"].startswith("thumb and index finger pinch"),
+    str(pinch),
+)
+group61 = copy.deepcopy(EXAMPLE)
+group61["subjects"][1].update({
+    "count": 2, "variation": "an older man in grey and a younger woman in green",
+    "hands": "the man holds a phone low in his right hand and the woman lets her hands hang at her sides",
+    "pose": "side by side with their backs to the camera",
+})
+g_q = {q["id"]: q["question"] for q in image_spec.build_questions(group61, image_spec.derive(group61, WIDTH, HEIGHT))}
+right61 = g_q.get("q_customer_hand_right", "")
+check(
+    "a group's question names the member and their pronoun, and the side flips for backs to the camera",
+    "the right hand of the man among" in right61 and "his own right, which is on the right of the picture" in right61,
+    right61,
+)
+check("a clause with no side asks nothing", "q_customer_hand_left" not in g_q)
+
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}
 check(

@@ -264,6 +264,11 @@ longer told to ignore how they look, and a drawn picture is no longer told it is
 Contract test **778 assertions**, passing here unchanged; the shipped review example is now 82
 questions.
 
+Then `0330de1`: the which-hand questions now read as whole sentences, a person seen from
+behind or a pair with their backs to the camera is recognised as facing away, and in a group
+the question names which member's hand it means. Contract test **784 assertions**, passing
+here unchanged.
+
 The version is frozen at 2.7.0 for the rest of this branch: the release is one release, not
 one per commit, and two editions assigning versions from snapshots of a moving branch
 collided twice.
