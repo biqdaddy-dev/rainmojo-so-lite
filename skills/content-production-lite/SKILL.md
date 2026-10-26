@@ -129,7 +129,15 @@ python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compi
      an even wall, an overcast sky above a low horizon, a plain backdrop. Expect it
      to fail roughly one time in four even so, which is survivable only because
      the headline is laid over the image by the template and never drawn by the
-     model.
+     model. Keep every person and object out of the region it reserves: the
+     compiler warns when a `position` opens in that part of the frame. A position
+     relative to another thing ("the lower right of the notebook") is not warned.
+
+   A viewpoint that must hold is written as something the camera sees, not as an
+   instruction. An angle stated as an instruction failed 4 of 4 times; a near
+   thing only that viewpoint can show held 2 of 2 (for a low lens, the underside
+   of the nearest raised panel in a corner). Say only what that thing shows, and
+   keep it out of the quiet area.
 
    A third thing the compiler checks, which is worth writing to from the start:
 

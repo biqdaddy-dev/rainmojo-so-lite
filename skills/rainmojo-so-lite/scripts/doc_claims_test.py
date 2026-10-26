@@ -416,6 +416,34 @@ check(
     f"seated {sorted(seated_ids)}, measured crossing questions for {sorted(measured)}",
 )
 
+print("D10 a thing placed in the reserved quiet area is warned, a relative position is not")
+# SKILL.md says the compiler warns when a position opens in the part of the frame
+# composition.negative_space reserves, and that a position relative to another
+# thing is not warned. The shipped example reserves the upper right quarter.
+check(
+    "the docs say the compiler warns on a position in the quiet area",
+    said("the compiler warns when a `position` opens in that part of the frame"),
+)
+check(
+    "and that a position relative to another thing is not warned",
+    said('A position relative to another thing ("the lower right of the notebook") is not warned'),
+)
+
+
+def quiet_area_warnings(position: str) -> list[str]:
+    spec = copy.deepcopy(EXAMPLE)
+    spec["subjects"][1]["position"] = position
+    warnings = image_spec.validate_spec(spec, WIDTH, HEIGHT, CONFIG)[1]
+    return [w for w in warnings if "negative_space" in w and "customer" in w]
+
+
+placed = quiet_area_warnings("upper right of the frame, nearer the camera")
+check("a person whose position opens in the reserved upper right is warned", bool(placed), "no warning")
+relative = quiet_area_warnings("the upper right of the counter, nearer the camera")
+check("one at the upper right of another thing is not", not relative, str(relative)[:160])
+elsewhere = quiet_area_warnings("lower left of the frame, nearer the camera")
+check("nor one in another part of the frame", not elsewhere, str(elsewhere)[:160])
+
 print("D6 the claims this edition once made and the code does not honour stay gone")
 for stale in (
     "both bands are read and intersected",

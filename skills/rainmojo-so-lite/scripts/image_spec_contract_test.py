@@ -3219,6 +3219,8 @@ _rs = {
     "a spoon in her right hand and a fork in her left": ["spoon", "fork"],
     "her right hand holds a cup of tea, her left a saucer": ["cup", "saucer"],
     "raises a glass of water": ["glass"],
+    "her right hand holds a spoonful of rice to the child's mouth": ["spoon"],
+    "she holds a bowlful of soup in both hands": ["bowl"],
     "her right hand holds out a bunch of bananas by its stem toward the buyer; her left hand rests on the boat's gunwale": ["banana"],
 }
 _rs_got = {k: image_spec.own_held(k) for k in _rs}
@@ -3234,6 +3236,22 @@ _counter["objects"][0]["position"] = "across the lower third, in front of the ph
 check("furniture in front of a person is not their place: it stands, a setting rests", "counter" not in image_spec.own_things(_counter, _counter["subjects"][0]))
 check("'at her left' says where, not whose", "plate" not in image_spec.own_things(_left, _left["subjects"][0]))
 check("one thing held is not listed", "q_pharmacist_own_things" not in {q["id"] for q in image_spec.build_questions(EXAMPLE, image_spec.derive(EXAMPLE, WIDTH, HEIGHT))})
+
+print("C73 a thing placed in the reserved negative space is warned")
+# The sweep session's minimal run (sustainmap-rooftop-visible).
+check("a reserved region is read from the negative space's opening phrase", image_spec.frame_region("the upper left quarter") == {"v": "top", "h": "left"})
+check("'right of centre' is not the right edge", "h" not in image_spec.frame_region("right of centre, behind the counter"))
+_ns = copy.deepcopy(EXAMPLE)
+_ns["composition"]["negative_space"] = "the upper left quarter, where the plain wall reads as an even field"
+_ns["objects"][2]["position"] = "overhangs the top left corner, close and soft"
+check("a thing in the reserved region is warned", any("shelving" in w and "negative_space" in w for w in image_spec.validate_spec(_ns, WIDTH, HEIGHT, DEFAULTS)[1]))
+_ns["objects"][2]["position"] = "across the upper left of the counter"
+check("a part of another thing is not a part of the frame", not [w for w in image_spec.validate_spec(_ns, WIDTH, HEIGHT, DEFAULTS)[1] if "negative_space" in w and "shelving" in w])
+_ns["objects"][2]["position"] = "across the upper left background"
+_ns["composition"]["negative_space"] = "the upper left quarter, where the plain wall above the shelving reads as an even field"
+check("nor a thing the reserved field was written around", not [w for w in image_spec.validate_spec(_ns, WIDTH, HEIGHT, DEFAULTS)[1] if "negative_space" in w and "shelving" in w])
+_ns["objects"][2]["position"] = "upper right background beyond the counter"
+check("one elsewhere is not", not [w for w in image_spec.validate_spec(_ns, WIDTH, HEIGHT, DEFAULTS)[1] if "negative_space" in w and "shelving" in w])
 
 print("C15 a thin client config still has a gate")
 thin = {"images": {"plausibility": {"required": True, "checks": []}}}

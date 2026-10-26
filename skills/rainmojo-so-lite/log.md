@@ -1050,6 +1050,29 @@ quantity list, so "holds a spoonful of rice" expects rice and "holds a bowlful o
 soup, where the hand holds the spoon and the bowl. "bunch of bananas", "pile of plates" and
 "stack of menus" read right.
 
+FORTIETH PORT, `d6a7468` to `e6704f9`, same version, one commit on `4f30add`, after the sweep's
+run lifted the freeze. "a spoonful of rice" is held by its spoon, and bowlful, cupful and ladleful
+likewise, which closes this edition's last open finding; a subject or object whose position
+opens in the region `composition.negative_space` reserves is warned, unless the position is
+relative to another thing or the reserved field is written around it; and the contract doc gains
+the viewpoint-as-content guidance. Three files byte-identical, the review example regenerated
+here and unchanged at 82. 945 assertions passing unchanged, as on the full edition's export;
+regression 4 of 4. Battery and corpus identical to a clean export of `e6704f9`, 17 of 20 clean,
+21, 2, 4, and the findings reproducer at 0 of 14. On the client briefs the one change is the new
+warning on sustainmap-rooftop-visible, a true positive: it reserves "the upper left quarter" and
+its near panel "overhangs the top left corner", the case the commit was written for.
+
+The full edition also changed its seo-image-production SKILL. Lite carries the same quiet-area
+rule in `content-production-lite/SKILL.md`, so the two points are written there in lite's words.
+The quiet-area bullet now says the compiler warns on a position that opens in that part of the
+frame and not on one relative to another thing. The viewpoint advice became its own paragraph
+after the list rather than a third bullet, because the list opens "Two rules the compiler
+enforces" and a viewpoint is guidance it does not enforce. The new warning claim is a behaviour,
+so T4 gains D10: the claim and its exemption are in the docs, a person positioned in the reserved
+upper right is warned, and one at the upper right of the counter, or in another part of the
+frame, is not. Run against `d6a7468`'s module the positive case fails, so it can catch what it is
+for. T4 is at 59 checks.
+
 BATTERY HARDENED against the one class it could not see. A probe that raises is not a probe
 that fails: an exception aborts the run, so every probe after it never runs and the ones
 before it look fine, which means a crash in the validator reads as a clean sheet. New

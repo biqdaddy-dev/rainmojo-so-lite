@@ -1454,7 +1454,7 @@ def own_held(hands: str) -> list[str]:
         # A quantity word is the things themselves; a container (a ladle of broth)
         # is the container (rangsarn: the bunch is the bananas).
         arrangement = re.match(
-            r"(?:a|an|the|her|his|their)?\s*(?:pair|set|bunch|handful|bundle|stack|pile|bowlful|spoonful|"
+            r"(?:a|an|the|her|his|their)?\s*(?:pair|set|bunch|handful|bundle|stack|pile|"
             r"armful|string|sheaf|fistful)\s+of\s+(?P<rest>.+)$",
             thing,
             re.I,
@@ -1484,6 +1484,8 @@ def own_held(hands: str) -> list[str]:
             else:
                 continue
         noun = noun[:-2] if noun.endswith("'s") else noun
+        # "a spoonful of rice" is held by its spoon (the lite session).
+        noun = {"spoonful": "spoon", "bowlful": "bowl", "cupful": "cup", "ladleful": "ladle"}.get(noun, noun)
         noun = noun[:-1] if noun.endswith("s") and not noun.endswith("ss") else noun
         if noun not in found:
             found.append(noun)
@@ -2890,6 +2892,31 @@ def validate_spec(
                 + f" side by side, {load['load_m']:g} m in all. It cannot hold them; widen "
                 "it, or move something off it."
             )
+
+    # A thing placed in the region the negative space reserves: the sweep
+    # session's viewpoint arm put a panel in the top left corner of an upper
+    # left quarter kept as an even pale field, and the review made it the worst fault.
+    reserved = negative_space_region(spec)
+    if reserved:
+        reserved_text = _text((spec.get("composition") or {}).get("negative_space")).lower()
+        for kind, entity in [("subject", x) for x in subjects] + [("object", x) for x in objects]:
+            where = re.split(r",|;", _text(entity.get("position")), maxsplit=1)[0]
+            # "the lower right of the notebook" is a part of another thing, not of
+            # the frame; and a field "above the canopy" was written around it.
+            relative = re.search(
+                r"\b(?:left|right|top|bottom|upper|lower|corner|edge|end|side)\s+of\s+(?:the|a|an|her|his|their)\s+"
+                r"(?!frame\b|picture\b|image\b|shot\b)\w+",
+                where.lower(),
+            )
+            names = [n for n in (_text(entity.get("short_name")).lower(), _text(entity.get("id")).replace("_", " ").lower()) if n]
+            if relative or any(re.search(r"\b" + re.escape(n) + r"\b", reserved_text) for n in names):
+                continue
+            if frame_region(where) == reserved:
+                warnings.append(
+                    f"{kind} {_text(entity.get('id'))}: its position ({where.strip()!r}) is in the "
+                    f"{reserved['v']} {reserved['h']} of the frame, which composition.negative_space "
+                    "keeps as an even field for the headline. Move it, or reserve another region."
+                )
 
     inv_openings, inv_practicals = light_inventory(spec)
     if inv_openings or inv_practicals:
@@ -4329,6 +4356,36 @@ def relative_widths(spec: dict[str, Any]) -> list[dict[str, Any]]:
         out.append({"id": _text(obj.get("id")), "supporter": on, "ratio": round(ratio, 3),
                     "said_as": round(value, 3), "words": words})
     return out
+
+
+_VERTICAL = (("top", r"\b(?:top|upper)\b"), ("bottom", r"\b(?:bottom|lower)\b"))
+_HORIZONTAL = (("left", r"\bleft\b(?!\s+of\s+cent)"), ("right", r"\bright\b(?!\s+of\s+cent)"))
+
+
+def frame_region(text: str) -> dict[str, str]:
+    """The part of the frame a phrase names: {"v": top|bottom, "h": left|right|centre}."""
+    lowered = text.lower()
+    region: dict[str, str] = {}
+    for value, pattern in _VERTICAL:
+        if re.search(pattern, lowered):
+            region["v"] = value
+            break
+    for value, pattern in _HORIZONTAL:
+        if re.search(pattern, lowered):
+            region["h"] = value
+            break
+    if "h" not in region and re.search(r"\b(?:upper|top|lower|bottom)\s+cent(?:re|er)\b", lowered):
+        region["h"] = "centre"
+    return region
+
+
+def negative_space_region(spec: dict[str, Any]) -> dict[str, str]:
+    """The region composition.negative_space reserves, from its opening phrase."""
+    composition = spec.get("composition") if isinstance(spec.get("composition"), dict) else {}
+    text = _text(composition.get("negative_space"))
+    lead = re.split(r",|\bwhere\b|\bwhich\b", text, maxsplit=1)[0]
+    region = frame_region(lead)
+    return region if len(region) == 2 else {}
 
 
 def failure_vocabulary() -> list[str]:
