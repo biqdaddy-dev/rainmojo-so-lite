@@ -17,6 +17,7 @@ careless run would otherwise walk through:
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 from pathlib import Path
 
@@ -553,7 +554,34 @@ def check_compile_spec_file() -> None:
         assert named["image_id"] == "cover-01", named["image_id"]
 
 
+def check_symlink_guard() -> None:
+    """A link a user made is refused; the operating system's own links are not.
+
+    macOS ships /var as a link into /private, so its temporary directory
+    crosses one; the guard refused every workspace there until it learned to
+    trust a link only root could have made.
+    """
+    guard = content_pipeline.client_workspace
+    with tempfile.TemporaryDirectory() as tmp:
+        guard.assert_no_reparse_components(Path(tmp) / "workspace")
+        target = Path(tmp) / "real"
+        target.mkdir()
+        link = Path(tmp) / "link"
+        try:
+            link.symlink_to(target, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            return  # Windows without the symlink privilege
+        if os.name != "nt" and os.geteuid() == 0:
+            return  # as root every link is root's, so the refusal cannot be shown
+        try:
+            guard.assert_no_reparse_components(link / "workspace")
+        except guard.WorkspaceError:
+            return
+        raise AssertionError("a link a user made was accepted")
+
+
 def main() -> None:
+    check_symlink_guard()
     check_compile_spec_file()
     for image_format in ("WEBP", "AVIF"):
         run(image_format)
