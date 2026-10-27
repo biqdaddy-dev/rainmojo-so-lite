@@ -1,0 +1,195 @@
+{
+  "version": 1,
+  "purpose": "a pharmacist explaining a prescription label to a customer across the counter, so the reader sees that advice comes with the medicine",
+  "medium": "photograph",
+  "style": {
+    "look": "warm documentary editorial, natural colour, matte skin",
+    "color_palette": "sage green cabinetry, warm white walls, pale wood counter, one amber accent from the window",
+    "mood": "calm, unhurried, competent",
+    "texture": "fine 35 mm grain, matte surfaces, even diffuse highlights"
+  },
+  "location": {
+    "place": "the dispensing counter of a small neighbourhood pharmacy",
+    "locale": "Bangkok, Thailand",
+    "time_of_day": "afternoon",
+    "weather": "bright overcast outside the shopfront",
+    "locale_details": [
+      "the shelf labels and the price tags carry Thai script",
+      "the pharmacist wears a short-sleeved white coat over a polo shirt, the common Thai pharmacy dress",
+      "a floor-standing fan sits at the end of the counter",
+      "the floor is large-format grey porcelain tile, the standard Thai shophouse floor"
+    ]
+  },
+  "camera": {
+    "shot_type": "medium",
+    "angle": "eye_level",
+    "tilt": "level",
+    "horizon": "middle",
+    "height_m": 1.55,
+    "focal_length_mm": 50,
+    "aperture_f": 2.8,
+    "subject_distance_m": 2.2,
+    "focus_on": "pharmacist"
+  },
+  "subjects": [
+    {
+      "id": "pharmacist",
+      "kind": "person",
+      "count": 1,
+      "description": "Thai pharmacist in her thirties",
+      "appearance": "mid-thirties, medium build, black hair tied back, warm light-brown skin",
+      "wardrobe": "short-sleeved white dispensing coat over a navy polo shirt, a plain unprinted lanyard",
+      "posture": "standing",
+      "pose": "standing behind the counter, weight on both feet, torso turned a quarter toward the customer, shoulders level",
+      "hands": "her left hand holds the medicine box at its base; her right index finger points at the label on its front, the fingertip beside the printed panel so the panel stays visible",
+      "gaze": "down at the box, toward where her finger points",
+      "expression": "explaining, mouth slightly open mid-sentence, eyebrows relaxed",
+      "action": "points at a line on the medicine label while explaining the dose",
+      "position": "left of centre, behind the counter, facing across it",
+      "height_m": 1.62,
+      "distance_m": 2.2,
+      "plane": "midground",
+      "interacts_with": [
+        "medicine_box",
+        "counter"
+      ],
+      "short_name": "pharmacist"
+    },
+    {
+      "id": "customer",
+      "kind": "person",
+      "count": 1,
+      "description": "older Thai man listening",
+      "appearance": "early sixties, slight build, short grey hair, glasses",
+      "wardrobe": "pale blue short-sleeved shirt, dark trousers",
+      "posture": "standing",
+      "pose": "standing on the near side of the counter, leaning in slightly from the waist, both arms resting on the counter edge",
+      "hands": "both hands rest flat on the counter, fingers relaxed and apart",
+      "gaze": "down at the medicine box the pharmacist holds",
+      "expression": "attentive, lips closed",
+      "action": "leans in to read the label she is pointing at",
+      "position": "right of centre, nearer the camera, back three-quarters to the lens",
+      "height_m": 1.68,
+      "distance_m": 1.5,
+      "plane": "foreground",
+      "interacts_with": [
+        "counter"
+      ],
+      "short_name": "older customer"
+    }
+  ],
+  "objects": [
+    {
+      "id": "counter",
+      "name": "pale wood dispensing counter",
+      "count": 1,
+      "material": "oak-veneer laminate on a white base unit",
+      "state": "clean, uncluttered",
+      "size": "0.9 m high, 2.4 m long, 0.6 m deep",
+      "height_m": 0.9,
+      "width_m": 2.4,
+      "scale_anchor": "its top meets the pharmacist just above the hip, a little below her waist",
+      "support": {
+        "kind": "stands_on",
+        "by": "the tiled floor"
+      },
+      "position": "runs across the lower third of the frame, separating the two people",
+      "distance_m": 1.9,
+      "plane": "midground",
+      "interacts_with": [
+        "pharmacist",
+        "customer",
+        "medicine_box"
+      ],
+      "short_name": "counter"
+    },
+    {
+      "id": "medicine_box",
+      "name": "small white medicine carton with a blank label panel",
+      "count": 1,
+      "material": "printed carton board, matte",
+      "state": "closed, held upright",
+      "size": "about 9 cm tall, 5 cm wide",
+      "height_m": 0.09,
+      "width_m": 0.05,
+      "scale_anchor": "it fits inside the pharmacist's hand with her fingers wrapping most of its width",
+      "support": {
+        "kind": "held_by",
+        "by": "pharmacist"
+      },
+      "position": "just above the counter near the centre of the frame, tilted slightly toward the customer",
+      "distance_m": 2.0,
+      "plane": "midground",
+      "interacts_with": [
+        "pharmacist"
+      ],
+      "short_name": "medicine box"
+    },
+    {
+      "id": "shelving",
+      "name": "wall of sage-green medicine shelving with boxed stock",
+      "count": 1,
+      "material": "painted MDF shelves, cardboard stock boxes",
+      "state": "fully stocked, boxes squared up",
+      "size": "2.2 m high, 3 m wide",
+      "height_m": 2.2,
+      "width_m": 3.0,
+      "scale_anchor": "its top shelf sits well above the pharmacist's head, about a third taller than she is",
+      "support": {
+        "kind": "mounted_on",
+        "by": "the back wall"
+      },
+      "position": "fills the frame behind the pharmacist",
+      "distance_m": 3.6,
+      "plane": "background",
+      "interacts_with": [],
+      "short_name": "shelving wall"
+    }
+  ],
+  "spatial_layout": {
+    "foreground": "the customer's shoulder and forearms on the counter edge, slightly soft",
+    "midground": "the pharmacist, the counter top and the medicine box, all sharp",
+    "background": "the stocked sage-green shelving, soft but still readable as shelving"
+  },
+  "lighting": {
+    "key": {
+      "source": "daylight through the shopfront window out of frame",
+      "direction": "front_left",
+      "quality": "soft, because the window is large and close and the sky is overcast"
+    },
+    "fill": [
+      "cool ceiling fluorescent tubes lifting the shadow side by about one stop",
+      "bounce off the white counter base under the chins"
+    ],
+    "shadow_direction": "right",
+    "color_temperature_k": 5200
+  },
+  "composition": {
+    "subject_placement": "the two faces sit on the left and right thirds, the medicine box on the centre line between them, the counter running as a horizontal through the lower third",
+    "negative_space": "the upper right quarter, where the shelving goes soft",
+    "crop_safety": "both faces and the medicine box stay inside a centre square, so the 1:1 and 4:5 crops lose only the shelving"
+  },
+  "background_focus": "blurred",
+  "realism": {
+    "imperfections": [
+      "a scuff in the counter laminate at the near corner, where customers rest their bags",
+      "one shelf box on the middle row pushed out of line with its neighbours",
+      "a few strands of the pharmacist's hair loose at the left temple",
+      "a thumbprint on the glass of the shopfront door behind the customer"
+    ]
+  },
+  "physical_invariants": [
+    "the counter separates the two people: each keeps their arms on their own side of it",
+    "the medicine box is small enough to sit in one hand and stays smaller than the pharmacist's forearm",
+    "the customer stands nearer the camera, so he reads noticeably larger in the frame than the pharmacist although he is only 6 cm taller",
+    "both people stand on the same floor, so their feet sit on one ground plane and their eye lines fall within a few centimetres of each other and of the horizon",
+    "the shelving behind is parallel to the counter, so both recede to the same vanishing point"
+  ],
+  "must_not_show": [
+    "readable brand names or drug names on any box",
+    "a doctor's long white coat or a stethoscope, which belong to a clinic rather than a pharmacy",
+    "pills loose on the counter",
+    "retouched glossy skin or specular bloom"
+  ],
+  "text_in_image": "none"
+}

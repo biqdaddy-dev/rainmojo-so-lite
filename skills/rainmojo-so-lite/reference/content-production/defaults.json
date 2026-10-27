@@ -122,6 +122,208 @@
         "brand_accuracy"
       ]
     },
+    "spec": {
+      "required": true,
+      "required_for_source_types": [
+        "",
+        "generated",
+        "ai_generated"
+      ],
+      "target_model": "",
+      "prompt_target": "",
+      "max_prompt_words": 0,
+      "max_people": 4,
+      "max_key_objects": 8,
+      "default_avoid": [
+        "text, letters, numbers, captions or signage that was not specified",
+        "logos, brand marks, watermarks or signatures",
+        "extra, missing or fused fingers, limbs or joints",
+        "duplicated people or objects, or a person merged into an object",
+        "objects floating without visible support",
+        "shadows that disagree with the light direction, or a second sun",
+        "warped or bent straight lines in walls, tiles, frames or furniture",
+        "people or objects whose size does not match their distance",
+        "reflections that do not match what stands in front of the surface",
+        "tilted water lines, liquid that does not fall downward, fabric that ignores gravity"
+      ]
+    },
+    "plausibility": {
+      "required": true,
+      "evidence_required": true,
+      "min_evidence_chars": 12,
+      "zoom_grid": 3,
+      "crop_scale": 2.0,
+      "checks": [
+        {
+          "id": "functional_plausibility",
+          "group": "functional",
+          "question": "Could every made object in the frame actually work: fastenings that fasten, straps and cords that go somewhere, strings and cables under the right tension, handles, hinges and controls where a hand could reach them?"
+        },
+        {
+          "id": "object_integrity",
+          "group": "functional",
+          "question": "Is every made object complete and symmetrical where its design is symmetrical, with no part fused into another and no edge that dissolves into a smudge?"
+        },
+        {
+          "id": "held_object_function",
+          "group": "functional",
+          "question": "Is everything held or worn held or worn the way it is actually used, rather than in a grip or a position that would not work?",
+          "not_applicable_when": "absent_from_image"
+        },
+        {
+          "id": "text_free",
+          "group": "functional",
+          "question": "Is the image free of text, numbers, signage, logos and watermarks the spec did not ask for, and free of lettering that reads as distorted or nonsensical glyphs?",
+          "verify_with": "ocr"
+        },
+        {
+          "id": "hand_and_finger_count",
+          "group": "anatomy",
+          "question": "Does every visible hand have five fingers, and every person the right number of arms, legs and joints, each bending the way a joint bends?",
+          "verify_with": "count",
+          "not_applicable_when": "no_people"
+        },
+        {
+          "id": "limb_proportion",
+          "group": "anatomy",
+          "question": "Are the proportions right: neck, arm and leg lengths, head size against body, with no limb stretched or shortened to fit the frame?",
+          "not_applicable_when": "no_people"
+        },
+        {
+          "id": "face_detail",
+          "group": "anatomy",
+          "question": "Do the eyes, teeth, ears and any eyeglasses hold up close: matching pupils and catchlights, a gaze that goes somewhere, teeth that are separate from the lip and gum, frames that rest on the ears and nose?",
+          "not_applicable_when": "no_people"
+        },
+        {
+          "id": "merged_bodies",
+          "group": "anatomy",
+          "question": "Does each person own their own body: no shared or merged limb between two people, no arm that belongs to nobody?",
+          "not_applicable_when": "no_people"
+        },
+        {
+          "id": "hand_object_contact",
+          "group": "anatomy",
+          "question": "Does each hand that holds something close around it, with the fingers on the near side in front and the far side hidden?",
+          "not_applicable_when": "absent_from_image"
+        },
+        {
+          "id": "gaze_and_expression",
+          "group": "anatomy",
+          "question": "Do both eyes point where the spec says, with an expression that fits the action rather than a blank or over-glossy stare?",
+          "not_applicable_when": "no_people"
+        },
+        {
+          "id": "material_realism",
+          "group": "stylistic",
+          "question": "Do skin, hair and fabric read as real material rather than wax, plastic or airbrush, with pores, stray hairs and creases where real ones would be?"
+        },
+        {
+          "id": "resolution_coherence",
+          "group": "stylistic",
+          "question": "Does the whole frame look like one photograph: the same sharpness, grain and noise throughout, with no element that looks cut from a different picture?"
+        },
+        {
+          "id": "unposed_credibility",
+          "group": "stylistic",
+          "question": "Does the scene look like something that happened rather than a staged shoot: no impossible tidiness, no everybody-in-focus-and-smiling perfection the brief did not ask for?"
+        },
+        {
+          "id": "count_integrity",
+          "group": "logic",
+          "question": "Does the image hold exactly the people and objects the spec names, with nothing duplicated, merged or added?",
+          "verify_with": "count"
+        },
+        {
+          "id": "cross_entity_shadows",
+          "group": "physics",
+          "question": "Do the shadows of every person and object run in the same direction, so that one light position explains all of them at once?"
+        },
+        {
+          "id": "shadow_geometry",
+          "group": "physics",
+          "question": "Do the shadow lengths match one light elevation, and does the line from each object to its own shadow point back toward the same light?"
+        },
+        {
+          "id": "contact_shadows",
+          "group": "physics",
+          "question": "Does everything resting on a surface meet it, with a contact shadow in the gap, so that nothing floats and nothing sinks into the floor?"
+        },
+        {
+          "id": "support_and_balance",
+          "group": "physics",
+          "question": "Is every object supported the way the spec says, and would it stay there under gravity rather than tipping, sliding or hanging from nothing?"
+        },
+        {
+          "id": "shared_vanishing_lines",
+          "group": "geometry",
+          "question": "Do the parallel planes in the frame agree: floor, counter, table and shelf edges converging on one horizon rather than each to its own?",
+          "not_applicable_when": "non_photographic"
+        },
+        {
+          "id": "same_ground_plane",
+          "group": "geometry",
+          "question": "Do all the figures stand on one floor, with their feet on a ground plane that recedes consistently, rather than on separate invisible shelves?",
+          "not_applicable_when": "no_people"
+        },
+        {
+          "id": "horizon_eyeline",
+          "group": "geometry",
+          "question": "Does the horizon cross each standing person at the height the spec's camera height requires, the same share of their height for everyone of equal height?",
+          "not_applicable_when": "no_people"
+        },
+        {
+          "id": "relative_scale",
+          "group": "geometry",
+          "question": "Is every person and object the size its distance requires, measured against the scale anchors in the spec?"
+        },
+        {
+          "id": "occlusion_depth_order",
+          "group": "geometry",
+          "question": "Does every nearer thing overlap the things behind it consistently, with no element both in front of and behind the same object?"
+        },
+        {
+          "id": "straight_lines",
+          "group": "geometry",
+          "question": "Do the lines that are straight in the world stay straight and evenly spaced: wall edges, tile grids, window frames, stair treads, shelf fronts?",
+          "not_applicable_when": "absent_from_image"
+        },
+        {
+          "id": "focus_falloff",
+          "group": "optics",
+          "question": "Does sharpness fall off with distance from the focus plane, with nothing behind a soft plane rendered sharper than it?",
+          "not_applicable_when": "non_photographic"
+        },
+        {
+          "id": "reflection_and_transparency",
+          "group": "optics",
+          "question": "Does every mirror, glass and glossy surface show what actually stands in front of it, in the right place, and does transparent material bend what is behind it?",
+          "not_applicable_when": "absent_from_image"
+        },
+        {
+          "id": "fluid_and_fabric",
+          "group": "physics",
+          "question": "Do liquid surfaces sit level, pours fall downward, steam rise, and fabric hang and crease under gravity rather than floating or standing stiff?",
+          "not_applicable_when": "absent_from_image"
+        },
+        {
+          "id": "locale_truth",
+          "group": "sociocultural",
+          "question": "Do the local details in the spec read correctly for the stated place: the script on signage, uniforms and dress, plates, plants, architecture, fittings?",
+          "not_applicable_when": "no_locale_details"
+        },
+        {
+          "id": "negative_space_clean",
+          "group": "composition",
+          "question": "Is the area the spec reserves for a headline or logo quiet enough to carry type at the published size?"
+        },
+        {
+          "id": "crop_safety",
+          "group": "composition",
+          "question": "Does the subject survive the crops the spec names, with nothing essential cut at the stated aspect ratios?"
+        }
+      ]
+    },
     "infographic": {
       "allowed": false,
       "language": "English"

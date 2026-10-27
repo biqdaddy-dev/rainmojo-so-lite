@@ -46,6 +46,10 @@ Read [agent.json](agent.json), then:
 - `{PLUGIN_ROOT}/skills/rainmojo-so-lite/_base/skill-scaffold.md`
 - `{PLUGIN_ROOT}/skills/rainmojo-so-lite/reference/content-production/contract.md`
 - `{PLUGIN_ROOT}/skills/rainmojo-so-lite/reference/content-production/content-review.example.json`
+- `{PLUGIN_ROOT}/skills/rainmojo-so-lite/reference/content-production/image-spec.contract.md`
+- `{PLUGIN_ROOT}/skills/rainmojo-so-lite/reference/content-production/image-spec.example.json`
+- `{PLUGIN_ROOT}/skills/rainmojo-so-lite/reference/content-production/image-plausibility-review.example.json`
+- `{PLUGIN_ROOT}/skills/rainmojo-so-lite/reference/content-production/image-model-registry.json`
 - `clients/<domain>/CLAUDE.md`
 - `clients/<domain>/brand-guidelines.md`
 - `clients/<domain>/client-profile.md`
@@ -76,6 +80,183 @@ The orchestrator must dispatch according to `engine.mode`:
 - `generic`: shared article packages under `content/production/<slug>/`
 - `client_native`: only the capability-backed adapter operations declared in
   the client config; never generic package or publisher paths
+
+## Image spec workflow (generic engine)
+
+Lite has no separate image-production skill, so the image instructions live here.
+Every image a model will generate carries a `spec` in `image-manifest.json`: the
+picture as a shot brief, with real distances in metres, a real height for every
+person, a size and a support for every object, one key light with the shadow
+direction it implies, and the area that stays quiet for a headline. The `prompt`
+and `negative_prompt` are compiled from it and never written by hand.
+
+1. Fill every manifest item with a distinct concept, alt, media title, optional
+   caption and provenance record. Leave `prompt` and `negative_prompt` empty.
+2. Start each spec from the blank template, which carries every required field as
+   an unanswered question in angle brackets:
+
+```bash
+python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" spec-template --medium photograph --people 2
+```
+
+   Read `image-spec.contract.md` for the field reference and
+   `image-spec.example.json` for a worked two-person scene.
+3. Compile the specs. This validates the physics and the logic of each brief,
+   derives the geometry it implies, and writes `prompt`, `negative_prompt` and
+   `spec_compiled` with the review questions:
+
+```bash
+python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compile-spec --client ./clients/<domain> --slug <slug>
+```
+
+   A client whose content runs through its own adapter, with no article package,
+   compiles one spec file at a time instead, and gets the same report as JSON
+   (exit code 1 when the spec is refused):
+
+```bash
+python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" compile-spec-file --spec <spec.json> --width <px> --height <px> --target-model openai-gpt-image --out <report.json>
+```
+
+   The review half works the same way for such a client: `review-crops-file --image
+   <generated.png> --out-dir <dir>` cuts the reviewer's magnified crops, and
+   `review-template-file` (the same arguments as `compile-spec-file`, plus `--image`
+   to record the image's sha256) writes the blank review with the questions the
+   prompt was compiled with.
+
+   A contradiction stops the compile and names it: a horizon that disagrees with
+   the camera tilt, a shot type that disagrees with the lens and the distance,
+   shadows that disagree with the key light, an object with no support, a standing
+   person who does not fit the frame, a sharp background the aperture cannot
+   deliver, an object height outside the band its building code fixes. Fix the
+   spec and compile again. Read the `warnings` in the report before moving on:
+   they carry the trim report and anything the geometry only makes unlikely.
+
+   Two rules the compiler enforces, so write the spec to them from the start:
+
+   - **Say what the picture is, never what it is not.** A field containing no,
+     not, without or free of is refused and named. Describe the state instead: a
+     plain unprinted lanyard, an even grey wall, Thai script on the shelf labels.
+     Anything to exclude goes in `must_not_show`, which reaches the avoid list and
+     never the scene description. A negation in a positive prompt tends to produce
+     the thing it forbids.
+   - **The quiet area is a thing in the scene, not a hole in a busy frame.** Name
+     an even wall, an overcast sky above a low horizon, a plain backdrop. Expect it
+     to fail roughly one time in four even so, which is survivable only because
+     the headline is laid over the image by the template and never drawn by the
+     model. Keep every person and object out of the region it reserves: the
+     compiler warns when a `position` opens in that part of the frame, including a
+     part of a thing that lies there ("the lower right of" a centred notebook), and
+     warns more softly when the quiet area is described around the thing itself.
+
+   A style reference is a subject-free crop of approved art, never a full master.
+   A full master's subject leaks into the picture: lotus leaves from a brand
+   image's pond appeared in 6 of 6 generated scenes, and in 0 of 3 with a crop of
+   its empty wash. Keep frames and borders out of the crop unless the picture wants
+   them, and say in `style.reference.origin` what it was cut from.
+
+   A restrictive palette needs two things, and words are neither. "One amber wash
+   only" lost every time until both were done: recolour the subject-free crop to
+   the spec's palette (a duotone of the approved art), which sets the overall
+   tint, and give each named thing its own colour inside the palette ("cloth spines
+   in brown, ochre and cream", "an undyed amber wool blanket"), which removes the
+   other colours the things still showed under the tint. Together they left no
+   off-palette colour in 3 of 3 pictures. The compiler warns when a field still
+   asks for colours the palette does not hold.
+
+   A line-art medium is the generator's, not the prompt's. With the same spec, a
+   generator that follows medium words drew black ink line on cream from the words
+   alone, while gpt-image painted the scene with or without a style reference, and
+   without the inline Constraints block too. For ink or line-art work, use a
+   generator that follows medium words; when gpt-image is the only one, attach the
+   recoloured style swatch, which moves it toward line but does not get there.
+
+   A viewpoint that must hold is written as something the camera sees, not as an
+   instruction. An angle stated as an instruction failed 4 of 4 times; a near
+   thing only that viewpoint can show held 2 of 2 (for a low lens, the underside
+   of the nearest raised panel in a corner). Say only what that thing shows, and
+   keep it out of the quiet area.
+
+   A third thing the compiler checks, which is worth writing to from the start:
+
+   - **`scale_anchor` is a claim, not a flourish.** For an object that stands or
+     rests on the floor, anchor its size to a body landmark of a person in the
+     scene and the compiler reads that landmark off their `height_m` and checks the
+     object's height against it, within 12 cm either way: the hip of a 1.62 m
+     person is 0.86 m, so a 0.42 m counter "at the hip" is refused. Only the first
+     landmark the anchor names is checked, and "above" or "below" is not part of
+     the check, so lead with the landmark you mean. Name the person when more than
+     one is in frame, or no check runs. An anchor about width or length, such as
+     "as wide as her shoulders", is left alone, and so is anything that hangs or is
+     mounted, whose `height_m` is its own length. When the anchor puts the object
+     in a hand, its height is compared with the person holding it, the one named
+     in `support.by`, or failing that the person the anchor names, or failing both
+     the tallest person in the frame: above three tenths of that height it is a
+     warning, above six tenths it is refused.
+
+   Set `images.spec.target_model` to the generator in use. `image-model-registry.json`
+   then decides where exclusions go and what prompt length is worth sending. Left
+   unset, they go inline in the prompt, which is right for gpt-image on Codex and
+   ChatGPT; on a Gemini or FLUX host, name the model, since those vendors advise
+   describing the positive state only. Most current generators have no
+   negative-prompt field at all, so an empty `negative_prompt` is the normal
+   result, not a failure.
+4. Generate from the compiled prompt exactly as written, and attach every image in
+   the item's `conditioning` list as an image input: the real place's references,
+   each person's likeness and the style reference, each with its role. If the
+   generator takes no image input, say so in the source review, since a likeness
+   or a style it was never shown cannot hold. Save the raw asset under
+   `images/raw/`, approve it with `review-source`, then run `process`.
+5. Cut the optimized image into the review grid and open the blank review. A whole
+   1200 px image hides the failures that matter: fingers, teeth, contact shadows,
+   drifting tile repeats, gibberish on signage:
+
+```bash
+python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" review-crops --client ./clients/<domain> --slug <slug> --image-id featured
+python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/image_production.py" review-template --client ./clients/<domain> --slug <slug> --image-id featured
+```
+
+6. Inspect the full frame and then every crop. Technical processing is not visual
+   approval. Answer in the review file every `checks` item the client config
+   requires; every `plausibility` check, with `status` and `evidence` naming what
+   you saw and in which crop; and every `spec_answers` question `yes` with
+   evidence. `not_applicable` is allowed only where the check permits it, and the
+   evidence must then say what is absent from the frame. A `no` means the image
+   does not match its brief: regenerate or fix the spec, do not pass it. The
+   rubric leads with the functional, anatomical and stylistic checks because
+   those are what actually fail, and asks the physics ones across pairs of things,
+   because a generated frame is usually self-consistent object by object and
+   inconsistent between objects.
+
+   Where a check or question carries `verify_with`, **measure it rather than
+   forming an impression**: `count` means count the fingers, limbs and objects;
+   `ocr` means read the lettering at full resolution; `geometry` means put a
+   straight edge on the horizon and compare heights. Those are the three things
+   both people and vision models judge badly.
+
+   Set `crops_reviewed` to the number of crops you actually opened and
+   `image_sha256` to the digest `review-crops` printed, then record the pass with
+   `mark-reviewed --status passed --checklist-json <review file>`.
+
+### Mandatory image rules
+
+- The prompt is compiled, never authored. Change the spec, not the prompt. A
+  prompt edited by hand, or a spec changed after compilation, is refused at the
+  next gate.
+- The compiled prompt never contains a negation, and never a bare camera number:
+  every value is emitted next to the words for its effect, because the words are
+  what steer.
+- `image_specs_ready` is refused while any generated image has no valid, freshly
+  compiled spec, and processing is refused when the prompt has drifted from it.
+- The headline is never generated into the image. `text_in_image` stays `none`
+  unless the client has enabled an infographic text workflow; approved text is
+  added deterministically after processing.
+- A physically impossible image is rejected even when it looks attractive:
+  shadows that disagree with one light, an object with no contact where it rests,
+  a size that does not match its distance, two vanishing points on different
+  horizons, a reflection showing something that is not in front of the surface,
+  liquid that does not sit level.
+- A passed review requires structured evidence tied to the exact image file.
+  Reprocessing an image invalidates every previous visual approval.
 
 ## Review guidance for model-drafted sections (decision layer)
 
@@ -111,6 +292,11 @@ Boundaries: off-site link acquisition belongs to `seo-backlink-strategy-lite`; E
 - `content_qa_passed` requires a structured reviewer/checklist record bound to
   the current `article.md` SHA-256.
 - Editing the article after review invalidates later gates.
+- `image_specs_ready` requires a valid, freshly compiled shot spec on every image
+  a model will generate; `process` refuses a prompt that has drifted from it, and
+  `mark-reviewed --status passed` refuses a plausibility review that is
+  incomplete, unevidenced, short of `zoom_grid` squared crops, or bound to a
+  different image file.
 - Article state transitions are validated and auditable.
 - Required product, pillar, related-content, and external-source links are
   checked against the article plan.
@@ -133,6 +319,7 @@ Boundaries: off-site link acquisition belongs to `seo-backlink-strategy-lite`; E
 ## Host image capability
 
 If the host exposes an image-generation capability, use it to create the approved
-raw asset from the manifest prompt. If it does not, stop after the brief/source
+raw asset from the compiled prompt, exactly as `compile-spec` wrote it. If it
+does not, stop after the brief/source
 intake stage and report that a raw source asset is required. Never claim that the
 image-production script itself generated an image.

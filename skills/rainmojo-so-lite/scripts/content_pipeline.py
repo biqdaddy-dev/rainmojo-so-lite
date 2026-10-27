@@ -23,6 +23,7 @@ from typing import Any
 from urllib.parse import urljoin, urlparse, urlsplit, urlunsplit
 
 import client_workspace
+import image_spec
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -1092,6 +1093,8 @@ def image_item(
         "width": int(dimensions["width"]),
         "height": int(dimensions["height"]),
         "concept": "",
+        "spec": {},
+        "spec_compiled": {},
         "prompt": "",
         "negative_prompt": "",
         "alt": "",
@@ -1554,6 +1557,23 @@ def image_source_review_errors(
     return errors
 
 
+def image_spec_gate_errors(
+    package: Path,
+    article: dict[str, Any],
+    config: dict[str, Any],
+) -> list[str]:
+    """Every image a model will generate needs a valid, freshly compiled spec."""
+    manifest_path = safe_path(package, article["images_file"])
+    if not manifest_path.exists():
+        return ["image-manifest.json is missing."]
+    manifest = load_json(manifest_path)
+    errors: list[str] = []
+    for item in manifest.get("items", []):
+        if image_spec.spec_required(item, config):
+            errors.extend(image_spec.freshness_errors(item))
+    return errors
+
+
 def set_status(
     client: str | Path,
     slug: str,
@@ -1589,6 +1609,12 @@ def set_status(
             raise RuntimeError(
                 "Content review is stale or incomplete: "
                 + "; ".join(review_errors)
+            )
+    if status == "image_specs_ready":
+        spec_errors = image_spec_gate_errors(package, article, config)
+        if spec_errors:
+            raise RuntimeError(
+                "Image spec gate failed: " + "; ".join(spec_errors)
             )
     timestamp = now_iso()
     article["status"] = status
@@ -1981,6 +2007,8 @@ def validate_package(
                 errors.append(f"{image_id}: media title is missing.")
             if not item.get("prompt", "").strip() and not item.get("source", "").strip():
                 errors.append(f"{image_id}: no image prompt or source is recorded.")
+            if image_spec.spec_required(item, config):
+                errors.extend(image_spec.freshness_errors(item))
             if config["provenance"].get("require_image_records", True):
                 provenance = item.get("provenance", {})
                 if not isinstance(provenance, dict):

@@ -1,0 +1,37 @@
+name: Contract tests
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contract-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-tests:
+    name: image spec contract, pipeline selftest, regression
+    # The repository is public and the runner is self-hosted, so a pull request
+    # from a fork must never be scheduled on it: only this repository's own
+    # branches, or a manual run, reach the runner.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the test dependency
+        run: python -m pip install "Pillow>=12.3,<13"
+      - name: Image spec contract test
+        run: python skills/rainmojo-so-lite/scripts/image_spec_contract_test.py
+      - name: Content pipeline selftest
+        run: python skills/rainmojo-so-lite/scripts/content_pipeline_selftest.py
+      - name: Regression
+        run: python skills/rainmojo-so-lite/scripts/regression.py

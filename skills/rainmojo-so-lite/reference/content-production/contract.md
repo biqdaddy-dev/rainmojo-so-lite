@@ -163,6 +163,14 @@ content_pipeline.py review-content --client <client> --slug <slug> \
 Use `content-review.example.json` as the neutral starter and replace its reviewer
 and SHA-256 placeholders before recording it.
 
+`image_specs_ready` is not manually assertable either. Every image a model will
+generate carries a `spec` in `image-manifest.json` and a `spec_compiled` record
+written by `image_production.py compile-spec`; the transition is refused while any
+of them is missing, invalid or stale. `process` refuses a `prompt` that has
+drifted from its compiled spec, so the prompt is always the compiled one. The
+field reference, the geometry the spec derives and the review protocol are in
+`image-spec.contract.md`.
+
 The input file is confined to the article package. Any later `article.md` edit
 changes its SHA-256, invalidates the review evidence, fails validation, and
 blocks later state transitions until the package is moved back to `draft_ready`

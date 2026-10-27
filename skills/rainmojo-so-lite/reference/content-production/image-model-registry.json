@@ -1,0 +1,103 @@
+{
+  "version": "1.0.0",
+  "checked_on": "2026-10-25",
+  "_note": "Capability data for the image generators a client may compile prompts for. This is data on purpose: model names, prompt limits and negative-prompt support change every few months, and nothing here is hardcoded in image_spec.py. images.spec.target_model names a key below; the entry then supplies prompt_target and max_prompt_words unless the client config sets them explicitly. Re-check each row against the vendor's own documentation before relying on it, and add a row rather than editing code when a new model appears.",
+  "_fields": {
+    "prompt_target": "Where exclusions may go: negative_prompt for a real negative channel, inline_constraints for a Constraints block in the prompt, none for a model whose vendor says to describe the positive state instead.",
+    "max_prompt_words": "Word budget for the compiled prompt, 0 for no trim. Not a hard API limit: it is the length past which the vendor or a benchmark says control degrades.",
+    "supports_json_prompt": "Whether a structured prompt is in distribution for this model rather than merely tolerated.",
+    "supports_layout_boxes": "Whether the model accepts per-element bounding boxes, which is the only documented way to reserve a region of the frame.",
+    "rewrites_prompt": "Whether the service rewrites the prompt before generating, which breaks determinism. Log what came back.",
+    "clause_order": "The vendor's own recommended clause order, for reference when reviewing a compiled prompt."
+  },
+  "models": {
+    "gemini-image": {
+      "label": "Google Gemini image generation, Nano Banana line",
+      "prompt_target": "none",
+      "max_prompt_words": 0,
+      "supports_json_prompt": false,
+      "supports_layout_boxes": false,
+      "rewrites_prompt": false,
+      "clause_order": "shot type, subject, setting, light, camera angle, lens",
+      "notes": "No negative-prompt field; an unknown key is rejected. The vendor's rule is to describe the positive state, a deserted street rather than no cars. Prose paragraphs, not keyword lists. Open with an explicit instruction to create an image. All output carries SynthID.",
+      "source": "https://ai.google.dev/gemini-api/docs/image-generation"
+    },
+    "openai-gpt-image": {
+      "label": "OpenAI image generation",
+      "prompt_target": "inline_constraints",
+      "max_prompt_words": 0,
+      "supports_json_prompt": true,
+      "supports_layout_boxes": false,
+      "rewrites_prompt": true,
+      "clause_order": "background and scene, subject, key details, constraints",
+      "notes": "No negative-prompt field, but the vendor's guide prescribes stating exclusions inline and restating them on every edit, which is what inline_constraints emits. Short labelled blocks beat one long paragraph for a complex ask. The service revises prompts; log what it returns. The vendor concedes it struggles to place elements precisely in layout-sensitive compositions.",
+      "source": "https://developers.openai.com/cookbook/examples/multimodal/image-gen-models-prompting-guide"
+    },
+    "midjourney": {
+      "label": "Midjourney",
+      "prompt_target": "negative_prompt",
+      "max_prompt_words": 60,
+      "supports_json_prompt": false,
+      "supports_layout_boxes": false,
+      "rewrites_prompt": false,
+      "clause_order": "subject, medium, environment, lighting, colour, mood, composition",
+      "notes": "The one model that penalises detail: its own documentation says short prompts generate the best images and warns that long lists confuse it, so the word budget here is deliberately tight. The avoid list goes to the --no parameter, which weights each term at minus one half and reads each word independently. A structured prompt cannot be processed at all.",
+      "source": "https://docs.midjourney.com/hc/en-us/articles/32023408776205-Prompt-Basics"
+    },
+    "flux": {
+      "label": "Black Forest Labs FLUX",
+      "prompt_target": "none",
+      "max_prompt_words": 0,
+      "supports_json_prompt": true,
+      "supports_layout_boxes": true,
+      "rewrites_prompt": true,
+      "clause_order": "prose for the lighter variants, structured prompt for the production ones",
+      "notes": "Negative prompts are explicitly unsupported and an unknown field is rejected. The current line expands a short prompt itself before generating, which is a standing source of non-determinism. Layout prompts take a caption plus an element array of boxes on a 0 to 1000 axis scale, y before x, which is the documented way to keep a headline band clear. Carries no C2PA manifest.",
+      "source": "https://docs.bfl.ai/guides/prompting_unified_reference.md"
+    },
+    "stable-diffusion-3-5": {
+      "label": "Stability Stable Diffusion 3.5",
+      "prompt_target": "negative_prompt",
+      "max_prompt_words": 0,
+      "supports_json_prompt": false,
+      "supports_layout_boxes": false,
+      "rewrites_prompt": false,
+      "clause_order": "style, subject and action, composition and framing, lighting and colour, technical parameters",
+      "notes": "A real negative_prompt field on both text-to-image and image-to-image, up to 10,000 characters. Older attention-weighting syntax in parentheses is ignored.",
+      "source": "https://docs.stability.ai/api-reference/generate/stable-diffusion-35.md"
+    },
+    "ideogram-4": {
+      "label": "Ideogram 4.x",
+      "prompt_target": "none",
+      "max_prompt_words": 0,
+      "supports_json_prompt": true,
+      "supports_layout_boxes": true,
+      "rewrites_prompt": true,
+      "clause_order": "summary, subject detail, pose, secondary elements, setting, lighting, framing, finish",
+      "notes": "The negative-prompt field was removed in this line; the 3.x line still has one. Trained on captions in its own structured format, so a structured prompt is in distribution rather than merely accepted, and it takes element boxes on the same 0 to 1000 axis scale. Turn the magic prompt off or the service rewrites what you send. Text named early in the prompt renders more reliably than text added at the end.",
+      "source": "https://docs.ideogram.ai/prompting/prompt-structure.md"
+    },
+    "recraft": {
+      "label": "Recraft",
+      "prompt_target": "none",
+      "max_prompt_words": 0,
+      "supports_json_prompt": false,
+      "supports_layout_boxes": false,
+      "rewrites_prompt": false,
+      "clause_order": "shot type and subject, framing, setting, lighting, atmosphere, optics, texture, genre, palette",
+      "notes": "No negative-prompt parameter anywhere in the API. Its own example prompts always pair a camera number with the plain-language effect of that number, which is the behaviour this compiler copies.",
+      "source": "https://www.recraft.ai/docs/prompt-engineering-guide/visual-formats/photorealism.md"
+    },
+    "adobe-firefly": {
+      "label": "Adobe Firefly",
+      "prompt_target": "none",
+      "max_prompt_words": 0,
+      "supports_json_prompt": false,
+      "supports_layout_boxes": false,
+      "rewrites_prompt": false,
+      "clause_order": "image type, subject, action, angle, lighting, background, colour palette, style",
+      "notes": "No negative-prompt parameter confirmed, and Adobe staff have said the model does not interpret one. Its own guide annotates every example prompt with the field each clause fills, which makes it the closest thing to a published version of what this compiler emits. Avoid imperative verbs such as generate or create.",
+      "source": "https://www.adobe.com/cc-shared/assets/pdf/business/teams/sdk/firefly-image-model-4-guide-updated.pdf"
+    }
+  }
+}

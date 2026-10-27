@@ -1,0 +1,579 @@
+{
+  "reviewer": "<your name, the person who looked at the image>",
+  "notes": "<what you looked at: the full frame, then every crop from review-crops>",
+  "image_sha256": "<sha256 printed by review-crops, of the optimized file you reviewed>",
+  "crops_reviewed": 9,
+  "checks": {
+    "composition": "passed",
+    "no_unapproved_text": "passed",
+    "logo_clear_space": "passed",
+    "anatomy_or_subject_integrity": "passed",
+    "equipment_or_scene_accuracy": "passed",
+    "brand_accuracy": "passed"
+  },
+  "plausibility": {
+    "functional_plausibility": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Could every made object in the frame actually work: fastenings that fasten, straps and cords that go somewhere, strings and cables under the right tension, handles, hinges and controls where a hand could reach them?"
+    },
+    "object_integrity": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Is every made object complete and symmetrical where its design is symmetrical, with no part fused into another and no edge that dissolves into a smudge?"
+    },
+    "held_object_function": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Is everything held or worn held or worn the way it is actually used, rather than in a grip or a position that would not work?"
+    },
+    "text_free": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Is the image free of text, numbers, signage, logos and watermarks the spec did not ask for, and free of lettering that reads as distorted or nonsensical glyphs?"
+    },
+    "hand_and_finger_count": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Does every visible hand have five fingers, and every person the right number of arms, legs and joints, each bending the way a joint bends?"
+    },
+    "limb_proportion": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Are the proportions right: neck, arm and leg lengths, head size against body, with no limb stretched or shortened to fit the frame?"
+    },
+    "face_detail": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Do the eyes, teeth, ears and any eyeglasses hold up close: matching pupils and catchlights, a gaze that goes somewhere, teeth that are separate from the lip and gum, frames that rest on the ears and nose?"
+    },
+    "merged_bodies": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Does each person own their own body: no shared or merged limb between two people, no arm that belongs to nobody?"
+    },
+    "hand_object_contact": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Does each hand that holds something close around it, with the fingers on the near side in front and the far side hidden?"
+    },
+    "gaze_and_expression": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Do both eyes point where the spec says, with an expression that fits the action rather than a blank or over-glossy stare?"
+    },
+    "material_realism": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Do skin, hair and fabric read as real material rather than wax, plastic or airbrush, with pores, stray hairs and creases where real ones would be?"
+    },
+    "resolution_coherence": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Does the whole frame look like one photograph: the same sharpness, grain and noise throughout, with no element that looks cut from a different picture?"
+    },
+    "unposed_credibility": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Does the scene look like something that happened rather than a staged shoot: no impossible tidiness, no everybody-in-focus-and-smiling perfection the brief did not ask for?"
+    },
+    "count_integrity": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Does the image hold exactly the people and objects the spec names, with nothing duplicated, merged or added?"
+    },
+    "cross_entity_shadows": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Do the shadows of every person and object run in the same direction, so that one light position explains all of them at once?"
+    },
+    "shadow_geometry": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Do the shadow lengths match one light elevation, and does the line from each object to its own shadow point back toward the same light?"
+    },
+    "contact_shadows": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Does everything resting on a surface meet it, with a contact shadow in the gap, so that nothing floats and nothing sinks into the floor?"
+    },
+    "support_and_balance": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Is every object supported the way the spec says, and would it stay there under gravity rather than tipping, sliding or hanging from nothing?"
+    },
+    "shared_vanishing_lines": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Do the parallel planes in the frame agree: floor, counter, table and shelf edges converging on one horizon rather than each to its own?"
+    },
+    "same_ground_plane": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Do all the figures stand on one floor, with their feet on a ground plane that recedes consistently, rather than on separate invisible shelves?"
+    },
+    "horizon_eyeline": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Does the horizon cross each standing person at the height the spec's camera height requires, the same share of their height for everyone of equal height?"
+    },
+    "relative_scale": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Is every person and object the size its distance requires, measured against the scale anchors in the spec?"
+    },
+    "occlusion_depth_order": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Does every nearer thing overlap the things behind it consistently, with no element both in front of and behind the same object?"
+    },
+    "straight_lines": {
+      "status": "not_applicable",
+      "evidence": "<say what is absent from the frame>",
+      "_check": "Do the lines that are straight in the world stay straight and evenly spaced: wall edges, tile grids, window frames, stair treads, shelf fronts?"
+    },
+    "focus_falloff": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Does sharpness fall off with distance from the focus plane, with nothing behind a soft plane rendered sharper than it?"
+    },
+    "reflection_and_transparency": {
+      "status": "not_applicable",
+      "evidence": "<say what is absent from the frame>",
+      "_check": "Does every mirror, glass and glossy surface show what actually stands in front of it, in the right place, and does transparent material bend what is behind it?"
+    },
+    "fluid_and_fabric": {
+      "status": "not_applicable",
+      "evidence": "<say what is absent from the frame>",
+      "_check": "Do liquid surfaces sit level, pours fall downward, steam rise, and fabric hang and crease under gravity rather than floating or standing stiff?"
+    },
+    "locale_truth": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Do the local details in the spec read correctly for the stated place: the script on signage, uniforms and dress, plates, plants, architecture, fittings?"
+    },
+    "negative_space_clean": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Is the area the spec reserves for a headline or logo quiet enough to carry type at the published size?"
+    },
+    "crop_safety": {
+      "status": "passed",
+      "evidence": "<what you saw and in which crop>",
+      "_check": "Does the subject survive the crops the spec names, with nothing essential cut at the stated aspect ratios?"
+    }
+  },
+  "spec_answers": {
+    "q_anomalies": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Before reading any other question, look at the whole image and every crop: is it free of anything a careful viewer would find wrong or implausible? The scene is in Bangkok, Thailand. Look at people (two people with one face; extra, missing or fused fingers; a face stretched by the lens), repeats (repeated things that are one pasted copy; stock tiled in identical rows; one item drawn twice, held and set down), size and distance (sizes that do not shrink with distance), support and physics (a thing with nothing holding it up; people or things standing on the wrong surface; food no dish on the table could give), light (a light or shadow with no source; faces lit from the front while the sun is behind them), text (lettering that is not a real script), time and place (a garment, tool, building or plant from the wrong country, century or season for that place), and at anything else. If not, answer no and list each thing in the evidence, with where it is."
+    },
+    "q_pharmacist": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the image show exactly 1 Thai pharmacist in her thirties?"
+    },
+    "q_pharmacist_appearance": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the pharmacist look like this: mid-thirties, medium build, black hair tied back, warm light-brown skin?"
+    },
+    "q_pharmacist_wardrobe": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the pharmacist wear this: short-sleeved white dispensing coat over a navy polo shirt, a plain unprinted lanyard?"
+    },
+    "q_pharmacist_position": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the pharmacist placed here in the frame: left of centre, behind the counter, facing across it? Answer from where it sits in fractions of the frame width and height."
+    },
+    "q_pharmacist_action": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the pharmacist doing this: points at a line on the medicine label while explaining the dose?"
+    },
+    "q_pharmacist_pose": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the body of the pharmacist hold this pose, with joints that bend the way a body bends: standing behind the counter, weight on both feet, torso turned a quarter toward the customer, shoulders level?"
+    },
+    "q_pharmacist_hands_action": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Do the hands of the pharmacist do this: her left hand holds the medicine box at its base; her right index finger points at the label on its front, the fingertip beside the printed panel so the panel stays visible?"
+    },
+    "q_pharmacist_hand_left": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is it the left hand of the pharmacist, her own left, whichever side of the picture that falls on, that holds the medicine box at its base?"
+    },
+    "q_pharmacist_hand_right": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is it the right hand of the pharmacist, her own right, whichever side of the picture that falls on, whose index finger points at the label on its front?"
+    },
+    "q_pharmacist_hands_count": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Where the fingers of the pharmacist can be counted, does each visible hand have five, counting the thumb, with none extra, fused or bending the wrong way? Fingers covered by what the hand holds are fine; answer cannot_tell if no finger can be counted."
+    },
+    "q_pharmacist_hands_joints": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Do the fingers of the pharmacist bend only at the knuckles, in the direction a finger bends?"
+    },
+    "q_pharmacist_hands_thumb": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the thumb of each visible hand of the pharmacist on the inner side, where a thumb is?"
+    },
+    "q_pharmacist_hands_proportion": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is each hand of the pharmacist the right size for the wrist and forearm it is attached to?"
+    },
+    "q_pharmacist_gaze": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Do both eyes of the pharmacist point here: down at the box, toward where her finger points?"
+    },
+    "q_customer": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the image show exactly 1 older Thai man listening?"
+    },
+    "q_customer_appearance": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the older customer look like this: early sixties, slight build, short grey hair, glasses?"
+    },
+    "q_customer_wardrobe": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the older customer wear this: pale blue short-sleeved shirt, dark trousers?"
+    },
+    "q_customer_position": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the older customer placed here in the frame: right of centre, nearer the camera, back three-quarters to the lens? Answer from where it sits in fractions of the frame width and height."
+    },
+    "q_customer_action": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the older customer doing this: leans in to read the label she is pointing at?"
+    },
+    "q_customer_pose": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the body of the older customer hold this pose, with joints that bend the way a body bends: standing on the near side of the counter, leaning in slightly from the waist, both arms resting on the counter edge?"
+    },
+    "q_customer_hands_action": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Do the hands of the older customer do this: both hands rest flat on the counter, fingers relaxed and apart?"
+    },
+    "q_customer_hands_count": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Where the fingers of the older customer can be counted, does each visible hand have five, counting the thumb, with none extra, fused or bending the wrong way? Fingers covered by what the hand holds are fine; answer cannot_tell if no finger can be counted."
+    },
+    "q_customer_hands_joints": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Do the fingers of the older customer bend only at the knuckles, in the direction a finger bends?"
+    },
+    "q_customer_hands_thumb": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the thumb of each visible hand of the older customer on the inner side, where a thumb is?"
+    },
+    "q_customer_hands_proportion": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is each hand of the older customer the right size for the wrist and forearm it is attached to?"
+    },
+    "q_customer_gaze": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Do both eyes of the older customer point here: down at the medicine box the pharmacist holds?"
+    },
+    "q_counter": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the image show exactly 1 pale wood dispensing counter?"
+    },
+    "q_counter_scale": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the counter the right size: 0.9 m high, 2.4 m long, 0.6 m deep, so that its top meets the pharmacist just above the hip, a little below her waist? Judge real sizes, not how large each looks at its distance."
+    },
+    "q_counter_support": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the counter visibly standing on the tiled floor, with contact and a contact shadow where they meet?"
+    },
+    "q_counter_position": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the counter placed here: runs across the lower third of the frame, separating the two people? Answer from where it sits in fractions of the frame width and height."
+    },
+    "q_counter_material": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the counter read as oak-veneer laminate on a white base unit?"
+    },
+    "q_counter_state": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the counter clean, uncluttered?"
+    },
+    "q_medicine_box": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the image show exactly 1 small white medicine carton with a blank label panel held by the pharmacist?"
+    },
+    "q_medicine_box_scale": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the medicine box the right size: about 9 cm tall, 5 cm wide, so that it fits inside the pharmacist's hand with her fingers wrapping most of its width? Judge real sizes, not how large each looks at its distance."
+    },
+    "q_medicine_box_support": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the medicine box visibly held by the pharmacist, with contact and a contact shadow where they meet?"
+    },
+    "q_medicine_box_position": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the medicine box placed here: just above the counter near the centre of the frame, tilted slightly toward the customer? Answer from where it sits in fractions of the frame width and height."
+    },
+    "q_medicine_box_material": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the medicine box read as printed carton board, matte?"
+    },
+    "q_medicine_box_state": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the medicine box closed, held upright?"
+    },
+    "q_shelving": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the image show exactly 1 wall of sage-green medicine shelving with boxed stock?"
+    },
+    "q_shelving_scale": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the shelving wall the right size: 2.2 m high, 3 m wide, so that its top shelf sits well above the pharmacist's head, about a third taller than she is? Judge real sizes, not how large each looks at its distance."
+    },
+    "q_shelving_support": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the shelving wall visibly mounted on the back wall, with contact and a contact shadow where they meet?"
+    },
+    "q_shelving_position": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the shelving wall placed here: fills the frame behind the pharmacist? Answer from where it sits in fractions of the frame width and height."
+    },
+    "q_shelving_material": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the shelving wall read as painted MDF shelves, cardboard stock boxes?"
+    },
+    "q_shelving_state": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the shelving wall fully stocked, boxes squared up?"
+    },
+    "q_camera_framing": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the pharmacist framed like this: framed from the waist up?"
+    },
+    "q_camera_angle": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the camera at an eye level angle to the main subject?"
+    },
+    "q_horizon": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the horizon or eye-level line sit across the middle of the frame, level, with receding parallel edges meeting on it?"
+    },
+    "q_eye_line": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does that horizon line cross the eyes of the pharmacist and the older customer, as a camera at their eye height requires?"
+    },
+    "q_focus": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the pharmacist the sharpest thing in the frame?"
+    },
+    "q_soft_customer": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the older customer clearly out of focus, with its edges blurred and any fine detail or lettering on it unreadable, as its distance from the focus plane requires?"
+    },
+    "q_soft_shelving": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the shelving wall clearly out of focus, with its edges blurred and any fine detail or lettering on it unreadable, as its distance from the focus plane requires?"
+    },
+    "q_light": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is every person and object lit mainly from the front left by daylight through the shopfront window out of frame, with the shaded side on the opposite side? A softer, weaker fill is declared as well (cool ceiling fluorescent tubes lifting the shadow side by about one stop; bounce off the white counter base under the chins) and is expected: it lifts the shadows without casting its own."
+    },
+    "q_shadows": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Do all shadows fall right with lengths that match one light height?"
+    },
+    "q_pair_shadow_pharmacist_customer": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Do the shadows of the pharmacist and the older customer run in the same direction, as one light position requires?"
+    },
+    "q_pair_shadow_customer_counter": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Do the shadows of the older customer and the counter run in the same direction, as one light position requires?"
+    },
+    "q_pair_ground_plane": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Do the pharmacist, the older customer and the counter all sit on one floor that recedes consistently, rather than on separate invisible shelves?"
+    },
+    "q_horizon_cut_pharmacist": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the horizon cross the pharmacist at about the eyes, measured on the image?"
+    },
+    "q_horizon_cut_customer": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the horizon cross the older customer at about the eyes, measured on the image?"
+    },
+    "q_negative_space": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the upper right quarter, where the shelving goes soft quiet enough to carry a headline?"
+    },
+    "q_crop_safety": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does this hold: both faces and the medicine box stay inside a centre square, so the 1:1 and 4:5 crops lose only the shelving? Check it by drawing each stated crop on the frame, not by eye."
+    },
+    "q_locale_01": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is this local detail right: the shelf labels and the price tags carry Thai script?"
+    },
+    "q_locale_02": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is this local detail right: the pharmacist wears a short-sleeved white coat over a polo shirt, the common Thai pharmacy dress?"
+    },
+    "q_locale_03": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is this local detail right: a floor-standing fan sits at the end of the counter?"
+    },
+    "q_locale_04": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is this local detail right: the floor is large-format grey porcelain tile, the standard Thai shophouse floor?"
+    },
+    "q_invariant_01": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the image respect this: the counter separates the two people: each keeps their arms on their own side of it? Check each part on its own and answer yes only if every part holds; name each part and what you saw in the evidence."
+    },
+    "q_invariant_02": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the image respect this: the medicine box is small enough to sit in one hand and stays smaller than the pharmacist's forearm? Check each part on its own and answer yes only if every part holds; name each part and what you saw in the evidence. Judge real sizes, not how large each looks at its distance."
+    },
+    "q_invariant_03": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the image respect this: the customer stands nearer the camera, so he reads noticeably larger in the frame than the pharmacist although he is only 6 cm taller? Check each part on its own and answer yes only if every part holds; name each part and what you saw in the evidence."
+    },
+    "q_invariant_04": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the image respect this: both people stand on the same floor, so their feet sit on one ground plane and their eye lines fall within a few centimetres of each other and of the horizon? Check each part on its own and answer yes only if every part holds; name each part and what you saw in the evidence."
+    },
+    "q_invariant_05": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does the image respect this: the shelving behind is parallel to the counter, so both recede to the same vanishing point? Check each part on its own and answer yes only if every part holds; name each part and what you saw in the evidence."
+    },
+    "q_imperfection_01": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is this actually visible: a scuff in the counter laminate at the near corner, where customers rest their bags?"
+    },
+    "q_imperfection_02": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is this actually visible: one shelf box on the middle row pushed out of line with its neighbours?"
+    },
+    "q_imperfection_03": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is this actually visible: a few strands of the pharmacist's hair loose at the left temple?"
+    },
+    "q_imperfection_04": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is this actually visible: a thumbprint on the glass of the shopfront door behind the customer?"
+    },
+    "q_must_not_01": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the image free of this: readable brand names or drug names on any box?"
+    },
+    "q_must_not_02": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the image free of this: a doctor's long white coat or a stethoscope, which belong to a clinic rather than a pharmacy?"
+    },
+    "q_must_not_03": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the image free of this: pills loose on the counter?"
+    },
+    "q_must_not_04": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the image free of this: retouched glossy skin or specular bloom?"
+    },
+    "q_distinct_faces": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Does each person have a visibly different face, build and signs of age, as different people would, rather than copies of one face? Compare the face crops side by side."
+    },
+    "q_undeclared": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the frame free of people and key objects beyond the ones the spec names, with no extra figures in the background and no added props?"
+    },
+    "q_malformed_glyphs": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the image free of malformed or invented glyphs, the half-formed marks that read as lettering at a glance without being any real script?"
+    },
+    "q_no_text": {
+      "answer": "yes",
+      "evidence": "<what you saw and in which crop>",
+      "_question": "Is the image free of any legible text, numbers, logos or watermarks the spec did not ask for?"
+    }
+  },
+  "_instructions": "status is passed, failed or not_applicable; answer is yes or no. Every entry needs evidence naming the zone or crop you looked at and what you saw. Answer q_anomalies first, before reading the other questions. Skip a question whose parent thing is absent from the image; when the parent fails on count or kind, still answer every question below it. Review the full image, then all 9 crops from review-crops."
+}
