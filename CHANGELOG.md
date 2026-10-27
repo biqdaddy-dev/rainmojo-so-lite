@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.8.1 (2026-10-27)
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- ปลั๊กอินสร้างและเปิด workspace ลูกค้าบน macOS ได้แล้ว ก่อนหน้านี้บน Mac ระบบปฏิเสธทุกโฟลเดอร์ที่อยู่ใต้ /var
+  เช่นโฟลเดอร์ชั่วคราว เพราะ macOS ทำโฟลเดอร์นั้นเป็นทางลัดของระบบ
+
+### Under the hood
+
+- New `macos` workflow: a GitHub-hosted macos-latest job runs the contract test, the pipeline selftest and regression on
+  pull requests, on demand and weekly. This repository is public, so hosted minutes cost nothing; `image_spec.py` is
+  byte-identical to the full edition's, so the shared module is covered on macOS 26 arm64 too.
+- Its first run found the bug above: `client_workspace.assert_no_reparse_components` refused `/var`, which macOS ships as a
+  link into `/private`. A link is now trusted only when root owns it and owns its directory, which nobody else may write
+  to; a link any user made is still refused (`check_symlink_guard` in the selftest).
+
 ## 2.8.0 (2026-10-26)
 
 ### สิ่งที่ผู้ใช้จะเห็น

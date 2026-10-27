@@ -189,17 +189,40 @@ def is_reparse_point(path: Path) -> bool:
         raise WorkspaceError(f"Cannot inspect path safety for {path}: {exc}") from exc
 
 
+def is_trusted_system_link(path: Path) -> bool:
+    """A symlink the operating system made, which no user could have planted.
+
+    macOS ships /var, /tmp and /etc as links into /private, so every temporary
+    directory crosses one. A link is trusted only when root owns it and root
+    owns its directory, which nobody else may write to. A link any user made
+    fails the first test, so the guard still refuses it.
+    """
+    if os.name == "nt":
+        return False
+    try:
+        link = path.lstat()
+        parent = path.parent.lstat()
+    except OSError:
+        return False
+    return (
+        stat.S_ISLNK(link.st_mode)
+        and link.st_uid == 0
+        and parent.st_uid == 0
+        and not parent.st_mode & (stat.S_IWGRP | stat.S_IWOTH)
+    )
+
+
 def assert_no_reparse_components(path: Path) -> None:
     absolute = Path(os.path.abspath(os.fspath(path)))
     parts = absolute.parts
     if not parts:
         return
     cursor = Path(parts[0])
-    if cursor.exists() and is_reparse_point(cursor):
+    if cursor.exists() and is_reparse_point(cursor) and not is_trusted_system_link(cursor):
         raise WorkspaceError(f"Path crosses a symlink or junction: {cursor}")
     for part in parts[1:]:
         cursor = cursor / part
-        if cursor.exists() and is_reparse_point(cursor):
+        if cursor.exists() and is_reparse_point(cursor) and not is_trusted_system_link(cursor):
             raise WorkspaceError(f"Path crosses a symlink or junction: {cursor}")
 
 
