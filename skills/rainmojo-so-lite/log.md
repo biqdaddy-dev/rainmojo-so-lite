@@ -29,7 +29,7 @@ Mirror of rainmojo-so DP-017 (v3.22.0). The full edition later moved its dated t
 
 ## [2026-10-26] chore - v2.7.0 re-port from f632e00 (DP-016)
 
-Closed with PR #6 (biqdaddy-dev/rainmojo-so-lite#6), shipping in v2.7.0. หมวด: image pipeline. Started 2026-10-25 (the v2.5.0 row), finished when PR #6 merges, which is the owner's call. Planned 5 hours across its three rows (3, 1 and 1); actual 8.0 hours of active work and 5440k tokens, measured from this session's transcript as the PR description states: gaps of ten minutes or less between events, and input, output and cache writes, a lower bound by two compaction calls.
+Closed with PR #6 (biqdaddy-dev/rainmojo-so-lite#6), shipping in v2.7.0. หมวด: image pipeline. Started 2026-10-25 (the v2.5.0 row), finished 2026-10-27 (PR #6 squash-merged as 0be485a and released as v2.7.0). Planned 5 hours across its three rows (3, 1 and 1); actual 8.0 hours of active work and 5440k tokens, measured from this session's transcript as the PR description states: gaps of ten minutes or less between events, and input, output and cache writes, a lower bound by two compaction calls.
 
 The review loop ran twice: this edition ported `ad2e1ad`, proved parity, and reported six
 findings against it; the full edition fixed all six and this edition ported `f632e00` and
@@ -1405,7 +1405,7 @@ are unchanged: root `plugin.json` version drift, and `images.spec.target_model` 
 
 ## [2026-10-25] feature - v2.4.0 image shot spec and plausibility gate (DP-015)
 
-Closed with PR #6 (biqdaddy-dev/rainmojo-so-lite#6), shipping in v2.7.0, together with DP-016. หมวด: image pipeline. Started 2026-10-25, finished when PR #6 merges, which is the owner's call. Planned 5 hours; actual 0.3 hours and 270k tokens, measured as for DP-016.
+Closed with PR #6 (biqdaddy-dev/rainmojo-so-lite#6), shipping in v2.7.0, together with DP-016. หมวด: image pipeline. Started 2026-10-25, finished 2026-10-27 (PR #6 squash-merged as 0be485a and released as v2.7.0). Planned 5 hours; actual 0.3 hours and 270k tokens, measured as for DP-016.
 
 Trigger: the owner asked for the prompt and image logic of every rainmojo-so edition to
 check people and objects for physical and logical correctness, with camera angle and
