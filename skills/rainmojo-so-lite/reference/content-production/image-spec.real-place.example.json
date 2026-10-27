@@ -1,0 +1,214 @@
+{
+  "version": 1,
+  "purpose": "the view a ringside ticket actually buys at Bangla Boxing Stadium, looking up at two fighters mid-round from below the canvas",
+  "medium": "photograph",
+  "style": {
+    "look": "travel editorial reportage, available light, unposed",
+    "color_palette": "canvas blue and red ropes, warm stage light on skin, deep shadow in the stands",
+    "mood": "loud, hot, immediate",
+    "texture": "fine grain, sweat sheen on skin, matte canvas"
+  },
+  "location": {
+    "place": "the ringside seats of an open-sided Muay Thai stadium hall",
+    "locale": "Patong, Phuket, Thailand",
+    "time_of_day": "night",
+    "weather": "warm and humid, the air still",
+    "locale_details": [
+      "the ring ropes are wrapped in red and blue sleeves, the Thai stadium convention",
+      "both fighters wear Muay Thai shorts and prajioud armbands, with rope anklets",
+      "the canvas carries painted Thai sponsor lettering, worn at the corners",
+      "the stand seating is plain moulded plastic bolted to a steel frame"
+    ],
+    "reference": {
+      "place_is_real": true,
+      "place_name": "Bangla Boxing Stadium, Patong",
+      "address": "Bangla Road behind Jungceylon, Patong, Kathu District, Phuket 83150",
+      "sources": [
+        {
+          "url": "https://www.phuket101.net/patong-boxing-stadium/",
+          "publisher": "Phuket 101",
+          "shows": "the hall layout: a two-storey stadium with bars on the ground floor and an upper amphitheatre of seating wrapped around the ring",
+          "viewpoint": "interior_wide",
+          "accessed": "2026-10-25",
+          "rights": "reference_only"
+        },
+        {
+          "url": "https://www.trazy.com/experience/detail/bangla-boxing-stadium-phuket-discount-ticket",
+          "publisher": "Trazy",
+          "shows": "the seating tiers: ringside sits below the level of the ring so spectators look up at the fighters, while the stadium seats are raised for a view of the whole ring",
+          "viewpoint": "seating",
+          "accessed": "2026-10-25",
+          "rights": "reference_only"
+        },
+        {
+          "url": "https://www.waug.com/en/activities/165128",
+          "publisher": "WAUG",
+          "shows": "the nightly programme: male and female bouts with the Wai Kru Ram Muay performed before each fight",
+          "viewpoint": "stage_or_ring",
+          "accessed": "2026-10-25",
+          "rights": "reference_only"
+        }
+      ],
+      "verified_facts": [
+        "ringside seating sits below the level of the ring, so a spectator there looks up at the fighters",
+        "the stadium seats behind ringside are raised, high enough to see the whole ring",
+        "the ring stands on a raised platform inside a hall that is open at the sides",
+        "bouts run at night, with male and female fighters on the same card"
+      ],
+      "conflicting_claims": [
+        "sources disagree on the fight nights and the ticket price, so neither appears in this image"
+      ],
+      "conditioning_images": []
+    }
+  },
+  "camera": {
+    "shot_type": "medium_wide",
+    "angle": "low",
+    "tilt": "up",
+    "horizon": "below_frame",
+    "height_m": 0.95,
+    "focal_length_mm": 35,
+    "aperture_f": 2.8,
+    "subject_distance_m": 3.4,
+    "focus_on": "red_fighter"
+  },
+  "subjects": [
+    {
+      "id": "red_fighter",
+      "kind": "person",
+      "short_name": "red-corner fighter",
+      "count": 1,
+      "description": "Thai Muay Thai fighter in the red corner",
+      "appearance": "early twenties, lean and long-limbed, a narrow face with high cheekbones, close-cropped black hair, warm brown skin, a healed scar through the left eyebrow, sweating",
+      "wardrobe": "red Muay Thai shorts with gold trim, red prajioud armbands, rope anklets, boxing gloves",
+      "posture": "standing",
+      "pose": "mid-round, weight on the back foot, left arm raised in guard, right knee driving upward",
+      "hands": "both hands are inside laced boxing gloves held high at cheek height, thumbs wrapped",
+      "gaze": "fixed on the blue-corner fighter in front of him",
+      "expression": "concentrated, mouth closed around a gumshield",
+      "action": "drives a knee toward the blue-corner fighter",
+      "position": "left of centre, inside the ropes",
+      "height_m": 1.72,
+      "ground_height_m": 1.1,
+      "distance_m": 3.4,
+      "plane": "midground",
+      "interacts_with": [
+        "blue_fighter",
+        "ring"
+      ]
+    },
+    {
+      "id": "blue_fighter",
+      "kind": "person",
+      "short_name": "blue-corner fighter",
+      "count": 1,
+      "description": "Thai Muay Thai fighter in the blue corner",
+      "appearance": "late twenties, stockier, with a thick neck and a broad square jaw, black hair shaved at the sides and longer on top, deeper tan, a faded tattoo on the right shoulder, sweating",
+      "wardrobe": "blue Muay Thai shorts, blue prajioud armbands, rope anklets, boxing gloves",
+      "posture": "standing",
+      "pose": "turning away from the knee, elbows dropped to block, hips twisting right",
+      "hands": "both hands are inside laced boxing gloves, forearms turned inward to cover the ribs",
+      "gaze": "down at the incoming knee",
+      "expression": "braced, jaw set",
+      "action": "turns his hip to take the knee on the forearm",
+      "position": "right of centre, inside the ropes, half a step back",
+      "height_m": 1.7,
+      "ground_height_m": 1.1,
+      "distance_m": 4.1,
+      "plane": "midground",
+      "interacts_with": [
+        "red_fighter",
+        "ring"
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "id": "ring",
+      "name": "boxing ring on a raised platform with red and blue rope sleeves",
+      "short_name": "ring",
+      "count": 1,
+      "material": "steel frame, painted plywood apron, canvas, foam-sleeved rope",
+      "state": "in use, canvas scuffed",
+      "size": "6.1 m square canvas, the platform 1.1 m above the floor",
+      "height_m": 1.1,
+      "width_m": 6.1,
+      "scale_anchor": "its apron edge meets a standing spectator at the waist, and the fighters' feet start above a seated spectator's head",
+      "support": {
+        "kind": "stands_on",
+        "by": "the stadium floor"
+      },
+      "position": "fills the frame from the lower edge upward, the near rope crossing the lower third",
+      "distance_m": 2.6,
+      "plane": "foreground",
+      "interacts_with": [
+        "red_fighter",
+        "blue_fighter"
+      ]
+    },
+    {
+      "id": "stand",
+      "name": "raised tier of moulded plastic stadium seating",
+      "short_name": "seating tier",
+      "count": 1,
+      "material": "moulded plastic seats on a galvanised steel frame",
+      "state": "filled with spectators, faces lost in the dark",
+      "size": "about 4 m high at the back row",
+      "height_m": 4.0,
+      "scale_anchor": "its back row sits well above the ring canvas, about twice a standing person's height off the floor",
+      "support": {
+        "kind": "stands_on",
+        "by": "the stadium floor"
+      },
+      "position": "behind and above the ring, filling the upper background",
+      "distance_m": 14.0,
+      "plane": "background",
+      "interacts_with": []
+    }
+  ],
+  "spatial_layout": {
+    "foreground": "the near rope and the canvas edge, close and slightly soft",
+    "midground": "the two fighters on the canvas, sharp",
+    "background": "the raised seating tier and the dark open side of the hall, soft"
+  },
+  "lighting": {
+    "key": {
+      "source": "a bank of hard stage floodlights rigged directly above the ring",
+      "direction": "above",
+      "quality": "hard, from small sources high overhead, so shadows are short and dense"
+    },
+    "fill": [
+      "spill from the stadium house lights lifting the canvas",
+      "bounce off the pale canvas under the fighters' chins"
+    ],
+    "shadow_direction": "below",
+    "color_temperature_k": 5000
+  },
+  "composition": {
+    "subject_placement": "the two fighters on the left and right thirds with the point of contact on the centre line, the near rope crossing the lower third",
+    "negative_space": "the upper right quarter, where the dark open side of the hall reads as an even black field",
+    "crop_safety": "both fighters and the point of contact stay inside a centre square, so a 1:1 crop loses only the stand"
+  },
+  "background_focus": "blurred",
+  "realism": {
+    "imperfections": [
+      "the canvas is scuffed grey along the near rope where feet drag",
+      "one rope sleeve has slipped, showing the bare rope beneath it at the left post",
+      "sweat has darkened the waistband of the red fighter's shorts"
+    ]
+  },
+  "physical_invariants": [
+    "the camera is a ringside seat below the canvas, so the whole ring is seen from underneath and the near rope cuts across the fighters' legs",
+    "the fighters stand 1.1 m above the camera's floor and the lens is 0.95 m up, so the eye-level line passes below their feet and the canvas edge is seen from underneath",
+    "the floodlights hang directly above the ring, so each fighter's shadow pools on the canvas beneath him rather than stretching sideways",
+    "the knee and the forearm meet at one point, and both bodies lean consistently with that contact",
+    "the seating tier behind rises away from the ring, so its rows recede to the same vanishing point as the ring ropes"
+  ],
+  "must_not_show": [
+    "readable sponsor names, promoter logos or ticket prices",
+    "western boxing gloves without rope anklets or prajioud armbands",
+    "a referee standing between the fighters",
+    "an empty stand"
+  ],
+  "text_in_image": "none"
+}

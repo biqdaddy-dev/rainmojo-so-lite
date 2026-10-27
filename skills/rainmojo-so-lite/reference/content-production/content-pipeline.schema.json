@@ -493,7 +493,9 @@
         "inline",
         "style",
         "logo",
-        "metadata"
+        "metadata",
+        "spec",
+        "plausibility"
       ],
       "properties": {
         "style": {
@@ -512,6 +514,127 @@
             "language": {
               "type": "string",
               "minLength": 1
+            }
+          }
+        },
+        "spec": {
+          "type": "object",
+          "required": [
+            "required",
+            "prompt_target",
+            "max_people",
+            "default_avoid"
+          ],
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "required_for_source_types": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "target_model": {
+              "type": "string",
+              "description": "A key in image-model-registry.json. Set, it supplies prompt_target and max_prompt_words unless this config states them. Empty means the config's own values are used."
+            },
+            "prompt_target": {
+              "type": "string",
+              "enum": [
+                "negative_prompt",
+                "inline_constraints",
+                "none",
+                "positive_only"
+              ],
+              "description": "Where exclusions may go. Most current generators have no negative-prompt field, and their vendors say to describe the positive state instead, so none is a normal answer. positive_only is the old name for inline_constraints."
+            },
+            "max_people": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "max_key_objects": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "default_avoid": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "plausibility": {
+          "type": "object",
+          "required": [
+            "required",
+            "evidence_required",
+            "zoom_grid",
+            "checks"
+          ],
+          "properties": {
+            "required": {
+              "type": "boolean"
+            },
+            "evidence_required": {
+              "type": "boolean"
+            },
+            "min_evidence_chars": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "zoom_grid": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "crop_scale": {
+              "type": "number",
+              "minimum": 1
+            },
+            "checks": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "question"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "group": {
+                    "type": "string"
+                  },
+                  "question": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "not_applicable_when": {
+                    "type": "string",
+                    "enum": [
+                      "always",
+                      "no_people",
+                      "non_photographic",
+                      "no_locale_details",
+                      "absent_from_image",
+                      "no_spec_reviewer_judgement"
+                    ]
+                  },
+                  "verify_with": {
+                    "type": "string",
+                    "enum": [
+                      "ocr",
+                      "count"
+                    ],
+                    "description": "Route this check to a tool, not to a vision model: OCR for rendered text and an object or digit count for how many. Measured VQA accuracy is 13.7 to 24.9 per cent on rendered text and 67.4 per cent on counting (DSG, arXiv:2310.18235)."
+                  }
+                }
+              }
             }
           }
         }
