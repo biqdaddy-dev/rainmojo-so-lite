@@ -7,5 +7,6 @@
 
 | ID | หมวด | งาน | เริ่ม | ปิดเมื่อ | ชม. (แผน) | ชม. (จริง) | โทเคน | PR |
 |---|---|---|---|---|---:|---:|---:|---|
+| LITE-001 | ci | agentlint ใน CI ตามที่เจ้าของตัดสิน 2026-10-31: vendor `agentlint.py` กับ `standard.md` จาก plugin-optimizer v1.4.0 (agentlint 1.3.0) พร้อม `VENDOR.json`, workflow `agentlint.yml` ที่ fail เฉพาะกฎแข็ง, ลด `AGENTS.md`/`CLAUDE.md`/`GEMINI.md` ให้ไม่เกิน 200 บรรทัด, เพิ่มประโยค "ไม่ใช้เมื่อ" ให้ skill และ agent 6 คู่ที่ description ชนกัน, เปิดแผนงานนี้ และออกรุ่น 2.8.2 ตรวจในเครื่องได้ 0 error 0 warning | 2026-11-01 | 2026-11-01 | 3 | 1.5 | 200k | biqdaddy-dev/rainmojo-so-lite#9 |
 
 งานเก่าของปลั๊กอินนี้ใช้รหัส `DP-` และอยู่ใน PR เดิม, CHANGELOG และ git log ตามเดิม
