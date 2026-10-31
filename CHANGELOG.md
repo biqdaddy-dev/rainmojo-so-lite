@@ -15,10 +15,11 @@
   to plugin-optimizer v1.4.0 (agentlint 1.3.0, standard 1.1.0) with each file's sha256 in `VENDOR.json`. Like the contract
   tests, the job never schedules a pull request from a fork on the self-hosted runner.
 - The 9 warnings of the first scan are cleared:
-  - `SK-WHEN-NOT`: `seo-audit-lite` says when not to use it and names `aiso-audit-lite`, `so-audit-lite` and
-    `seo-onpage-lite`; `seo-schema-lite` names `aiso-schema-lite`; `aiso-citability-lite` names `aiso-content-lite`;
-    `seo-content-gap-analysis-lite` names `seo-competitor-lite`. The Codex, Gemini and Antigravity agent copies are
-    rebuilt with agentpack.
+  - `SK-WHEN-NOT`: one side of each pair says when not to use it and names the other. `seo-audit-lite` names
+    `so-audit-lite` and `aiso-audit-lite`; `seo-onpage-lite` names `seo-audit-lite`; `seo-schema-lite` names
+    `aiso-schema-lite`; `aiso-citability-lite` names `aiso-content-lite`; `seo-content-gap-analysis-lite` names
+    `seo-competitor-lite`. The pairs the full edition shares use its wording and sides. The Codex, Gemini and
+    Antigravity agent copies are rebuilt with agentpack.
   - `IF-LINES`: `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` go from 205 to 199 lines and stay identical. Dropped: the
     instruction to rerun `build.py`, which is not in this repository (replaced by "copy AGENTS.md over the other two"),
     and the fourth caution, which repeated the no-total-score rule already stated in the intro and in the Lite scope.
