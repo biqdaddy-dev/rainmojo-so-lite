@@ -1,0 +1,47 @@
+# agentlint for a repository that ships skills, agents or plugins.
+#
+# Copy this file to .github/workflows/agentlint.yml in the consumer repository
+# and vendor agentlint next to it (see ci/README.md in biqdaddy-dev/plugin-optimizer):
+#
+#   tooling/agentlint/agentlint.py   from skills/plugin-optimizer/scripts/agentlint.py
+#   tooling/agentlint/VENDOR.json    source, commit and sha256 of the copy
+#
+# `check --ci` fails only on the hard rules (SK-NAME-DIR, SK-DESC, SB-LINES) and
+# shows every other finding as a warning on the PR. Paths to skip go in an
+# .agentlintignore file at the repository root.
+name: agentlint
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agentlint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  agentlint:
+    name: agentlint --ci
+    # This repository is public and CI_RUNNER is self-hosted, so a pull request
+    # from a fork must never be scheduled on it: only this repository's own
+    # branches, or a manual run, reach the runner (same guard as contract-tests).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    # Private BIQDADDY repositories set the variable CI_RUNNER to their
+    # self-hosted runner label: GitHub-hosted runners fail on the account's
+    # bill. Public repositories can leave it unset.
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: agentlint (hard rules fail, the rest warn)
+        run: python tooling/agentlint/agentlint.py check --ci .

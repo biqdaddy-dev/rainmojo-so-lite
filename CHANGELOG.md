@@ -1,5 +1,32 @@
 # Changelog
 
+## 2.8.2 (2026-11-01)
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- ระบบเลือกเครื่องมือได้แม่นขึ้นเมื่อมีสองตัวที่ทำงานคล้ายกัน เช่น ตรวจ SEO ทั้งเว็บกับตรวจทั้ง SEO และ AI,
+  ตรวจ schema ที่มีอยู่กับสร้าง schema ใหม่, หาช่องว่างเนื้อหากับหาว่าคู่แข่งคือใคร
+  คำอธิบายของแต่ละตัวบอกแล้วว่าไม่ใช้เมื่อไรและให้ไปใช้ตัวไหนแทน
+
+### Under the hood
+
+- agentlint now runs on every pull request (`.github/workflows/agentlint.yml`, roadmap LITE-001). It fails only on the hard
+  rules `SK-NAME-DIR`, `SK-DESC` and `SB-LINES` and shows the rest as warnings. The copy in `tooling/agentlint/` is pinned
+  to plugin-optimizer v1.4.0 (agentlint 1.3.0, standard 1.1.0) with each file's sha256 in `VENDOR.json`. Like the contract
+  tests, the job never schedules a pull request from a fork on the self-hosted runner.
+- The 9 warnings of the first scan are cleared:
+  - `SK-WHEN-NOT`: one side of each pair says when not to use it and names the other. `seo-audit-lite` names
+    `so-audit-lite` and `aiso-audit-lite`; `seo-onpage-lite` names `seo-audit-lite`; `seo-schema-lite` names
+    `aiso-schema-lite`; `aiso-citability-lite` names `aiso-content-lite`; `seo-content-gap-analysis-lite` names
+    `seo-competitor-lite`. The pairs the full edition shares use its wording and sides. The Codex, Gemini and
+    Antigravity agent copies are rebuilt with agentpack.
+  - `IF-LINES`: `AGENTS.md`, `CLAUDE.md` and `GEMINI.md` go from 205 to 199 lines and stay identical. Dropped: the
+    instruction to rerun `build.py`, which is not in this repository (replaced by "copy AGENTS.md over the other two"),
+    and the fourth caution, which repeated the no-total-score rule already stated in the intro and in the Lite scope.
+    The host table became a four-line list with the same content.
+- New roadmap `docs/operations/roadmap.md` and archive `docs/archive/roadmap/README.md`. Task ids use the prefix `LITE-`
+  from LITE-001 (owner decision 2026-10-31); earlier `DP-` ids stay in their PRs and in this changelog.
+
 ## 2.8.1 (2026-10-27)
 
 ### สิ่งที่ผู้ใช้จะเห็น

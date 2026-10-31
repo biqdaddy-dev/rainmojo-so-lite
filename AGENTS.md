@@ -4,8 +4,7 @@
 อย่าง ChatGPT, Perplexity, Claude, Gemini และ Google AI Overviews มองเห็นและหยิบไปอ้างอิง
 รุ่นนี้เป็นรุ่น Lite ของ RAINMOJO SO: เก็บวิธีทำงานไว้ครบ รายงานเป็นเช็กลิสต์และจำนวนนับ ไม่มีคะแนนถ่วงน้ำหนัก
 
-ไฟล์นี้คือเอกสารกลางของปลั๊กอิน เนื้อหาเหมือนกันทุกตัวอักษรกับ CLAUDE.md และ GEMINI.md
-เพื่อให้ทุก host อ่านคำอธิบายชุดเดียวกัน ถ้าจะแก้ ให้แก้ AGENTS.md แล้วรัน build.py ใหม่
+ไฟล์นี้เหมือนกันทุกตัวอักษรกับ CLAUDE.md และ GEMINI.md ถ้าจะแก้ ให้แก้ AGENTS.md แล้วคัดลอกทับอีกสองไฟล์
 
 ## ปลั๊กอินนี้ทำอะไร
 
@@ -191,15 +190,10 @@ AISO (AI Search Optimization) คือการทำให้ระบบ AI �
    ใช้ WordPress application password ไม่ใช่รหัสผ่านที่ใช้ล็อกอินปกติ เพราะถอนได้ทีละอัน
    และต้องใส่ `.env` ไว้ใน `.gitignore` ถ้าโฟลเดอร์งานอยู่ใน git
 3. ผลลัพธ์ทุกชิ้นเป็นข้อเสนอแนะ ไม่ใช่การเปลี่ยนแปลงเว็บไซต์ ผู้ใช้เป็นคนตัดสินใจนำไปใช้เอง
-4. รุ่น Lite รายงานเป็นเช็กลิสต์และจำนวนนับ ไม่มีคะแนนรวมและไม่มีสูตรถ่วงน้ำหนัก
 
 ## ไฟล์ประกอบแยกตาม host
 
-| Host | ไฟล์ที่ host อ่าน |
-|---|---|
-| Claude Code, Claude Desktop, Cowork | `.claude-plugin/plugin.json` และ `CLAUDE.md` |
-| OpenAI Codex, GPT desktop | `.codex-plugin/plugin.json` และ `AGENTS.md` |
-| Gemini CLI | `gemini-extension.json` และ `GEMINI.md` |
-| Google Antigravity | `plugin.json` ที่ราก |
-
-ทุก host อ่านสกิลจากโฟลเดอร์ `skills/` ชุดเดียวกัน ไม่มีการทำสำเนาแยกราย host
+- Claude Code, Claude Desktop, Cowork: `.claude-plugin/plugin.json` และ `CLAUDE.md`
+- OpenAI Codex, GPT desktop: `.codex-plugin/plugin.json` และ `AGENTS.md`
+- Gemini CLI: `gemini-extension.json` และ `GEMINI.md` · Google Antigravity: `plugin.json` ที่ราก
+- ทุก host อ่านสกิลจากโฟลเดอร์ `skills/` ชุดเดียวกัน ไม่มีการทำสำเนาแยกราย host
