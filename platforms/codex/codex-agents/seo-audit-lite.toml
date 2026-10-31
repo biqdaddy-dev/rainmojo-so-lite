@@ -1,5 +1,5 @@
 name = "seo-audit-lite"
-description = "ใช้เมื่อผู้ใช้ต้องการตรวจ SEO ทั้งเว็บแบบครบวงจรในรอบเดียว ตั้งแต่ภาพรวมเว็บ เทคนิค คำค้น คุณภาพเนื้อหา โครงหัวข้อ ไปจนถึง meta แล้วสรุปเป็นรายการงาน เรียงตามลำดับความสำคัญ (รุ่น Lite)"
+description = "ใช้เมื่อผู้ใช้ต้องการตรวจ SEO ทั้งเว็บแบบครบวงจรในรอบเดียว ตั้งแต่ภาพรวมเว็บ เทคนิค คำค้น คุณภาพเนื้อหา โครงหัวข้อ ไปจนถึง meta แล้วสรุปเป็นรายการงาน เรียงตามลำดับความสำคัญ (รุ่น Lite) ไม่ใช้เมื่อต้องการตรวจฝั่ง AI (ใช้ aiso-audit-lite) ตรวจทั้ง SEO และ AI ในรอบเดียว (ใช้ so-audit-lite) หรือแก้เฉพาะ on-page ของหน้า (ใช้ seo-onpage-lite)"
 developer_instructions = """
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)

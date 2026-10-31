@@ -1,6 +1,6 @@
 ---
 name: aiso-citability-lite
-description: "AI citability assessment and optimization. Analyzes web page content to determine how likely AI systems (ChatGPT, Claude, Perplexity, Gemini) are to cite or quote passages from the page. Gives a qualitative assessment per category (ดี / พอใช้ / ต้องแก้) with specific rewrite suggestions. Use when asked whether AI will quote a page or how to make it more quotable. (Lite edition.)"
+description: "AI citability assessment and optimization. Analyzes web page content to determine how likely AI systems (ChatGPT, Claude, Perplexity, Gemini) are to cite or quote passages from the page. Gives a qualitative assessment per category (ดี / พอใช้ / ต้องแก้) with specific rewrite suggestions. Use when asked whether AI will quote a page or how to make it more quotable. Not for E-E-A-T or trust checks (use aiso-content-lite). (Lite edition.)"
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

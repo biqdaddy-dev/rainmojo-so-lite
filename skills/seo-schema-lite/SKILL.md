@@ -1,6 +1,6 @@
 ---
 name: seo-schema-lite
-description: "Schema.org markup generation for business entities, local SEO and AI citation readiness with JSON-LD structured data implementation. Use when a page needs LocalBusiness, Organization or other JSON-LD markup. (Lite edition.)"
+description: "Schema.org markup generation for business entities, local SEO and AI citation readiness with JSON-LD structured data implementation. Use when a page needs LocalBusiness, Organization or other JSON-LD markup. Not for auditing JSON-LD already on a page (use aiso-schema-lite). (Lite edition.)"
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
