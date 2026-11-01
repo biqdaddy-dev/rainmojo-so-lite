@@ -1,5 +1,5 @@
 name = "seo-onpage-lite"
-description = "ตรวจและวางแผนแก้ on-page ของเว็บไซต์แบบครบสาย ใช้เมื่อผู้ใช้ต้องการปรับ meta tags, schema, โครงหัวข้อ H1 ถึง H6 และลิงก์ภายในของหน้าเว็บให้พร้อมทั้งสำหรับ Google และระบบ AI แล้วสรุปเป็นรายการแก้บนหน้าเรียงตามความสำคัญ (Lite edition สำหรับเวิร์กช็อป)"
+description = "ตรวจและวางแผนแก้ on-page ของเว็บไซต์แบบครบสาย ใช้เมื่อผู้ใช้ต้องการปรับ meta tags, schema, โครงหัวข้อ H1 ถึง H6 และลิงก์ภายในของหน้าเว็บให้พร้อมทั้งสำหรับ Google และระบบ AI แล้วสรุปเป็นรายการแก้บนหน้าเรียงตามความสำคัญ (Lite edition สำหรับเวิร์กช็อป) ไม่ใช้สำหรับ audit ทั้งเว็บ (ใช้ seo-audit-lite)"
 developer_instructions = """
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
 ## Client workspace routing (mandatory for file changes)
