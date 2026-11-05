@@ -48,5 +48,5 @@
     "ห้ามแก้ไฟล์บนเว็บจริง สกิลนี้อ่านและเขียนรายงานเท่านั้น",
     "ถ้าข้อมูลไม่พอให้เขียนตรง ๆ ว่าไม่พอ และบอกว่าต้องใช้อะไรเพิ่ม"
   ],
-  "notes": "Lite edition for the BIQDADDY AI Visibility Course. Self-contained: no shared _base, no reference pack, no external scripts."
+  "notes": "Lite edition for the BIQDADDY AI Visibility Course. Self-contained: no shared _base, no external scripts; rarely used cases live in references/rare-cases.md."
 }
