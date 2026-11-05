@@ -3,7 +3,6 @@ name: seo-internal-linking-lite
 description: >
   วางแผนลิงก์ภายในด้วยโครง hub และ spoke ให้ความสำคัญไปรวมที่หน้าเป้าหมาย และพาผู้อ่านเดินต่อถึงหน้า conversion
   ใช้เมื่อถามว่าหน้าไหนควรลิงก์หาหน้าไหน อยากหา orphan page วางแผน anchor text หรือเชื่อม topic cluster
-  ไม่ใช้เมื่อหาลิงก์จากเว็บอื่น backlink (ใช้ seo-backlink-strategy-lite) หรือวางโครง pillar กับ cluster ทั้งชุด (ใช้ seo-topical-authority-lite)
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

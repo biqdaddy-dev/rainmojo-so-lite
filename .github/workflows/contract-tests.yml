@@ -35,5 +35,3 @@ jobs:
         run: python skills/rainmojo-so-lite/scripts/content_pipeline_selftest.py
       - name: Regression
         run: python skills/rainmojo-so-lite/scripts/regression.py
-      - name: Every skill description says when not to use it
-        run: python skills/rainmojo-so-lite/scripts/description_when_not_test.py

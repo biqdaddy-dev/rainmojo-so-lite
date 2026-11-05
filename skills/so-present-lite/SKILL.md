@@ -1,6 +1,6 @@
 ---
 name: so-present-lite
-description: "Presentation layer for every RAINMOJO SO Lite answer: the Tier 1 quick-glance card in chat and the seven response modes (quick fact, how-to, comparison, troubleshoot, audit, deployable, next steps). Builds or validates summary.json, renders it for the current host with present.py, and lints emoji, glyph, dash and pipe policy. Use when a run has finished and its result must be shown or re-rendered for another host. Never a substitute for the Tier 2 deliverable; the Lite card carries counts, never a weighted score. Not for the HTML client report (use report-lite). (Lite edition.)"
+description: "Presentation layer for every RAINMOJO SO Lite answer: the Tier 1 quick-glance card in chat and the seven response modes (quick fact, how-to, comparison, troubleshoot, audit, deployable, next steps). Builds or validates summary.json, renders it for the current host with present.py, and lints emoji, glyph, dash and pipe policy. Use when a run has finished and its result must be shown or re-rendered for another host. Never a substitute for the Tier 2 deliverable; the Lite card carries counts, never a weighted score. (Lite edition.)"
 allowed-tools: Read Grep Glob Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

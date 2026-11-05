@@ -11,7 +11,8 @@ is the one invoked; a request in its "not" list passes when that skill is not in
 
 Needs a logged-in `claude` CLI (`claude /login`). Exit 1 when any check fails.
 Written 2026-11-05 for LITE-004 (dispatch plan rule: after a description change, run
-3 should-load and 2 should-not requests in new sessions).
+3 should-load and 2 should-not requests in new sessions). Run it for every skill whose
+description a change touches; add cases to cases.json for a skill that has none.
 """
 
 from __future__ import annotations

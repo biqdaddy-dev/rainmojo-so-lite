@@ -7,7 +7,6 @@ description: >
   และวิธีแก้ redirect ที่วนลูป
   ใช้เมื่อผู้ใช้จะเปลี่ยน URL เปลี่ยนโดเมน ย้ายโฮสต์ ย้ายแพลตฟอร์ม รวมหลายโดเมนเป็นโดเมนเดียว
   หรือรีดีไซน์เว็บที่กระทบโครง URL
-  ไม่ใช้เมื่อแค่ออกแบบ sitemap ใหม่โดยไม่ย้าย URL (ใช้ sitemap-architecture-lite)
   (Lite edition.)
 allowed-tools: Read Grep Glob WebFetch Write Edit Bash
 ---

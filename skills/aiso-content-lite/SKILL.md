@@ -1,6 +1,6 @@
 ---
 name: aiso-content-lite
-description: "Content quality and E-E-A-T assessment for AI citability: experience, expertise, authoritativeness, trustworthiness and content structure. Reports a qualitative level per dimension (ดี / พอใช้ / ต้องแก้), not a numeric score. Use when asked whether content is trustworthy enough for AI answers or how to raise E-E-A-T. Not for checking whether single passages are quotable (use aiso-citability-lite) or a YMYL pre-publish checklist (use seo-content-audit-lite). ไม่ใช้เมื่อตรวจทีละย่อหน้า (Lite edition.)"
+description: "Content quality and E-E-A-T assessment for AI citability: experience, expertise, authoritativeness, trustworthiness and content structure. Reports a qualitative level per dimension (ดี / พอใช้ / ต้องแก้), not a numeric score. Use when asked whether content is trustworthy enough for AI answers or how to raise E-E-A-T. (Lite edition.)"
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

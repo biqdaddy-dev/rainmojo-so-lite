@@ -3,7 +3,6 @@ name: rainmojo-so-lite
 description: >
   จุดเริ่มต้นของปลั๊กอิน บอกว่ามีสกิลอะไรบ้าง ควรใช้ตัวไหนกับงานแบบไหน และเก็บไฟล์อ้างอิงกลางที่สกิลอื่นเรียกใช้
   ใช้เมื่อผู้ใช้ถามว่าปลั๊กอินนี้ทำอะไรได้บ้าง เริ่มยังไง ควรใช้สกิลไหน หรือพิมพ์ว่า help
-  ไม่ใช้เมื่อผู้ใช้ให้ URL มาตรวจ audit หรือ check แล้ว สกิลนี้ไม่ตรวจเว็บเอง (ใช้สกิลตรวจตัวนั้น เช่น technical-audit-lite หรือ aiso-crawlers-lite)
 allowed-tools: Read Grep Glob
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

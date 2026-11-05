@@ -4,7 +4,6 @@ description: >
   WordPress REST API operations reference auth patterns, Cloudflare WAF
   workaround, rate limiting, Yoast canonical meta field, Redirection plugin API,
   batch vs single fetch bug. Use when executing any WP REST API bulk operation.
-  Not for posting one article as a draft (use wp-publish-draft-lite) or checking the login first (use wp-connect-lite). ไม่ใช้เมื่อส่งบทความชิ้นเดียว
 allowed-tools: Read Bash Write
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

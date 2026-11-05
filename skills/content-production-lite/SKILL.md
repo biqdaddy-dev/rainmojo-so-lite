@@ -1,6 +1,6 @@
 ---
 name: content-production-lite
-description: "Run the client-configured SEO content factory from validated article planning through content QA, image production, internal and external linking, and a verified WordPress draft. Supports the shared generic engine and declared client-native adapters. Use when an approved article plan must become a verified WordPress draft. Not for a one-off article without a client production config (use content-draft-lite) or the WordPress upload step alone (use wp-content-publisher-lite). ไม่ใช้เมื่อเขียนบทความชิ้นเดียว"
+description: "Run the client-configured SEO content factory from validated article planning through content QA, image production, internal and external linking, and a verified WordPress draft. Supports the shared generic engine and declared client-native adapters. Use when an approved article plan must become a verified WordPress draft."
 allowed-tools: Read Grep Glob Write Bash Skill
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

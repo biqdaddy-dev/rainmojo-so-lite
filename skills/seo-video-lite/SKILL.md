@@ -7,7 +7,6 @@ description: >
   และการตรวจซ้ำหลังเผยแพร่
   ใช้เมื่อหน้าเว็บมีวิดีโอหรือกำลังจะมี ต้องทำซับหรือ transcript วางแผนวัดผลวิดีโอ
   หรือวิดีโอที่เผยแพร่แล้วไม่โผล่ในผลค้นวิดีโอ
-  ไม่ใช้เมื่อเป็นภาพนิ่ง image (ใช้ seo-image-optimizer-lite)
   (Lite edition.)
 allowed-tools: Read Grep Glob WebFetch Write Edit Bash
 ---

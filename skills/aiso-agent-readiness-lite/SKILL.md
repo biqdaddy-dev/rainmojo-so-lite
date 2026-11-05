@@ -1,6 +1,6 @@
 ---
 name: aiso-agent-readiness-lite
-description: "AI agent readiness checklist of the rendered page for autonomous web agents (ChatGPT agent, Claude in Chrome, Gemini and Copilot agents, Playwright MCP): landmarks, roles and accessible names, ARIA, form labels, dialog focus and the agent tool surface, measured by agent_readiness_lite.py. 14 checks per page, PASS, FAIL, N/A or could not verify, no score. Use when asked whether AI agents can use a site or page. Not for headings (seo-heading-matrix-lite), SSR (aiso-technical-lite), robots (aiso-crawlers-lite) or JSON-LD (aiso-schema-lite). Not a WCAG claim. (Lite edition.)"
+description: "AI agent readiness checklist of the rendered page for autonomous web agents (ChatGPT agent, Claude in Chrome, Gemini and Copilot agents, Playwright MCP): landmarks, roles and accessible names, ARIA, form labels, dialog focus and the agent tool surface, measured by agent_readiness_lite.py. 14 checks per page, PASS, FAIL, N/A or could not verify, no score. Use when asked whether AI agents can use a site or page. Not for headings, SSR, robots, llms.txt or JSON-LD (cite those skills). Not a WCAG claim. (Lite edition.)"
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

@@ -1,6 +1,6 @@
 ---
 name: aiso-brand-mentions-lite
-description: "Brand mention scanner for AI visibility. Counts brand presence across the platforms that AI models rely on for entity recognition and citation decisions (YouTube, Reddit, Wikipedia, LinkedIn) and reports a per-platform mention count table with platform-specific recommendations. Use when asked how visible a brand is to AI assistants or where it is mentioned. Not for finding who the competitors are (use seo-competitor-lite) or planning backlinks (use seo-backlink-strategy-lite). ไม่ใช้เมื่อถามหาคู่แข่งหรือแผน backlink (Lite edition.)"
+description: "Brand mention scanner for AI visibility. Counts brand presence across the platforms that AI models rely on for entity recognition and citation decisions (YouTube, Reddit, Wikipedia, LinkedIn) and reports a per-platform mention count table with platform-specific recommendations. Use when asked how visible a brand is to AI assistants or where it is mentioned. (Lite edition.)"
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

@@ -1,6 +1,6 @@
 ---
 name: aiso-technical-lite
-description: "Technical SEO audit with AISO-specific checks: crawlability, indexability, security, URL structure, mobile-friendliness and AI crawler access. Reports the number of checks passed per category, not a numeric score. Use when asked for a technical check of a site before or alongside an AI search audit. Not for page speed, mobile or why pages are not in Google (use technical-audit-lite) or the per-bot allow or block map (use aiso-crawlers-lite). ไม่ใช้เมื่อถามว่าเว็บช้าไหม (Lite edition.)"
+description: "Technical SEO audit with AISO-specific checks: crawlability, indexability, security, URL structure, mobile-friendliness and AI crawler access. Reports the number of checks passed per category, not a numeric score. Use when asked for a technical check of a site before or alongside an AI search audit. (Lite edition.)"
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

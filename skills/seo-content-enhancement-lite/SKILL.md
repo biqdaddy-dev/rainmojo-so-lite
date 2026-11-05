@@ -3,8 +3,7 @@ name: seo-content-enhancement-lite
 description: >
   ยกระดับเนื้อหาหนึ่งหน้าให้ผ่านมาตรฐาน Google Search Quality Evaluator Guidelines
   ด้วยหลัก QEG ย่อ 6 ข้อ โครงแบบตอบก่อนขยายทีหลัง และ checklist ก่อนส่ง
-  ใช้เมื่อต้องปรับปรุงเนื้อหาเดิมหรือร่างที่เขียนเสร็จแล้วให้ผ่านมาตรฐานก่อนส่ง
-  ไม่ใช้เมื่อเขียนบทความใหม่ทั้งชิ้น (ใช้ seo-content-creation-lite) หรือตรวจอย่างเดียวไม่แก้ (ใช้ seo-content-audit-lite)
+  ใช้เมื่อต้องเขียนบทความใหม่ ปรับปรุงเนื้อหาเดิม หรือตรวจคุณภาพเนื้อหา
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

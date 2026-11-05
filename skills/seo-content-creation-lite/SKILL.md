@@ -1,6 +1,6 @@
 ---
 name: seo-content-creation-lite
-description: "Expert content creation including brand configuration setup. Creates high-quality, brand-consistent content that reads naturally while achieving SEO objectives. Use when the user asks for an article, page copy or a draft from an outline. Copy-paste results to other agents for complete workflow. Not for a full article package with meta, schema and image brief (use content-draft-lite) or improving an existing page (use seo-content-enhancement-lite). ไม่ใช้เมื่อปรับบทความเดิม"
+description: "Expert content creation including brand configuration setup. Creates high-quality, brand-consistent content that reads naturally while achieving SEO objectives. Use when the user asks for an article, page copy or a draft from an outline. Copy-paste results to other agents for complete workflow."
 allowed-tools: Read Grep Glob WebFetch Write
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
