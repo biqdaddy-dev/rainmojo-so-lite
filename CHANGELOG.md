@@ -1,5 +1,24 @@
 # Changelog
 
+## 2.8.3 (2026-11-05)
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- รุ่นนี้ไม่มีอะไรเปลี่ยนในการใช้งาน เป็นงานจัดระเบียบภายในเท่านั้น
+
+### Under the hood
+
+- `technical-audit-lite/SKILL.md` goes from 506 to 485 lines, under the 500-line limit (LITE-003). The no-shell fallback
+  and the cache-layer and counting notes move word for word to `references/rare-cases.md`; SKILL.md says when to read it
+  and keeps the rule "write ตรวจไม่ได้, never ไม่มี".
+- `tooling/invocation-test/` (LITE-004): 5-request cases (3 should load, 2 should not) for 20 skills in name-similar
+  groups, and a runner that sends each request to a fresh headless session with only this plugin loaded. No skill
+  description changes: the owner ruled on 2026-11-05 that the 2026-10-31 SK-WHEN-NOT rule stands (when-not only on
+  colliding pairs), and agentlint finds no colliding pair.
+- `docs/operations/agent-fold-plan.md` (LITE-005): the plan for folding the 17 agents, to start only after rainmojo-so
+  passes its eval baseline (DP-023). Counted from each agent's call order, only `seo-disavow-auditor-lite` wraps a single
+  skill. No agent changes in this version.
+
 ## 2.8.2 (2026-11-01)
 
 ### สิ่งที่ผู้ใช้จะเห็น
