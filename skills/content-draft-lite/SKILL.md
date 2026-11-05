@@ -4,6 +4,7 @@ description: >
   เขียนแพ็กเกจบทความหนึ่งชิ้นเก็บไว้ในเครื่อง พร้อม meta title description schema และบรีฟภาพ
   ใช้เมื่อผู้ใช้ต้องการเขียนหน้าใหม่ แก้หน้าเดิมให้ AI หยิบไปอ้างอิงได้ หรือเตรียมบทความก่อนส่งขึ้นเว็บ
   ผลลัพธ์เป็นไฟล์ในเครื่อง ยังไม่ส่งขึ้นเว็บ ส่งด้วยสกิล wp-publish-draft-lite ต่างหาก
+  ไม่ใช้เมื่อลูกค้าตั้งสายผลิตเนื้อหาเต็มไว้แล้ว (ใช้ content-production-lite) หรือแค่ปรับบทความเดิมบางส่วน (ใช้ seo-content-enhancement-lite)
 allowed-tools: Read Grep Glob WebFetch Write
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

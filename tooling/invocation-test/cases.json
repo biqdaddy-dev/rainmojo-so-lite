@@ -1,0 +1,85 @@
+{
+  "about": "5-request invocation test (LITE-004, 2026-11-05): per skill 3 requests that should load it and 2 that should not (they belong to the named sibling). Each request runs in a fresh headless session with only this plugin loaded. Requests are written the way the team types them, Thai and English.",
+  "skills": {
+    "technical-audit-lite": {
+      "load": ["เว็บ example.com โหลดช้าไหม เปิดบนมือถือใช้ได้หรือเปล่า", "why are my pages not showing up in Google? site is example.com", "ช่วยตรวจ HTTPS กับ canonical ของ example.com หน่อย"],
+      "not": ["GPTBot กับ ClaudeBot เข้าเว็บ example.com ได้ไหม", "check whether OpenAI and Anthropic crawlers are blocked on example.com"]
+    },
+    "aiso-crawlers-lite": {
+      "load": ["GPTBot กับ ClaudeBot เข้าเว็บ example.com ได้ไหม", "check whether OpenAI and Anthropic crawlers are blocked on example.com", "robots.txt ของ example.com บล็อกบอท AI ตัวไหนบ้าง"],
+      "not": ["เว็บ example.com โหลดช้าไหม เปิดบนมือถือใช้ได้หรือเปล่า", "เขียนไฟล์ llms.txt ให้ example.com"]
+    },
+    "aiso-llmstxt-lite": {
+      "load": ["เขียนไฟล์ llms.txt ให้ example.com", "validate the llms.txt on example.com", "llms.txt ของเว็บเราถูกรูปแบบไหม example.com"],
+      "not": ["robots.txt ของ example.com บล็อกบอท AI ตัวไหนบ้าง", "sitemap ใหญ่จนช้า จะแตกเป็นหลายไฟล์ยังไง"]
+    },
+    "compare-lite": {
+      "load": ["สแกนรอบสองของ example.com เสร็จแล้ว ที่แก้ไปได้ผลไหม", "compare last month's scan with this month's for example.com", "ขอรายงานความคืบหน้าเทียบสองรอบของ example.com"],
+      "not": ["อยากพิสูจน์ว่าที่แก้ title ทำให้อันดับขึ้นจริง ออกแบบ SEO test ให้หน่อย", "ทำรายงาน HTML ส่งลูกค้าจากผลตรวจ aiso ของ example.com"]
+    },
+    "seo-experiment-lite": {
+      "load": ["อยากพิสูจน์ว่าที่แก้ title ทำให้อันดับขึ้นจริง ออกแบบ SEO test ให้หน่อย", "design an SEO A/B test with a holdout group of pages", "อันดับที่ขึ้นมาเพราะเราแก้หรือเพราะอย่างอื่น จะทดสอบยังไง"],
+      "not": ["สแกนรอบสองของ example.com เสร็จแล้ว ที่แก้ไปได้ผลไหม", "compare last month's scan with this month's for example.com"]
+    },
+    "content-draft-lite": {
+      "load": ["เขียนบทความเรื่องฟันคุดพร้อม meta และ schema เก็บไว้ในเครื่องก่อน", "draft one article package about dental implants with meta title and image brief", "เตรียมบทความหนึ่งชิ้นก่อนส่งขึ้นเว็บ เรื่องจัดฟันใส"],
+      "not": ["ลูกค้าตั้งค่าสายผลิตไว้แล้ว เอาแผนบทความที่อนุมัติไปทำจนเป็น draft บน WordPress", "ปรับบทความเดิมที่ลงไปแล้วให้ AI หยิบไปอ้างง่ายขึ้น ไม่ต้องเขียนใหม่"]
+    },
+    "content-production-lite": {
+      "load": ["ลูกค้าตั้งค่าสายผลิตไว้แล้ว เอาแผนบทความที่อนุมัติไปทำจนเป็น draft บน WordPress", "run the content factory for client demo-client from the approved plan", "ทำบทความชุดที่อนุมัติแล้วตามสายผลิตของลูกค้า พร้อมภาพและลิงก์"],
+      "not": ["เขียนบทความเรื่องฟันคุดพร้อม meta และ schema เก็บไว้ในเครื่องก่อน", "draft one article package about dental implants with meta title and image brief"]
+    },
+    "wp-publish-draft-lite": {
+      "load": ["เอาบทความที่เขียนเสร็จแล้วขึ้น WordPress เป็น draft", "upload my finished article to WordPress as a draft with its images", "ส่งแพ็กเกจบทความจาก content-draft ขึ้นเว็บเป็นฉบับร่าง"],
+      "not": ["ทดสอบว่าเชื่อม WordPress ผ่าน REST API ได้ไหม", "Cloudflare บล็อก REST API ตอนแก้ Yoast canonical หลายหน้า ทำยังไง"]
+    },
+    "wp-connect-lite": {
+      "load": ["ทดสอบว่าเชื่อม WordPress ผ่าน REST API ได้ไหม", "how do I connect this plugin to my WordPress site?", "ส่งขึ้นเว็บแล้ว error 401 ไม่รู้ว่าพังตรงไหน"],
+      "not": ["เอาบทความที่เขียนเสร็จแล้วขึ้น WordPress เป็น draft", "upload my finished article to WordPress as a draft with its images"]
+    },
+    "new-workspace-lite": {
+      "load": ["เริ่มงานตรวจเว็บใหม่ example.com ควรเก็บไฟล์ไว้ที่ไหน", "set up the work folder for auditing example.com", "สร้างโครงโฟลเดอร์ก่อนเริ่มตรวจ example.com"],
+      "not": ["เปิดลูกค้าใหม่ชื่อ demo-dental สำหรับงานผลิตบทความ", "create a client workspace for a new content client"]
+    },
+    "new-client-lite": {
+      "load": ["เปิดลูกค้าใหม่ชื่อ demo-dental สำหรับงานผลิตบทความ", "create a client workspace for a new content client", "โฟลเดอร์ลูกค้า demo-dental หาย สร้างใหม่ให้หน่อย"],
+      "not": ["เริ่มงานตรวจเว็บใหม่ example.com ควรเก็บไฟล์ไว้ที่ไหน", "set up the work folder for auditing example.com"]
+    },
+    "seo-keyword-research-lite": {
+      "load": ["หาคำค้นภาษาไทยเกี่ยวกับคลินิกทันตกรรม", "what keywords should a Bangkok dental clinic target?", "คนค้นอะไรบ้างเกี่ยวกับรากฟันเทียม"],
+      "not": ["มีคำค้น 200 คำแล้ว จัดกลุ่มให้หน่อยว่าทำได้กี่หน้า", "group this keyword list into pillar and cluster pages"]
+    },
+    "seo-keyword-clustering-lite": {
+      "load": ["มีคำค้น 200 คำแล้ว จัดกลุ่มให้หน่อยว่าทำได้กี่หน้า", "group this keyword list into pillar and cluster pages", "คำค้นพวกนี้ intent เดียวกันไหม ควรรวมเป็นหน้าเดียวหรือเปล่า"],
+      "not": ["หาคำค้นภาษาไทยเกี่ยวกับคลินิกทันตกรรม", "what keywords should a Bangkok dental clinic target?"]
+    },
+    "seo-competitor-lite": {
+      "load": ["คู่แข่งของ example.com บนหน้าค้นหาคือใคร", "why does my competitor rank for implant keywords and we don't?", "คู่แข่งมีอะไรที่เว็บเรายังไม่มี"],
+      "not": ["ควรเขียนเรื่องอะไรต่อ หัวข้อไหนที่คนค้นแต่เรายังไม่มี", "แบรนด์เราถูกพูดถึงบน Reddit กับ YouTube แค่ไหน"]
+    },
+    "seo-content-gap-analysis-lite": {
+      "load": ["ควรเขียนเรื่องอะไรต่อ หัวข้อไหนที่คนค้นแต่เรายังไม่มี", "find content gaps for example.com", "คำถามที่ลูกค้าถามแต่เว็บเรายังไม่ตอบมีอะไรบ้าง"],
+      "not": ["คู่แข่งของ example.com บนหน้าค้นหาคือใคร", "why does my competitor rank for implant keywords and we don't?"]
+    },
+    "aiso-schema-lite": {
+      "load": ["ตรวจ JSON-LD ที่มีอยู่บนหน้าแรกของ example.com", "is the structured data on example.com valid?", "schema บนเว็บเราครบในมุมที่ AI ใช้ไหม"],
+      "not": ["สร้าง LocalBusiness schema ให้คลินิกที่ยังไม่มี markup เลย", "write Organization JSON-LD for our company"]
+    },
+    "seo-schema-lite": {
+      "load": ["สร้าง LocalBusiness schema ให้คลินิกที่ยังไม่มี markup เลย", "write Organization JSON-LD for our company", "ทำ FAQPage schema ให้หน้าคำถามที่พบบ่อย"],
+      "not": ["ตรวจ JSON-LD ที่มีอยู่บนหน้าแรกของ example.com", "is the structured data on example.com valid?"]
+    },
+    "sitemap-architecture-lite": {
+      "load": ["sitemap ใหญ่จนช้า จะแตกเป็นหลายไฟล์ยังไง", "design a sitemap index with hreflang for a two-language site", "เปิด sitemap.xml แล้วอ่านไม่รู้เรื่อง ทำให้คนอ่านได้ยังไง"],
+      "not": ["จะย้ายโดเมนจาก old.com ไป new.com ไม่ให้อันดับหาย", "plan the URL redirects for our CMS migration"]
+    },
+    "seo-migration-lite": {
+      "load": ["จะย้ายโดเมนจาก old.com ไป new.com ไม่ให้อันดับหาย", "plan the URL redirects for our CMS migration", "redirect วนลูปหลังย้ายโฮสต์ แก้ยังไง"],
+      "not": ["sitemap ใหญ่จนช้า จะแตกเป็นหลายไฟล์ยังไง", "design a sitemap index with hreflang for a two-language site"]
+    },
+    "report-lite": {
+      "load": ["ทำรายงาน HTML ส่งลูกค้าจากผลตรวจ aiso ของ example.com", "build the one-page client report from the AISO results", "สรุปผลตรวจ AI เป็นรายงานหน้าเดียวให้ลูกค้า"],
+      "not": ["สแกนรอบสองของ example.com เสร็จแล้ว ที่แก้ไปได้ผลไหม", "compare last month's scan with this month's for example.com"]
+    }
+  }
+}

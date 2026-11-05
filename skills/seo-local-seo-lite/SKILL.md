@@ -4,6 +4,7 @@ description: >
   ตรวจ Google Business Profile ตรวจ NAP ให้ตรงกัน สร้าง LocalBusiness schema
   และวางแผนคำค้นกับหน้าตามพื้นที่ ใช้เมื่อธุรกิจมีหน้าร้านหรือพื้นที่ให้บริการ
   อยากถูกพบใน Google Maps อยากปรับ GBP หรือวางแผนหน้าสาขา
+  ไม่ใช้เมื่อธุรกิจไม่มีหน้าร้านหรือพื้นที่บริการ และต้องการแค่ Organization schema (ใช้ seo-schema-lite)
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

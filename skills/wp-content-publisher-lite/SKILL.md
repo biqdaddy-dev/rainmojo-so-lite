@@ -1,6 +1,6 @@
 ---
 name: wp-content-publisher-lite
-description: "Publish a validated article package to WordPress as a verified draft. Uploads media, writes alt/title/caption fields, assigns featured media, binds inline placeholders, writes SEO fields, handles explicit WAF 403 REST fallback, throttles writes, preserves idempotency, and fetches every result for verification. Use when an approved article package is ready to go into WordPress."
+description: "Publish a validated article package to WordPress as a verified draft. Uploads media, writes alt/title/caption fields, assigns featured media, binds inline placeholders, writes SEO fields, handles explicit WAF 403 REST fallback, throttles writes, preserves idempotency, and fetches every result for verification. Use when an approved article package is ready to go into WordPress. Not for one article from content-draft-lite (use wp-publish-draft-lite), testing the connection (use wp-connect-lite) or bulk REST fixes (use wp-rest-ops-lite). ไม่ใช้เมื่อส่งบทความชิ้นเดียว"
 allowed-tools: Read Grep Glob Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

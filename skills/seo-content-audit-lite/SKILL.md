@@ -7,6 +7,7 @@ description: >
   หรือทบทวนคุณภาพเนื้อหาเดิมที่ลงไปแล้ว
   รอบที่ตรวจทั้งเว็บยังใช้จำแนกเนื้อหาบางตามหมวด ตรวจเนื้อหาซ้ำจากคำบรรยายของผู้ผลิต
   และตรวจห่วงโซ่ตัวตนผู้เขียนได้ด้วย
+  ไม่ใช้เมื่อจะลงมือแก้เนื้อหา (ใช้ seo-content-enhancement-lite) หรือวัดว่า AI จะหยิบย่อหน้าไปอ้างไหม (ใช้ aiso-citability-lite)
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

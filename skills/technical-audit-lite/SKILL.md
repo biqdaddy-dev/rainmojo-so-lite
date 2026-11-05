@@ -4,6 +4,7 @@ description: >
   ตรวจเทคนิคพื้นฐานของเว็บ 4 ด้าน คือ ความเร็ว มือถือ HTTPS และการเข้าดัชนี
   สรุปเป็น ผ่าน ควรดู มีปัญหา ไม่มีคะแนนรวม
   ใช้เมื่อผู้ใช้ถามว่าเว็บช้าไหม เปิดบนมือถือใช้ได้ไหม ทำไมหน้าเว็บไม่ขึ้นใน Google
+  ไม่ใช้เมื่อถามว่าบอท AI เช่น GPTBot หรือ ClaudeBot เข้าเว็บได้ไหม (ใช้ aiso-crawlers-lite) หรือตรวจ schema (ใช้ aiso-schema-lite)
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

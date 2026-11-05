@@ -1,6 +1,6 @@
 ---
 name: seo-competitor-lite
-description: "ระบุคู่แข่งจริงบนหน้าค้นหา อ่าน SERP รายคำค้น ทำตาราง content gap และ keyword gap เชิงคุณภาพ ใช้เมื่อผู้ใช้ถามว่าคู่แข่งคือใคร ทำไมคู่แข่งติดอันดับแต่เว็บของผู้ใช้ไม่ติด หรือคู่แข่งมีอะไรที่เว็บของผู้ใช้ยังไม่มี"
+description: "ระบุคู่แข่งจริงบนหน้าค้นหา อ่าน SERP รายคำค้น ทำตาราง content gap และ keyword gap เชิงคุณภาพ ใช้เมื่อผู้ใช้ถามว่าคู่แข่งคือใคร ทำไมคู่แข่งติดอันดับแต่เว็บของผู้ใช้ไม่ติด หรือคู่แข่งมีอะไรที่เว็บของผู้ใช้ยังไม่มี ไม่ใช้เมื่อถามว่าควรเขียนหัวข้ออะไรต่อ (ใช้ seo-content-gap-analysis-lite) หรือแบรนด์ถูกพูดถึงที่ไหน brand mentions (ใช้ aiso-brand-mentions-lite)"
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

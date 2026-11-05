@@ -3,6 +3,7 @@ name: seo-image-optimizer-lite
 description: >
   แปลงภาพเป็น WebP หรือ AVIF ย่อขนาด ตั้งชื่อไฟล์อังกฤษจากการดูภาพจริง และลบ EXIF
   ใช้เมื่อมีภาพจะเอาขึ้นเว็บ ภาพหนักเกิน หรือชื่อไฟล์เป็นไทยหรือเป็นรหัสกล้อง
+  ไม่ใช้เมื่อจะส่งภาพขึ้น WordPress (ใช้ wp-publish-draft-lite) หรือทำวิดีโอ video (ใช้ seo-video-lite)
 allowed-tools: Read Glob Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

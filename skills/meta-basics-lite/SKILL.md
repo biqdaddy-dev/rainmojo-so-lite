@@ -1,6 +1,6 @@
 ---
 name: meta-basics-lite
-description: "พื้นฐาน title tag และ meta description วิธีนับตัวอักษรไทย อังกฤษ และ emoji กฎความยาว หลักการตั้ง title และ checklist ตรวจก่อนใช้จริง ใช้เมื่อผู้ใช้ต้องการเขียนหรือตรวจ title และ meta description (Lite edition.)"
+description: "พื้นฐาน title tag และ meta description วิธีนับตัวอักษรไทย อังกฤษ และ emoji กฎความยาว หลักการตั้ง title และ checklist ตรวจก่อนใช้จริง ใช้เมื่อผู้ใช้ต้องการเขียนหรือตรวจ title และ meta description ไม่ใช้เมื่อตรวจโครงหัวข้อ H1 ถึง H6 (ใช้ seo-heading-matrix-lite) หรือทำ schema JSON-LD (ใช้ seo-schema-lite) (Lite edition.)"
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

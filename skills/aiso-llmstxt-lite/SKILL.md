@@ -1,6 +1,6 @@
 ---
 name: aiso-llmstxt-lite
-description: "Analyzes and generates llms.txt files, the emerging standard for helping AI systems understand website structure and content. Can validate existing llms.txt files or generate new ones from scratch by crawling the site. Use when asked to check, write or fix a site's llms.txt. (Lite edition.)"
+description: "Analyzes and generates llms.txt files, the emerging standard for helping AI systems understand website structure and content. Can validate existing llms.txt files or generate new ones from scratch by crawling the site. Use when asked to check, write or fix a site's llms.txt. Not for robots.txt or AI bot blocking (use aiso-crawlers-lite) or XML sitemaps (use sitemap-architecture-lite). ไม่ใช้เมื่อถามเรื่อง robots.txt หรือ sitemap (Lite edition.)"
 allowed-tools: Read Grep Glob WebFetch Write Bash
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->

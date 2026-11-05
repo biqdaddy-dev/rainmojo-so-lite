@@ -3,6 +3,7 @@ name: seo-keyword-clustering-lite
 description: >
   จัดกลุ่มคำค้นตามความหมายและ search intent แล้ววางโครงเนื้อหาแบบ pillar-cluster พร้อมแผนลิงก์ภายใน
   ใช้เมื่อมีคำค้นแล้ว ต้องตัดสินใจว่าจะทำเนื้อหากี่กลุ่ม หน้าไหนเป็น pillar และเริ่มกลุ่มไหนก่อน
+  ไม่ใช้เมื่อยังไม่มีคำค้น keyword (ใช้ seo-keyword-research-lite ก่อน)
 allowed-tools: Read Grep Glob WebFetch Write
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
