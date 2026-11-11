@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- รุ่นนี้ไม่มีอะไรเปลี่ยนในการใช้งาน เป็นงานจัดระเบียบภายในเท่านั้น
+
+### Under the hood
+
+- `sitemap-architecture-lite/SKILL.md` goes from 497 to 268 lines (LITE-011, after rainmojo-so RSO-021, blueprint
+  RS-10). Three sections used only sometimes move word for word to `references/`: `human-readable-view.md` (styled
+  XML, XSLT removal, HTML sitemap page), `video-entries.md` and `porting-checklist.md`, each with a review_by line;
+  SKILL.md says when to read each one.
+
 ## 2.8.3 (2026-11-05)
 
 ### สิ่งที่ผู้ใช้จะเห็น
