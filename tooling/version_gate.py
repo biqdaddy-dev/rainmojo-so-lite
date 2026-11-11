@@ -3,8 +3,8 @@
 
 Ported from rainmojo-so's version_gate.py (RSO-017). Checks, exit 1 on any finding:
 1. every other manifest (root Antigravity plugin.json, Gemini, Codex, Copilot, Cursor and the
-   marketplace entry) carries the same name and version. The root plugin.json read 2.2.0 through
-   six releases because nothing compared it;
+   marketplace entry) carries the same name and version. The root plugin.json read 2.2.0 from
+   2.3.0 to 2.8.3 because nothing compared it;
 2. no SKILL.md or agent frontmatter carries a version of its own;
 3. README.md names no plugin version: it points to CHANGELOG.md instead, so it cannot go stale;
 4. the newest numbered CHANGELOG.md section is that version, so a bump never ships without notes
