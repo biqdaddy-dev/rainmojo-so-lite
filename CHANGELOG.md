@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- รุ่นนี้ไม่มีอะไรเปลี่ยนในการใช้งาน เป็นงานจัดระเบียบภายในเท่านั้น
+
+### Under the hood
+
+- One place for the routing and presentation rules (LITE-010, after rainmojo-so RSO-015, blueprint RS-4). Each of the
+  60 skill and agent files carried both rules in full, about 2 KB each; they now carry a 5-line and a 3-line pointer
+  to `skills/rainmojo-so-lite/reference/shared-rules.md`, which holds the full text once. The two instruction gates
+  enforce the short blocks and flag any long block left over. `platforms/` was rebuilt with agentpack 1.6.0.
+  About 78 KB less in `skills/` and `agents/`, 70 KB less in `platforms/`.
+
 ## 2.8.3 (2026-11-05)
 
 ### สิ่งที่ผู้ใช้จะเห็น
