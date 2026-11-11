@@ -76,5 +76,22 @@ class ChecksTest(unittest.TestCase):
         self.assertEqual(out["by_kind"], {"positive": 80, "negative": 90})
 
 
+class PrepareTest(unittest.TestCase):
+    def test_run_has_its_own_site_copy_and_pinned_plugin(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            src = Path(tmp) / "plugin"
+            (src / ".claude-plugin").mkdir(parents=True)
+            (src / ".claude-plugin/plugin.json").write_text('{"version": "9.9.9"}', encoding="utf-8")
+            (src / "evals").mkdir()
+            out = Path(tmp) / "out"
+            self.assertEqual(inapp.main(["prepare", "--out", str(out), "--case", "case-07-blocked",
+                                         "--run", "1", "--plugin", str(src)]), 0)
+            rd = out / "case-07-blocked" / "run-1"
+            self.assertTrue((rd / "site" / "robots.txt").exists())
+            self.assertFalse((out / "_plugin" / "evals").exists())
+            meta = json.loads((rd / "meta.json").read_text(encoding="utf-8"))
+            self.assertEqual(meta["plugin_version"], "9.9.9")
+
+
 if __name__ == "__main__":
     unittest.main()

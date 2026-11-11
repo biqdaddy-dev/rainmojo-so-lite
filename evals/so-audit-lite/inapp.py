@@ -272,6 +272,9 @@ def cmd_prepare(a) -> int:
     rd = run_dir(a.out, a.case, a.run)
     (rd / "workspace").mkdir(parents=True)
     (rd / "scratch").mkdir()
+    # The mirror serves this copy, never the repo: the pilot's mirror went 404 mid-run when the
+    # checkout switched to a branch without evals/ (2026-11-12).
+    shutil.copytree(CASES_DIR / a.case / "site", rd / "site")
     version = json.loads((staged / ".claude-plugin/plugin.json").read_text(encoding="utf-8"))["version"]
     meta = {"case": a.case, "run": a.run, "plugin_version": version, "plugin": str(staged),
             "prepared": datetime.now(timezone.utc).isoformat(timespec="seconds")}
@@ -285,7 +288,7 @@ def cmd_serve(a) -> int:
     (rd / "stop").unlink(missing_ok=True)
     case = load_case(a.case)
     # A run resumed after an interruption passes --port to keep the URL its prompt names.
-    server, mirror = start_mirror(CASES_DIR / a.case / "site", rd / "requests.log", a.port or 0)
+    server, mirror = start_mirror(rd / "site", rd / "requests.log", a.port or 0)
     meta = json.loads((rd / "meta.json").read_text(encoding="utf-8"))
     prompt = AGENT_PROMPT.format(plugin=meta["plugin"], workspace=str(rd / "workspace"),
                                  scratch=str(rd / "scratch"), agent=AGENT,
