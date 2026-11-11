@@ -53,3 +53,19 @@ Rules learned on rainmojo-so that apply here:
   lost points on E.
 - Cost is computed from the token counts and the model, never from the weekly meter, which other
   sessions move too.
+
+## Pilot, 2026-11-12 (case-01-roastery run 1, plugin 2.8.3 at 257310c, Sonnet 5.5 agent and judge)
+
+- Score 96: 9 of 10 facts (missed F8, the missing alt text on the /shop/ images, which the run marked
+  could not verify), B 15, C 15, D 10, E 20. No combined score, `present.py --lint` passed.
+- Agent: 308,309 tokens, 60 tool calls, 49 minutes. Judge: 103,987 tokens, 8 tool calls, under a minute.
+  About 412k tokens a run with its judging, against about 270k for a rainmojo-so so-audit Sonnet run
+  without judging.
+- The run is kept as run 1 of case-01 in the baseline batch: same harness, same pinned plugin copy.
+- An earlier attempt (184k tokens) is not scored: its mirror served the cases from the repo checkout and
+  answered 404 after the checkout changed branch. `prepare` now copies the snapshot into the run folder.
+- The final message was saved condensed in its last two paragraphs (what could not be done, conflicts);
+  later runs save the hand-back text verbatim.
+- The run surfaced three instruction conflicts in lite itself: `so-audit-lite` promises an 8-row status
+  table but lists 7 phases; it allows 15 task items while `report-lite` caps fixes at 10; it names the
+  report `_so-audit_` while `report-lite` names it `_aiso-report_`.
