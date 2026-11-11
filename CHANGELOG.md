@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- ผู้ใช้ Antigravity เห็นเลขรุ่นของปลั๊กอินตรงกับรุ่นจริงแล้ว
+
+### Under the hood
+
+- One version source (LITE-008): `.claude-plugin/plugin.json`. `tooling/version_gate.py` fails CI when any other
+  manifest, the marketplace entry, a skill or agent frontmatter, README.md or the newest CHANGELOG section disagrees.
+  The root Antigravity `plugin.json` read 2.2.0 since 2.3.0 and now reads 2.8.3; README points to this file instead
+  of naming a version.
+
 ## 2.8.3 (2026-11-05)
 
 ### สิ่งที่ผู้ใช้จะเห็น
