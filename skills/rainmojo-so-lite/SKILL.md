@@ -97,7 +97,7 @@ any surface; the glyph allowlist applies to chat and Markdown only.
 | โฟลเดอร์ | คืออะไร |
 |---|---|
 | `reference/` | ข้อกำหนดและตัวอย่างที่สกิลผลิตเนื้อหาอ่าน |
-| `scripts/` | สคริปต์ Python ที่สกิลเรียกใช้ ทุกตัวมี `--self-test`: `client_workspace.py`, `content_pipeline.py`, `content_formatter.py`, `image_production.py`, `wordpress_publisher.py`, `robots_generator.py`, `page_analyzer.py`, `agent_readiness_lite.py`, `ai_platforms.py`, `present.py`, `present_html.py`, `build_summary.py`, `routing_instruction_gate.py`, `presentation_instruction_gate.py` |
+| `scripts/` | สคริปต์ Python ที่สกิลเรียกใช้ ทุกตัวมี `--self-test`: `client_workspace.py`, `content_pipeline.py`, `content_formatter.py`, `image_production.py`, `wordpress_publisher.py`, `robots_generator.py`, `page_analyzer.py`, `agent_readiness_lite.py`, `ai_platforms.py`, `present.py`, `present_html.py`, `build_summary.py`, `routing_instruction_gate.py`, `presentation_instruction_gate.py` และตัวช่วย `_isolated_mode.py` ที่ทำให้สคริปต์ยังหาแพ็กเกจเจอเมื่อถูกรันด้วย `python -I` |
 | `templates/widget/` | สัญญาข้อมูลการ์ด Tier 1 (`summary.schema.json`), ป้ายข้อความ, ไอคอน SVG, สไตล์ และตัวอย่าง 6 โหมด |
 | `reference/frameworks/ai-platform-registry.json` | ทะเบียนบอท 68 token และ 11 การ์ดของ 10 แพลตฟอร์ม ข้อเท็จจริงสาธารณะ ไม่มีน้ำหนักคะแนน |
 | `_base/presentation-scaffold.md` | ชั้นแสดงผลสองระดับและ 7 โหมดคำตอบที่ทุกสกิลสืบทอด |

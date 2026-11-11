@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- ตรวจเว็บได้ครบทุกขั้น ไม่ข้ามขั้นเพราะเครื่องหาโปรแกรมเสริมไม่เจออีกแล้ว
+
+### Under the hood
+
+- Scripts work under `python -I` (LITE-009, port of rainmojo-so RSO-012). `-I` hides the user site-packages, where
+  `pip install --user` puts `requests`, `beautifulsoup4`, `lxml` and Pillow, and the script's own folder; 6 of the 9
+  agent-run scripts stopped with "Missing dependency" or "No module named client_workspace". Each now imports
+  `_isolated_mode.py` first, which adds back the user site and nothing else (the current directory stays off the
+  path). `isolated_mode_test.py` checks the import order and the behaviour, and runs in CI.
+
 ## 2.8.3 (2026-11-05)
 
 ### สิ่งที่ผู้ใช้จะเห็น

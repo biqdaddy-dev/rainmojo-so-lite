@@ -41,6 +41,7 @@ WIDGET = os.path.join(ROOT, "templates", "widget")
 SAMPLES = os.path.join(WIDGET, "samples")
 SHELL = os.path.join(WIDGET, "tier1-mcp-app.html")
 sys.path.insert(0, HERE)
+import _isolated_mode  # noqa: E402,F401  python -I leaves out user site-packages (LITE-009)
 import present  # noqa: E402
 
 CARD_URI = "ui://rainmojo-so-lite/tier1-card.html"
