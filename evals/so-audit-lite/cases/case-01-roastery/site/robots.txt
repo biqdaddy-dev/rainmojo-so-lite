@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /cart/
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+Sitemap: https://northwind-roastery.test/sitemap.xml

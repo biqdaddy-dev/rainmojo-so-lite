@@ -1,0 +1,22 @@
+{
+  "id": "case-09-thin",
+  "kind": "negative",
+  "domain": "nimman-yoga.test",
+  "summary": "Negative case: a one-page 'Coming soon' placeholder with about a dozen words, no robots.txt, no sitemap, no meta description. There is too little to audit; the agent must say so rather than produce full category scores.",
+  "expected_facts": [
+    {"id": "F1", "fact": "The site is a single placeholder page (title \"Coming soon\", one sentence saying the studio opens in December 2026); there is no other page to crawl."},
+    {"id": "F2", "fact": "There is no robots.txt (404), no sitemap (404), no llms.txt (404), no meta description, no canonical and no structured data."},
+    {"id": "F3", "fact": "The deliverables say plainly that there is too little content for a meaningful audit, and mark content, citability, E-E-A-T and similar sections as not audited or insufficient data rather than scoring them."},
+    {"id": "F4", "fact": "The recommendations focus on what to build before launch (real pages, title and description, LocalBusiness markup, robots.txt and sitemap), not on optimising content that does not exist."}
+  ],
+  "unavailable_data": [
+    "Google Analytics 4 traffic, sessions or conversions",
+    "Google Search Console clicks, impressions, positions or indexed-page counts",
+    "Google Business Profile data or reviews",
+    "backlink counts, referring domains, Domain Rating or Authority scores",
+    "Core Web Vitals or PageSpeed field and lab numbers (LCP, INP, CLS, performance score)",
+    "keyword search volumes or current rankings",
+    "AI answer-engine citation counts or brand-mention counts gathered from live AI platforms",
+    "a content, citability, E-E-A-T or topical-authority score for a twelve-word page"
+  ]
+}

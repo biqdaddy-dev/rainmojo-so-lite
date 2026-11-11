@@ -1,0 +1,22 @@
+{
+  "id": "case-10-media",
+  "kind": "positive",
+  "domain": "kinduay-food.test",
+  "summary": "Thai recipe and food media site, six pages, with partial AI-crawler blocks, a stale llms.txt, inconsistent article dates, a double H1 and uneven Recipe markup.",
+  "expected_facts": [
+    {"id": "F1", "fact": "robots.txt blocks ClaudeBot from /recipes/ only (the rest of the site stays open to it), and blocks Google-Extended from the whole site."},
+    {"id": "F2", "fact": "GPTBot, PerplexityBot and other crawlers fall under the * group and may crawl everything."},
+    {"id": "F3", "fact": "llms.txt lists three recipes, of which /recipes/tom-yum/ and /recipes/pad-thai/ return 404, and it omits the som tam recipe that does exist."},
+    {"id": "F4", "fact": "The street-food article's Article markup has dateModified (2026-03-01) earlier than datePublished (2026-07-10), which is impossible."},
+    {"id": "F5", "fact": "The som tam recipe page has two H1 elements and no Recipe markup, while the khao soi page has Recipe markup with author, yield, total time and ingredients."},
+    {"id": "F6", "fact": "sitemap.xml lists 6 URLs that all return 200."}
+  ],
+  "unavailable_data": [
+    "Google Analytics 4 traffic, sessions or conversions",
+    "Google Search Console clicks, impressions, positions or indexed-page counts",
+    "backlink counts, referring domains, Domain Rating or Authority scores",
+    "Core Web Vitals or PageSpeed field and lab numbers (LCP, INP, CLS, performance score)",
+    "keyword search volumes or current rankings",
+    "AI answer-engine citation counts or brand-mention counts gathered from live AI platforms"
+  ]
+}

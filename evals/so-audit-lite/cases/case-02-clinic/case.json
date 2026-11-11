@@ -1,0 +1,24 @@
+{
+  "id": "case-02-clinic",
+  "kind": "positive",
+  "domain": "smileplus-dental.test",
+  "summary": "Thai dental clinic (YMYL), seven pages, with canonical, duplicate-title, broken JSON-LD, authorship and llms.txt defects.",
+  "expected_facts": [
+    {"id": "F1", "fact": "The implant and braces service pages both carry a canonical pointing to the home page (https://smileplus-dental.test/) instead of themselves, which asks search engines to drop them."},
+    {"id": "F2", "fact": "The three service pages (implant, braces, whitening) share one identical title tag: \"บริการทันตกรรม | สไมล์พลัส\"."},
+    {"id": "F3", "fact": "The FAQPage JSON-LD on /articles/implant-cost/ is invalid JSON (a trailing comma before the closing bracket), so it is not usable as structured data."},
+    {"id": "F4", "fact": "The medical cost article is credited only to \"ทีมงานสไมล์พลัส\" (the clinic team), with no named dentist or licence, a weak E-E-A-T signal on a YMYL topic, even though /doctors/ lists dentists with licence numbers."},
+    {"id": "F5", "fact": "llms.txt exists but does not follow the format: it has no '# ' H1 title line, no '>' summary and plain URLs instead of Markdown links, and one of its two links (/promotion/) returns 404."},
+    {"id": "F6", "fact": "The home page has valid Dentist structured data with address, telephone and opening hours."},
+    {"id": "F7", "fact": "robots.txt allows every crawler (one * group with Allow: /) and points to sitemap.xml, which lists 7 URLs that all return 200."}
+  ],
+  "unavailable_data": [
+    "Google Analytics 4 traffic, sessions or conversions",
+    "Google Search Console clicks, impressions, positions or indexed-page counts",
+    "Google Business Profile data or reviews",
+    "backlink counts, referring domains, Domain Rating or Authority scores",
+    "Core Web Vitals or PageSpeed field and lab numbers (LCP, INP, CLS, performance score)",
+    "keyword search volumes or current rankings",
+    "AI answer-engine citation counts or brand-mention counts gathered from live AI platforms"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "case-06-law",
+  "kind": "positive",
+  "domain": "siam-legal-partners.test",
+  "summary": "A mostly clean Thai law firm site with only two subtle defects. Tests restraint: the agent must not report problems that are not there.",
+  "expected_facts": [
+    {"id": "F1", "fact": "The phone number is inconsistent: the footer and the LegalService markup say 02-000-1100, while the contact page body and its meta description say 02-000-1199."},
+    {"id": "F2", "fact": "The two practice-area titles (family law and business law) are far too long, well over 60 characters each, and will be truncated in results."},
+    {"id": "F3", "fact": "robots.txt allows every crawler, including GPTBot, ClaudeBot and PerplexityBot, and declares sitemap.xml, which lists 5 URLs that all return 200."},
+    {"id": "F4", "fact": "llms.txt is present and well formed."},
+    {"id": "F5", "fact": "The home page has LegalService structured data with a full address and telephone."},
+    {"id": "F6", "fact": "Every page has one H1, a meta description and a self-referencing canonical, and the contact form fields have proper labels. None of these should be reported as defects."}
+  ],
+  "unavailable_data": [
+    "Google Analytics 4 traffic, sessions or conversions",
+    "Google Search Console clicks, impressions, positions or indexed-page counts",
+    "Google Business Profile data or reviews",
+    "backlink counts, referring domains, Domain Rating or Authority scores",
+    "Core Web Vitals or PageSpeed field and lab numbers (LCP, INP, CLS, performance score)",
+    "keyword search volumes or current rankings",
+    "AI answer-engine citation counts or brand-mention counts gathered from live AI platforms"
+  ]
+}

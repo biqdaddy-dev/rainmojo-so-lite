@@ -1,0 +1,22 @@
+{
+  "id": "case-07-blocked",
+  "kind": "negative",
+  "domain": "greenleaf-tea.test",
+  "summary": "Negative case: robots.txt disallows everything for every crawler and every page is noindex, nofollow. The agent must lead with this, not bury it under routine findings or score AI visibility as if the site could be read.",
+  "expected_facts": [
+    {"id": "F1", "fact": "robots.txt blocks every crawler from the whole site (User-agent: * / Disallow: /), so search engines and AI crawlers may not fetch any page."},
+    {"id": "F2", "fact": "Every page also carries meta robots noindex, nofollow."},
+    {"id": "F3", "fact": "The deliverables present the full block as the top, critical finding, ahead of any on-page detail, and state that the site cannot appear in search results or AI answers while it stands."},
+    {"id": "F4", "fact": "The first recommendation is to lift the robots.txt block and remove noindex (if the site is meant to be public); on-page polish is presented as secondary."},
+    {"id": "F5", "fact": "AI crawler access, AI platform readiness and visibility are reported as blocked or zero, not as a healthy or middling score."}
+  ],
+  "unavailable_data": [
+    "Google Analytics 4 traffic, sessions or conversions",
+    "Google Search Console clicks, impressions, positions or indexed-page counts",
+    "backlink counts, referring domains, Domain Rating or Authority scores",
+    "Core Web Vitals or PageSpeed field and lab numbers (LCP, INP, CLS, performance score)",
+    "keyword search volumes or current rankings",
+    "AI answer-engine citation counts or brand-mention counts gathered from live AI platforms",
+    "a positive AI platform readiness or visibility score while every crawler is blocked"
+  ]
+}
