@@ -262,6 +262,39 @@ def summarise(scores: list[float]) -> dict:
             "stdev": round(statistics.stdev(scores), 2) if len(scores) > 1 else 0.0}
 
 
+def read_transcript(path: Path) -> dict:
+    """A subagent's hand-back text, tool calls and active time, from its transcript JSONL.
+
+    The app writes ~/.claude/projects/<project>/<session>/subagents/agent-<id>.jsonl. The hand-back
+    is the SubagentHandback tool call's message, or else the last assistant text.
+    """
+    final, tools, stamps = "", 0, []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if entry.get("timestamp"):
+            stamps.append(entry["timestamp"])
+        if entry.get("type") != "assistant":
+            continue
+        for block in (entry.get("message") or {}).get("content") or []:
+            if not isinstance(block, dict):
+                continue
+            if block.get("type") == "tool_use":
+                if block.get("name") == "SubagentHandback":
+                    final = str((block.get("input") or {}).get("message") or final)
+                else:
+                    tools += 1
+            elif block.get("type") == "text" and block.get("text", "").strip():
+                final = block["text"]
+    seconds = None
+    if len(stamps) > 1:
+        parse = lambda s: datetime.fromisoformat(s.replace("Z", "+00:00"))  # noqa: E731
+        seconds = round((parse(stamps[-1]) - parse(stamps[0])).total_seconds())
+    return {"final": final, "tool_uses": tools, "wall_seconds": seconds}
+
+
 # --- commands --------------------------------------------------------------------------------
 
 def cmd_prepare(a) -> int:
@@ -283,12 +316,12 @@ def cmd_prepare(a) -> int:
     return 0
 
 
-def cmd_serve(a) -> int:
-    rd = run_dir(a.out, a.case, a.run)
+def open_run(out: Path, case_id: str, run: int, port: int = 0):
+    """Start one run's mirror and write its prompt.md; returns the server."""
+    rd = run_dir(out, case_id, run)
     (rd / "stop").unlink(missing_ok=True)
-    case = load_case(a.case)
-    # A run resumed after an interruption passes --port to keep the URL its prompt names.
-    server, mirror = start_mirror(rd / "site", rd / "requests.log", a.port or 0)
+    case = load_case(case_id)
+    server, mirror = start_mirror(rd / "site", rd / "requests.log", port)
     meta = json.loads((rd / "meta.json").read_text(encoding="utf-8"))
     prompt = AGENT_PROMPT.format(plugin=meta["plugin"], workspace=str(rd / "workspace"),
                                  scratch=str(rd / "scratch"), agent=AGENT,
@@ -296,7 +329,14 @@ def cmd_serve(a) -> int:
                                  domain=case["domain"], mirror=mirror)
     (rd / "prompt.md").write_text(prompt, encoding="utf-8")
     (rd / "mirror.txt").write_text(mirror, encoding="utf-8")
-    print(f"serving {mirror} for {a.case} run {a.run}; prompt at {rd / 'prompt.md'}", flush=True)
+    print(f"serving {mirror} for {case_id} run {run}; prompt at {rd / 'prompt.md'}", flush=True)
+    return server
+
+
+def cmd_serve(a) -> int:
+    rd = run_dir(a.out, a.case, a.run)
+    # A run resumed after an interruption passes --port to keep the URL its prompt names.
+    server = open_run(a.out, a.case, a.run, a.port or 0)
     deadline = time.monotonic() + a.hours * 3600
     try:
         while time.monotonic() < deadline and not (rd / "stop").exists():
@@ -306,12 +346,49 @@ def cmd_serve(a) -> int:
     return 0
 
 
+def cmd_batch_serve(a) -> int:
+    """Prepare the runs that do not exist yet and serve every run not yet collected, from one
+    process, until each is collected (its stop file appears) or --hours pass."""
+    cases = all_cases() if a.cases == ["all"] else a.cases
+    servers = {}
+    for case_id in cases:
+        for run in a.runs:
+            rd = run_dir(a.out, case_id, run)
+            if (rd / "run.json").exists():
+                continue
+            if not rd.exists():
+                cmd_prepare(argparse.Namespace(out=a.out, case=case_id, run=run, plugin=a.plugin))
+            port = 0
+            if (rd / "mirror.txt").exists() and a.keep_ports:
+                port = int((rd / "mirror.txt").read_text(encoding="utf-8").rsplit(":", 1)[1])
+            servers[rd] = open_run(a.out, case_id, run, port)
+    deadline = time.monotonic() + a.hours * 3600
+    try:
+        while servers and time.monotonic() < deadline:
+            for rd in [r for r in servers if (r / "stop").exists()]:
+                servers.pop(rd).shutdown()
+            time.sleep(5)
+    finally:
+        for server in servers.values():
+            server.shutdown()
+    return 0
+
+
 def cmd_collect(a) -> int:
     rd = run_dir(a.out, a.case, a.run)
     case = load_case(a.case)
     workspace = rd / "workspace"
-    (workspace / "final-message.md").write_text(
-        Path(a.final_message).read_text(encoding="utf-8"), encoding="utf-8")
+    if a.transcript:
+        got = read_transcript(Path(a.transcript))
+        final = got["final"]
+        a.tool_uses = a.tool_uses if a.tool_uses is not None else got["tool_uses"]
+        a.wall_seconds = a.wall_seconds if a.wall_seconds is not None else got["wall_seconds"]
+    elif a.final_message:
+        final = Path(a.final_message).read_text(encoding="utf-8")
+    else:
+        print("collect needs --transcript or --final-message", file=sys.stderr)
+        return 2
+    (workspace / "final-message.md").write_text(final, encoding="utf-8")
     (rd / "stop").write_text("", encoding="utf-8")
     meta = json.loads((rd / "meta.json").read_text(encoding="utf-8"))
     checks = deterministic_checks(workspace, rd / "requests.log", Path(meta["plugin"]))
@@ -331,6 +408,8 @@ def cmd_collect(a) -> int:
 def cmd_score(a) -> int:
     rd = run_dir(a.out, a.case, a.run)
     case = load_case(a.case)
+    if a.transcript:
+        (rd / "judge.json").write_text(read_transcript(Path(a.transcript))["final"], encoding="utf-8")
     verdict = extract_json((rd / "judge.json").read_text(encoding="utf-8"))
     if verdict is None:
         print("judge.json holds no JSON object", file=sys.stderr)
@@ -388,6 +467,14 @@ def main(argv: list[str] | None = None) -> int:
     s = sub.add_parser("summary")
     s.add_argument("--out", type=Path, required=True)
     s.add_argument("--write-baseline", help="also write the summary to this file")
+    b = sub.add_parser("batch-serve")
+    b.add_argument("--out", type=Path, required=True)
+    b.add_argument("--cases", nargs="+", default=["all"])
+    b.add_argument("--runs", nargs="+", type=int, default=[1, 2, 3])
+    b.add_argument("--plugin", default=str(PLUGIN_ROOT), help="plugin source to stage")
+    b.add_argument("--hours", type=float, default=14)
+    b.add_argument("--keep-ports", action="store_true",
+                   help="reuse each run's earlier port (resuming after an interruption)")
     for name in ("prepare", "serve", "collect", "score"):
         p = sub.add_parser(name)
         p.add_argument("--out", type=Path, required=True)
@@ -405,12 +492,16 @@ def main(argv: list[str] | None = None) -> int:
             p.add_argument("--wall-seconds", type=float)
             p.add_argument("--tool-uses", type=int)
             p.add_argument("--tokens", type=int)
-            p.add_argument("--final-message", required=True)
+            p.add_argument("--final-message", help="a file holding the agent's final message")
+            p.add_argument("--transcript", help="the agent subagent's transcript JSONL; gives the "
+                           "final message, tool calls and active time")
         if name == "score":
             p.add_argument("--judge-model", required=True)
+            p.add_argument("--transcript", help="the judge subagent's transcript JSONL; its "
+                           "hand-back is saved as judge.json")
     a = ap.parse_args(argv)
     return {"prepare": cmd_prepare, "serve": cmd_serve, "collect": cmd_collect,
-            "score": cmd_score, "summary": cmd_summary}[a.cmd](a)
+            "score": cmd_score, "summary": cmd_summary, "batch-serve": cmd_batch_serve}[a.cmd](a)
 
 
 if __name__ == "__main__":
