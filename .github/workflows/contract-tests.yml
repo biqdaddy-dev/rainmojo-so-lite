@@ -27,6 +27,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Session context ceiling (LITE-014)
+        run: python -I tooling/context_budget.py
       - name: Install the test dependency
         run: python -m pip install "Pillow>=12.3,<13"
       - name: Image spec contract test

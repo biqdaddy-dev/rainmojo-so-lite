@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- รุ่นนี้ไม่มีอะไรเปลี่ยนในการใช้งาน เป็นงานจัดระเบียบภายในเท่านั้น
+
+### Under the hood
+
+- Session context is measured and capped (LITE-014, blueprint C11): `tooling/context_budget.py` counts the
+  characters every session loads from lite (skill listing plus agent descriptions, no SessionStart hook) and fails
+  CI when the total grows past `tooling/context-budget.json`. Four of the longest descriptions lose their mechanism
+  detail, keeping every "use when" and "not for" cue: 19,048 to 18,772 characters. Getting under agentlint's
+  16,000 needs the invocation test, which needs a logged-in CLI.
+
 ## 2.8.3 (2026-11-05)
 
 ### สิ่งที่ผู้ใช้จะเห็น
