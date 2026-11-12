@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- ลูกค้าใหม่ได้ไฟล์เกณฑ์ตัดสินใจ คำศัพท์กลาง และบันทึกจุดที่ถูกแก้ ตั้งแต่วันแรก
+
+### Under the hood
+
+- Client starter files (LITE-013, blueprint RS-8): the demo-client template gains `judgement.md` (choices with
+  the path taken, because and the exception, most important first; stop and ask when none fits), `CONTEXT.md`
+  (shared terms with meaning, not-meaning, example, do-not-use, owner, date) and `corrections.md` (one row per
+  reviewer correction, five causes, where the source was fixed, new-session retest). The client AGENTS.md and
+  CLAUDE.md load them; `client_workspace.py validate` warns when one is missing without failing older workspaces,
+  and `adopt` copies any that are missing. `new-client-lite` drafts the rules from 20 to 30 reviewer comments and
+  keeps only the rows the user confirms.
+
 ## 2.8.3 (2026-11-05)
 
 ### สิ่งที่ผู้ใช้จะเห็น
