@@ -1,0 +1,25 @@
+{
+  "id": "case-04-hotel",
+  "kind": "positive",
+  "domain": "baan-rimnam-hotel.test",
+  "summary": "Boutique hotel, six pages, with a sitemap index pointing at a missing child sitemap, an orphan page, thin pages, filename alt text, an http:// internal link and thin Hotel markup.",
+  "expected_facts": [
+    {"id": "F1", "fact": "robots.txt points to sitemap_index.xml, which lists two child sitemaps; page-sitemap.xml works but post-sitemap.xml returns 404."},
+    {"id": "F2", "fact": "/spa/ is an orphan: it is in page-sitemap.xml but no page links to it."},
+    {"id": "F3", "fact": "/dining/ and /location/ are thin pages with a single short sentence each."},
+    {"id": "F4", "fact": "Image alt text is the camera file name (IMG_2034.jpg, IMG_2035.jpg, DSC0091.jpg) rather than a description."},
+    {"id": "F5", "fact": "The navigation links to Location with an absolute http:// URL instead of https or a relative path."},
+    {"id": "F6", "fact": "The Hotel structured data on the home page has only name and url: no address, telephone, priceRange, image or rating, although the address and phone are on every page."},
+    {"id": "F7", "fact": "There is no llms.txt (404); robots.txt allows all crawlers."}
+  ],
+  "unavailable_data": [
+    "Google Analytics 4 traffic, sessions or conversions",
+    "Google Search Console clicks, impressions, positions or indexed-page counts",
+    "Google Business Profile data or reviews",
+    "backlink counts, referring domains, Domain Rating or Authority scores",
+    "Core Web Vitals or PageSpeed field and lab numbers (LCP, INP, CLS, performance score)",
+    "keyword search volumes or current rankings",
+    "booking-engine or OTA data",
+    "AI answer-engine citation counts or brand-mention counts gathered from live AI platforms"
+  ]
+}

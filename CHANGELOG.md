@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### สิ่งที่ผู้ใช้จะเห็น
+
+- รุ่นนี้ไม่มีอะไรเปลี่ยนในการใช้งาน เป็นงานจัดระเบียบภายในเท่านั้น
+
+### Under the hood
+
+- Outcome eval for `so-audit-lite` (LITE-007, blueprint DP-023 section 9): 10 synthetic `.test` sites, the same
+  snapshots as rainmojo-so, graded by a lite rubric (facts 40, honest coverage 15, no invented numbers 15,
+  actionable 10, carried through 20) through an in-app harness, `evals/so-audit-lite/inapp.py`. Baseline on
+  2.8.3: 10 cases x 3 runs, mean 97.68 (`evals/so-audit-lite/baseline.json`). Every structural change is
+  measured against it.
+
 ## 2.8.3 (2026-11-05)
 
 ### สิ่งที่ผู้ใช้จะเห็น

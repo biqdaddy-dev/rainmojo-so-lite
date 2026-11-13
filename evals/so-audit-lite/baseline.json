@@ -1,0 +1,308 @@
+{
+  "created": "2026-11-13T04:01:39+00:00",
+  "suite": "so-audit-lite",
+  "harness": "inapp-subagent",
+  "plugin_versions": [
+    "2.8.3"
+  ],
+  "models": [
+    "sonnet"
+  ],
+  "efforts": [
+    "default"
+  ],
+  "judge_models": [
+    "sonnet"
+  ],
+  "runs_scored": 30,
+  "mean": 97.68,
+  "min": 83.0,
+  "max": 100.0,
+  "stdev": 4.52,
+  "by_criterion": {
+    "A_facts": 38.98,
+    "B_coverage": 15.0,
+    "C_no_invented": 14.77,
+    "D_actionable": 9.93,
+    "E_carried_through": 19.0
+  },
+  "by_kind": {
+    "positive": 98.44,
+    "negative": 95.89
+  },
+  "agent_total_tokens": 7412888,
+  "agent_mean_tokens": 247096,
+  "unscored": [],
+  "runs": [
+    {
+      "case": "case-01-roastery",
+      "kind": "positive",
+      "run": 1,
+      "score": 96.0,
+      "wall_seconds": 2921.0,
+      "tool_uses": 60,
+      "total_tokens": 308309
+    },
+    {
+      "case": "case-01-roastery",
+      "kind": "positive",
+      "run": 2,
+      "score": 100.0,
+      "wall_seconds": 4164,
+      "tool_uses": 81,
+      "total_tokens": 397876
+    },
+    {
+      "case": "case-01-roastery",
+      "kind": "positive",
+      "run": 3,
+      "score": 100.0,
+      "wall_seconds": 1568,
+      "tool_uses": 24,
+      "total_tokens": 169700
+    },
+    {
+      "case": "case-02-clinic",
+      "kind": "positive",
+      "run": 1,
+      "score": 100.0,
+      "wall_seconds": 3806,
+      "tool_uses": 71,
+      "total_tokens": 338002
+    },
+    {
+      "case": "case-02-clinic",
+      "kind": "positive",
+      "run": 2,
+      "score": 100.0,
+      "wall_seconds": 4155,
+      "tool_uses": 73,
+      "total_tokens": 340442
+    },
+    {
+      "case": "case-02-clinic",
+      "kind": "positive",
+      "run": 3,
+      "score": 100.0,
+      "wall_seconds": 2357,
+      "tool_uses": 33,
+      "total_tokens": 194080
+    },
+    {
+      "case": "case-03-spa",
+      "kind": "positive",
+      "run": 1,
+      "score": 100.0,
+      "wall_seconds": 2903,
+      "tool_uses": 54,
+      "total_tokens": 280505
+    },
+    {
+      "case": "case-03-spa",
+      "kind": "positive",
+      "run": 2,
+      "score": 100.0,
+      "wall_seconds": 1060,
+      "tool_uses": 17,
+      "total_tokens": 137468
+    },
+    {
+      "case": "case-03-spa",
+      "kind": "positive",
+      "run": 3,
+      "score": 100.0,
+      "wall_seconds": 2582,
+      "tool_uses": 54,
+      "total_tokens": 270971
+    },
+    {
+      "case": "case-04-hotel",
+      "kind": "positive",
+      "run": 1,
+      "score": 90.0,
+      "wall_seconds": 1266,
+      "tool_uses": 22,
+      "total_tokens": 156790
+    },
+    {
+      "case": "case-04-hotel",
+      "kind": "positive",
+      "run": 2,
+      "score": 100.0,
+      "wall_seconds": 2777,
+      "tool_uses": 46,
+      "total_tokens": 253560
+    },
+    {
+      "case": "case-04-hotel",
+      "kind": "positive",
+      "run": 3,
+      "score": 100.0,
+      "wall_seconds": 1182,
+      "tool_uses": 18,
+      "total_tokens": 146049
+    },
+    {
+      "case": "case-05-shop",
+      "kind": "positive",
+      "run": 1,
+      "score": 100.0,
+      "wall_seconds": 3027,
+      "tool_uses": 69,
+      "total_tokens": 363569
+    },
+    {
+      "case": "case-05-shop",
+      "kind": "positive",
+      "run": 2,
+      "score": 100.0,
+      "wall_seconds": 3563,
+      "tool_uses": 70,
+      "total_tokens": 350039
+    },
+    {
+      "case": "case-05-shop",
+      "kind": "positive",
+      "run": 3,
+      "score": 100.0,
+      "wall_seconds": 2194,
+      "tool_uses": 49,
+      "total_tokens": 230731
+    },
+    {
+      "case": "case-06-law",
+      "kind": "positive",
+      "run": 1,
+      "score": 98.0,
+      "wall_seconds": 1477,
+      "tool_uses": 29,
+      "total_tokens": 209484
+    },
+    {
+      "case": "case-06-law",
+      "kind": "positive",
+      "run": 2,
+      "score": 100.0,
+      "wall_seconds": 3349,
+      "tool_uses": 74,
+      "total_tokens": 394929
+    },
+    {
+      "case": "case-06-law",
+      "kind": "positive",
+      "run": 3,
+      "score": 90.0,
+      "wall_seconds": 2183,
+      "tool_uses": 71,
+      "total_tokens": 359752
+    },
+    {
+      "case": "case-07-blocked",
+      "kind": "negative",
+      "run": 1,
+      "score": 100.0,
+      "wall_seconds": 716,
+      "tool_uses": 15,
+      "total_tokens": 132610
+    },
+    {
+      "case": "case-07-blocked",
+      "kind": "negative",
+      "run": 2,
+      "score": 100.0,
+      "wall_seconds": 348,
+      "tool_uses": 12,
+      "total_tokens": 126860
+    },
+    {
+      "case": "case-07-blocked",
+      "kind": "negative",
+      "run": 3,
+      "score": 100.0,
+      "wall_seconds": 321,
+      "tool_uses": 14,
+      "total_tokens": 145758
+    },
+    {
+      "case": "case-08-nositemap",
+      "kind": "negative",
+      "run": 1,
+      "score": 100.0,
+      "wall_seconds": 1174,
+      "tool_uses": 21,
+      "total_tokens": 185638
+    },
+    {
+      "case": "case-08-nositemap",
+      "kind": "negative",
+      "run": 2,
+      "score": 90.0,
+      "wall_seconds": 1111,
+      "tool_uses": 47,
+      "total_tokens": 243907
+    },
+    {
+      "case": "case-08-nositemap",
+      "kind": "negative",
+      "run": 3,
+      "score": 100.0,
+      "wall_seconds": 1303,
+      "tool_uses": 37,
+      "total_tokens": 195376
+    },
+    {
+      "case": "case-09-thin",
+      "kind": "negative",
+      "run": 1,
+      "score": 100.0,
+      "wall_seconds": 1740,
+      "tool_uses": 39,
+      "total_tokens": 201109
+    },
+    {
+      "case": "case-09-thin",
+      "kind": "negative",
+      "run": 2,
+      "score": 90.0,
+      "wall_seconds": 642,
+      "tool_uses": 18,
+      "total_tokens": 144069
+    },
+    {
+      "case": "case-09-thin",
+      "kind": "negative",
+      "run": 3,
+      "score": 83.0,
+      "wall_seconds": 1252,
+      "tool_uses": 27,
+      "total_tokens": 204224
+    },
+    {
+      "case": "case-10-media",
+      "kind": "positive",
+      "run": 1,
+      "score": 100.0,
+      "wall_seconds": 3586,
+      "tool_uses": 68,
+      "total_tokens": 351946
+    },
+    {
+      "case": "case-10-media",
+      "kind": "positive",
+      "run": 2,
+      "score": 100.0,
+      "wall_seconds": 2061,
+      "tool_uses": 62,
+      "total_tokens": 314144
+    },
+    {
+      "case": "case-10-media",
+      "kind": "positive",
+      "run": 3,
+      "score": 93.3,
+      "wall_seconds": 1777,
+      "tool_uses": 59,
+      "total_tokens": 264991
+    }
+  ]
+}
