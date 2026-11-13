@@ -69,3 +69,50 @@ Rules learned on rainmojo-so that apply here:
 - The run surfaced three instruction conflicts in lite itself: `so-audit-lite` promises an 8-row status
   table but lists 7 phases; it allows 15 task items while `report-lite` caps fixes at 10; it names the
   report `_so-audit_` while `report-lite` names it `_aiso-report_`.
+
+## Baseline, 2026-11-13 (10 cases x 3 runs, plugin 2.8.3 at 257310c, Sonnet 5.5 agent and judge)
+
+[baseline.json](baseline.json) holds the numbers. Mean 97.68 (min 83, max 100, standard deviation 4.52);
+positive cases 98.44, negative cases 95.89.
+
+| Criterion | Mean | Max |
+|---|---|---|
+| A. Facts found | 38.98 | 40 |
+| B. Honest coverage | 15.0 | 15 |
+| C. No invented numbers | 14.77 | 15 |
+| D. Actionable | 9.93 | 10 |
+| E. Carried through | 19.0 | 20 |
+
+| Case | Runs | Mean |
+|---|---|---|
+| case-01-roastery | 96, 100, 100 | 98.7 |
+| case-02-clinic | 100, 100, 100 | 100 |
+| case-03-spa | 100, 100, 100 | 100 |
+| case-04-hotel | 90, 100, 100 | 96.7 |
+| case-05-shop | 100, 100, 100 | 100 |
+| case-06-law | 98, 100, 90 | 96.0 |
+| case-07-blocked | 100, 100, 100 | 100 |
+| case-08-nositemap | 100, 90, 100 | 96.7 |
+| case-09-thin | 100, 90, 83 | 91.0 |
+| case-10-media | 100, 100, 93.3 | 97.8 |
+
+Cost: agents 7.41M tokens (mean 247k a run, 126k to 398k), judges about 2.7M (mean 96k). Wall time
+5 to 70 minutes a run; at most 3 to 6 runs at a time, under PC load from other sessions.
+
+What it says about lite today:
+- Facts, honesty and invented numbers are at the ceiling, as in rainmojo-so's baseline, so a later
+  change can only show up there as a regression.
+- E lost points in 2 runs (case-06 r3, case-08 r2) where every script call used `python -I` and the
+  scripts stopped on missing `requests`, `bs4` and `lxml`: all 11 python calls in case-06 r3 had `-I`.
+  LITE-009 is the fix; its after-batch measures it.
+- case-09-thin is the weakest case: two of three runs graded content, citability and E-E-A-T on a
+  13-word placeholder with check counts instead of saying there was too little to audit.
+- Runs often hit the same three instruction conflicts first seen in the pilot (8-row table with 7
+  phases, 15 vs 10 task items, `_so-audit_` vs `_aiso-report_`), and several rewrote
+  `build_summary.py` output by hand because `page_analyzer.py` misreads Thai without a charset header
+  (false SSR-01 FAIL).
+
+How the batch ran: the first batch folder sat in `%TEMP%`, where `src/` and `_plugin/` vanished
+overnight; batches now sit under the user profile. One judge answer had a stray `]` and was repaired
+by hand before scoring (case-09 r2). Judge totals that disagreed with their own parts (case-02 r3 said
+90, parts 100) are recomputed by the runner.
