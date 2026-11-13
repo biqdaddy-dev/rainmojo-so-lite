@@ -14,7 +14,8 @@
   reviewer correction, five causes, where the source was fixed, new-session retest). The client AGENTS.md and
   CLAUDE.md load them; `client_workspace.py validate` warns when one is missing without failing older workspaces,
   and `adopt` copies any that are missing. `new-client-lite` drafts the rules from 20 to 30 reviewer comments and
-  keeps only the rows the user confirms.
+  keeps only the rows the user confirms. A fresh agent given only the three files picked right in 5 of 5
+  situations (pass mark 4); the record is `docs/operations/lite-013-decision-test.md`.
 
 ## 2.8.3 (2026-11-05)
 
