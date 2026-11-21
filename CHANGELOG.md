@@ -5,9 +5,19 @@
 ### สิ่งที่ผู้ใช้จะเห็น
 
 - ตรวจเว็บได้ครบทุกขั้น ไม่ข้ามขั้นเพราะเครื่องหาโปรแกรมเสริมไม่เจออีกแล้ว
+- เว็บที่ปิดบอทหรือยังแทบไม่มีเนื้อหา ระบบจะบอกตรง ๆ ว่ายังตรวจให้ระดับไม่ได้ แทนการให้ระดับที่ไม่มีความหมาย
 
 ### Under the hood
 
+- Scope gate before any audit step (LITE-015, port of rainmojo-so RSO-036). `scope_gate.py` fetches robots.txt
+  and up to 10 pages (sitemap, else homepage links) and sets `scorable` false when robots.txt closes the whole
+  site, every fetched page is noindex, or the pages hold under 50 words of main text; an empty client-rendered
+  app shell is a finding, not thin content. so-audit-lite, seo-audit-lite and aiso-audit-lite run it after phase 0:
+  a closed gate means no level and no count of checks passed anywhere, while robots.txt lines, HTTP status, word
+  counts and every item in `facts.missing` are still reported. `build_summary.py --scope-gate` drops dimensions,
+  platforms, competitors and the query matrix from the card. `text_words.py` counts Thai with pythainlp when it is
+  installed and estimates one word per 5 Thai characters otherwise, so short Thai sites are not mistaken for empty
+  ones. `scope_gate_test.py` (25 checks) runs in CI.
 - Scripts work under `python -I` (LITE-009, port of rainmojo-so RSO-012). `-I` hides the user site-packages, where
   `pip install --user` puts `requests`, `beautifulsoup4`, `lxml` and Pillow, and the script's own folder; 6 of the 9
   agent-run scripts stopped with "Missing dependency" or "No module named client_workspace". Each now imports

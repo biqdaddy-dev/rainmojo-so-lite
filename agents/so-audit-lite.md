@@ -74,6 +74,21 @@ any surface; the glyph allowlist applies to chat and Markdown only.
 ถ้าเฟส 2.1 พบว่า AI crawler ถูกบล็อกทั้งหมด ให้ข้ามเฟส 2.2 กับ 2.3
 บันทึกไว้เป็นงานเร่งด่วน แล้วไปเฟส 3 ตามปกติ
 
+## ด่านขอบเขต (ทำทันทีหลังเฟส 0 ก่อนเฟสอื่น)
+
+รัน `python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/scope_gate.py" <URL ของเว็บ>` (เพิ่ม `--pages <URL> ...`
+เมื่อผู้ใช้ระบุหน้าเอง) แล้วบันทึก JSON ที่ได้ลง `work/{domain}/00-baseline/{domain}_scope-gate_{YYYY-MM-DD}.json`
+(รอบถัดไปลง `01-current/`) ถ้า `scorable` เป็น false คือ robots.txt ปิดทั้งเว็บด้วย `User-agent: *` / `Disallow: /`,
+ทุกหน้าที่ดึงมาติด noindex หรือหน้าที่ดึงมามีข้อความหลักรวมไม่ถึง 50 คำ (หน้าที่เป็นเปลือกแอปเรนเดอร์ฝั่งผู้ใช้
+ไม่นับว่าบาง ให้รายงานเรื่องการเรนเดอร์ฝั่งผู้ใช้เป็นข้อค้นพบแล้วตรวจต่อตามปกติ) ให้ทำดังนี้
+
+- รายงานเงื่อนไขนั้นเป็นเรื่องแรกพร้อมตัวเลขจากด่าน แล้วข้ามไปเฟสสรุป ไม่ต้องเรียกสกิลตรวจที่เหลือ
+- ไม่ให้ระดับ ดี พอใช้ ต้องแก้ และไม่ใส่จำนวนข้อที่ผ่านในด้านใดเลย ทั้งเนื้อหา citability E-E-A-T schema
+  แพลตฟอร์ม และ AI agent แม้เป็นผลบางส่วน ทุกด้านในตารางสถานะลงว่า ตรวจไม่ได้ พร้อมเหตุผล `ด่านขอบเขต: <เหตุผล>`
+- ยังรายงานข้อเท็จจริงที่ไม่ใช่การให้ระดับให้ครบ คือบรรทัดใน robots.txt, สถานะ HTTP, จำนวนคำ, ทุกรายการใน
+  `facts.missing` ของด่าน และ title ของทุกหน้าที่ดึงมา
+- รายการงานเน้นสิ่งที่ต้องเปิดหรือสร้างก่อนจึงจะตรวจได้ เช่น เอา `Disallow: /` หรือ noindex ออก หรือเขียนเนื้อหาจริง
+
 ## ผลลัพธ์
 
 ให้ `report-lite` รวมผลทุกเฟสเป็นรายงานเดียว เขียนลง
@@ -96,6 +111,7 @@ work/{domain}/04-reports/{domain}_so-audit_{YYYY-MM-DD}.html
 1. สร้าง `work/{domain}/04-reports/{domain}_so-audit_{YYYY-MM-DD}_summary.json` จากข้อมูลชุดเดียวกับไฟล์ผลลัพธ์ ถ้ารอบนี้มี JSON จากสคริปต์
    (`agent_readiness_lite.py`, `page_analyzer.py`, `robots_generator.py --output json`, ไฟล์ checklist ของ `aiso-platform-lite`,
    ไฟล์ sampling ของ `aiso-brand-mentions-lite`) ให้ประกอบด้วย `build_summary.py` ตามที่ `so-present-lite` อธิบาย
+   ถ้าด่านขอบเขตปิด ให้ประกอบการ์ดด้วย `build_summary.py --scope-gate {ไฟล์ scope-gate}` ซึ่งตัดจำนวนข้อและระดับทั้งหมดออก และแสดงเหตุผลของด่านแทน
    ถ้าไม่มี ให้เขียนตาม `templates/widget/summary.schema.json` ด้วยมือ: `dimensions[]` คือด้านในตารางสถานะ
    value = จำนวนข้อที่ได้ระดับ ดี, max = จำนวนข้อที่ตรวจ, `key_risk` คือข้อแรกของรายการงาน, `actions` คือ 4 ข้อแรก,
    `transparency.could_not_verify` คือทุกด้านที่ ตรวจไม่ได้, `handoff.tier2_path` คือ path ของไฟล์ผลลัพธ์ **ห้ามใส่บล็อก `score`**
