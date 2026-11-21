@@ -12,7 +12,9 @@
   `pip install --user` puts `requests`, `beautifulsoup4`, `lxml` and Pillow, and the script's own folder; 6 of the 9
   agent-run scripts stopped with "Missing dependency" or "No module named client_workspace". Each now imports
   `_isolated_mode.py` first, which adds back the user site and nothing else (the current directory stays off the
-  path). `isolated_mode_test.py` checks the import order and the behaviour, and runs in CI.
+  path). `isolated_mode_test.py` checks the import order and the behaviour, and runs in CI. Outcome eval before and after on
+  the same 10 x 3 harness: runs that lost points on carrying the audit through went from 3 to 0, positive cases
+  98.44 to 100 (`docs/operations/lite-009-eval.md`).
 
 ## 2.8.3 (2026-11-05)
 
