@@ -1,0 +1,119 @@
+{
+  "created": "2026-11-21T15:31:48+00:00",
+  "suite": "so-audit-lite",
+  "harness": "inapp-subagent",
+  "plugin_versions": [
+    "2.8.3"
+  ],
+  "models": [
+    "sonnet"
+  ],
+  "efforts": [
+    "default"
+  ],
+  "judge_models": [
+    "sonnet"
+  ],
+  "runs_scored": 9,
+  "mean": 100.0,
+  "min": 100.0,
+  "max": 100.0,
+  "stdev": 0.0,
+  "by_criterion": {
+    "A_facts": 40.0,
+    "B_coverage": 15.0,
+    "C_no_invented": 15.0,
+    "D_actionable": 10.0,
+    "E_carried_through": 20.0
+  },
+  "by_kind": {
+    "positive": 100.0,
+    "negative": 100.0
+  },
+  "agent_total_tokens": 1202172,
+  "agent_mean_tokens": 133575,
+  "unscored": [],
+  "runs": [
+    {
+      "case": "case-03-spa",
+      "kind": "positive",
+      "run": 1,
+      "score": 100.0,
+      "wall_seconds": 232,
+      "tool_uses": 14,
+      "total_tokens": 128600
+    },
+    {
+      "case": "case-06-law",
+      "kind": "positive",
+      "run": 1,
+      "score": 100.0,
+      "wall_seconds": 463,
+      "tool_uses": 31,
+      "total_tokens": 179622
+    },
+    {
+      "case": "case-07-blocked",
+      "kind": "negative",
+      "run": 1,
+      "score": 100.0,
+      "wall_seconds": 69,
+      "tool_uses": 7,
+      "total_tokens": 105892
+    },
+    {
+      "case": "case-07-blocked",
+      "kind": "negative",
+      "run": 2,
+      "score": 100.0,
+      "wall_seconds": 81,
+      "tool_uses": 7,
+      "total_tokens": 99498
+    },
+    {
+      "case": "case-07-blocked",
+      "kind": "negative",
+      "run": 3,
+      "score": 100.0,
+      "wall_seconds": 75,
+      "tool_uses": 7,
+      "total_tokens": 98122
+    },
+    {
+      "case": "case-09-thin",
+      "kind": "negative",
+      "run": 1,
+      "score": 100.0,
+      "wall_seconds": 77,
+      "tool_uses": 8,
+      "total_tokens": 102437
+    },
+    {
+      "case": "case-09-thin",
+      "kind": "negative",
+      "run": 2,
+      "score": 100.0,
+      "wall_seconds": 67,
+      "tool_uses": 7,
+      "total_tokens": 99987
+    },
+    {
+      "case": "case-09-thin",
+      "kind": "negative",
+      "run": 3,
+      "score": 100.0,
+      "wall_seconds": 72,
+      "tool_uses": 8,
+      "total_tokens": 100572
+    },
+    {
+      "case": "case-10-media",
+      "kind": "positive",
+      "run": 1,
+      "score": 100.0,
+      "wall_seconds": 816,
+      "tool_uses": 58,
+      "total_tokens": 287442
+    }
+  ]
+}
