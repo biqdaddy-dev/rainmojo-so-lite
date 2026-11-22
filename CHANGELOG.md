@@ -8,6 +8,11 @@
 
 ### Under the hood
 
+- Outcome eval for `so-audit-lite` (LITE-007, blueprint DP-023 section 9): 10 synthetic `.test` sites, the same
+  snapshots as rainmojo-so, graded by a lite rubric (facts 40, honest coverage 15, no invented numbers 15,
+  actionable 10, carried through 20) through an in-app harness, `evals/so-audit-lite/inapp.py`. Baseline on
+  2.8.3: 10 cases x 3 runs, mean 97.68 (`evals/so-audit-lite/baseline.json`). Every structural change is
+  measured against it.
 - One version source (LITE-008): `.claude-plugin/plugin.json`. `tooling/version_gate.py` fails CI when any other
   manifest, the marketplace entry, a skill or agent frontmatter, README.md or the newest CHANGELOG section disagrees.
   The root Antigravity `plugin.json` read 2.2.0 since 2.3.0 and now reads 2.8.3; README points to this file instead
