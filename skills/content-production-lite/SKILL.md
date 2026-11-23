@@ -278,7 +278,7 @@ Boundaries: off-site link acquisition belongs to `seo-backlink-strategy-lite`; E
 - Article state transitions are validated and auditable.
 - Required product, pillar, related-content, and external-source links are
   checked against the article plan.
-- Image generation and content drafting may run in parallel.
+- Image generation and content drafting do not depend on each other; finish one, then the other, in either order.
 - WordPress media and post writes use one serial worker per client.
 - Draft-only is mandatory.
 - A non-draft slug is rejected before the first media write.
