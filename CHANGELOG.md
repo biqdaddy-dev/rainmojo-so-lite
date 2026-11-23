@@ -1,13 +1,12 @@
 # Changelog
 
-## Unreleased
+## 2.9.0 (2026-11-23)
 
 ### สิ่งที่ผู้ใช้จะเห็น
 
-- ผู้ใช้ Antigravity เห็นเลขรุ่นของปลั๊กอินตรงกับรุ่นจริงแล้ว
-- ลูกค้าใหม่ได้ไฟล์เกณฑ์ตัดสินใจ คำศัพท์กลาง และบันทึกจุดที่ถูกแก้ ตั้งแต่วันแรก
-- ตรวจเว็บได้ครบทุกขั้น ไม่ข้ามขั้นเพราะเครื่องหาโปรแกรมเสริมไม่เจออีกแล้ว
 - เว็บที่ปิดบอทหรือยังแทบไม่มีเนื้อหา ระบบจะบอกตรง ๆ ว่ายังตรวจให้ระดับไม่ได้ แทนการให้ระดับที่ไม่มีความหมาย
+- ตรวจเว็บได้ครบทุกขั้น ไม่ข้ามขั้นเพราะเครื่องหาโปรแกรมเสริมไม่เจออีกแล้ว
+- ลูกค้าใหม่ได้ไฟล์เกณฑ์ตัดสินใจ คำศัพท์กลาง และบันทึกจุดที่ถูกแก้ ตั้งแต่วันแรก
 
 ### Under the hood
 
@@ -16,7 +15,7 @@
   actionable 10, carried through 20) through an in-app harness, `evals/so-audit-lite/inapp.py`. Baseline on
   2.8.3: 10 cases x 3 runs, mean 97.68 (`evals/so-audit-lite/baseline.json`). Every structural change is
   measured against it.
-- One version source (LITE-008): `.claude-plugin/plugin.json`. `tooling/version_gate.py` fails CI when any other
+- One version source (LITE-008): `.claude-plugin/plugin.json`. Antigravity users now see the real plugin version. `tooling/version_gate.py` fails CI when any other
   manifest, the marketplace entry, a skill or agent frontmatter, README.md or the newest CHANGELOG section disagrees.
   The root Antigravity `plugin.json` read 2.2.0 since 2.3.0 and now reads 2.8.3; README points to this file instead
   of naming a version.
