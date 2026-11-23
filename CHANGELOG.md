@@ -4,7 +4,7 @@
 
 ### สิ่งที่ผู้ใช้จะเห็น
 
-- รุ่นนี้ไม่มีอะไรเปลี่ยนในการใช้งาน เป็นงานจัดระเบียบภายในเท่านั้น
+- ผู้ใช้ Antigravity เห็นเลขรุ่นของปลั๊กอินตรงกับรุ่นจริงแล้ว
 
 ### Under the hood
 
@@ -13,6 +13,10 @@
   actionable 10, carried through 20) through an in-app harness, `evals/so-audit-lite/inapp.py`. Baseline on
   2.8.3: 10 cases x 3 runs, mean 97.68 (`evals/so-audit-lite/baseline.json`). Every structural change is
   measured against it.
+- One version source (LITE-008): `.claude-plugin/plugin.json`. `tooling/version_gate.py` fails CI when any other
+  manifest, the marketplace entry, a skill or agent frontmatter, README.md or the newest CHANGELOG section disagrees.
+  The root Antigravity `plugin.json` read 2.2.0 since 2.3.0 and now reads 2.8.3; README points to this file instead
+  of naming a version.
 
 ## 2.8.3 (2026-11-05)
 
