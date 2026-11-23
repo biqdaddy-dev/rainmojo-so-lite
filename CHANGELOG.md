@@ -8,6 +8,11 @@
 
 ### Under the hood
 
+- Outcome eval for `so-audit-lite` (LITE-007, blueprint DP-023 section 9): 10 synthetic `.test` sites, the same
+  snapshots as rainmojo-so, graded by a lite rubric (facts 40, honest coverage 15, no invented numbers 15,
+  actionable 10, carried through 20) through an in-app harness, `evals/so-audit-lite/inapp.py`. Baseline on
+  2.8.3: 10 cases x 3 runs, mean 97.68 (`evals/so-audit-lite/baseline.json`). Every structural change is
+  measured against it.
 - No instruction to run work in parallel that an agent cannot carry out (LITE-012, blueprint RS-5): the
   `parallel_processes` keys leave `seo-content-creation-lite` and `seo-schema-lite` agent.json, and
   `content-production-lite` says image generation and drafting are independent steps done one after the other. The
