@@ -23,6 +23,12 @@
   vendored agentlint moves from plugin-optimizer v1.4.0 to v1.6.0, whose AG-TOOLS rule flags such instructions in
   agents; it reports 0 errors and 10 warnings on this tree (repeated blocks and context size, for LITE-010 and
   LITE-011).
+- One place for the routing and presentation rules (LITE-010, after rainmojo-so RSO-015, blueprint RS-4). Each of the
+  60 skill and agent files carried both rules in full, about 2 KB each; they now carry a 5-line and a 3-line pointer
+  to `skills/rainmojo-so-lite/reference/shared-rules.md`, which holds the full text once. The two instruction gates
+  enforce the short blocks and flag any long block left over. `platforms/` was rebuilt with agentpack 1.6.0.
+  About 78 KB less in `skills/` and `agents/`, 70 KB less in `platforms/`. Outcome eval before and after on the same 10 x 3
+  harness: mean 97.68 to 98.00, no criterion moved by more than half a point (`docs/operations/lite-010-eval.md`).
 
 ## 2.8.3 (2026-11-05)
 

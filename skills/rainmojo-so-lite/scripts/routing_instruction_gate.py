@@ -21,28 +21,19 @@ from pathlib import Path
 PLUGIN_ROOT = Path(__file__).resolve().parents[3]
 MARKER = "RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1"
 BLOCK = f"""<!-- {MARKER} -->
-## Client workspace routing (mandatory for file changes)
-
-Every generated file has exactly one home. Audit, keyword and comparison
-outputs live under `work/{{domain}}/` created by `new-workspace-lite`
-(`00-baseline/` first run, `01-current/` later runs, `02-fixes/`, `03-content/`,
-`04-reports/`, `uploads/` read-only for user files); never invent another
-top-level folder there. Content production and WordPress publishing use the
-client workspace `clients/<client>/` created by `new-client-lite`: read
-`workspace-routing.json` first, resolve every artifact with
-`{{PLUGIN_ROOT}}/skills/rainmojo-so-lite/scripts/client_workspace.py route`, use the
-most precise registered route, edit root files only when their exact filename is
-in `root_policy.allowed_files`, treat `uploads/` as read-only, and when no route
-fits use `create-work` then `route-work`; never construct a `work/<name>/...`
-path by hand inside a client workspace. Never write generated files to the
-plugin tree or the caller's working directory. Append one line to the
-workspace's `CHANGELOG.md` or `log.md` after every write. Run
-`client_workspace.py validate` before handing a client workspace over. Direct
-CMS/API operations retain their own safety and verification gates.
+Files: audit outputs go under `work/{{domain}}/` from `new-workspace-lite`; content and WordPress
+work go under `clients/<client>/`, each path resolved with
+`{{PLUGIN_ROOT}}/skills/rainmojo-so-lite/scripts/client_workspace.py route`. Never write to the
+plugin tree or loose in the working directory; log every write in the workspace `CHANGELOG.md`.
+Full rule: `{{PLUGIN_ROOT}}/skills/rainmojo-so-lite/reference/shared-rules.md`.
 
 """
 
-BLOCK_RE = re.compile(
+# The short block (LITE-010, after rainmojo-so RSO-015): the marker, a few non-empty lines, one
+# blank line. The full rule text lives once in skills/rainmojo-so-lite/reference/shared-rules.md.
+BLOCK_RE = re.compile(rf"<!-- {MARKER} -->\r?\n(?:[^\r\n]+\r?\n)+\r?\n")
+# The long block every file carried up to 2.8.3; --apply replaces it with BLOCK.
+LEGACY_BLOCK_RE = re.compile(
     rf"<!-- {MARKER} -->\r?\n"
     r"## Client workspace routing \(mandatory for file changes\)\r?\n"
     r".*?and verification gates\.\r?\n\r?\n",
@@ -74,7 +65,9 @@ def install_or_refresh(path: Path) -> bool:
     block = BLOCK.replace("\n", newline.decode("ascii")).encode("utf-8")
     if MARKER.encode("ascii") in payload:
         decoded = payload.decode("utf-8")
-        updated, count = BLOCK_RE.subn(block.decode("utf-8"), decoded)
+        updated, count = (LEGACY_BLOCK_RE.subn(block.decode("utf-8"), decoded)
+                          if LEGACY_BLOCK_RE.search(decoded)
+                          else BLOCK_RE.subn(block.decode("utf-8"), decoded))
         if count != 1:
             raise RuntimeError(f"Cannot refresh exactly one routing instruction block: {path}")
         updated_bytes = bom + updated.encode("utf-8")
@@ -105,6 +98,8 @@ def verify(root: Path | None = None) -> list[str]:
         rel = path.relative_to(root).as_posix()
         text = path.read_text(encoding="utf-8-sig")
         matches = list(BLOCK_RE.finditer(text))
+        if LEGACY_BLOCK_RE.search(text):
+            errors.append(f"{rel}: long routing block left; run --apply")
         if len(matches) != 1:
             errors.append(f"{rel}: routing block count={len(matches)}")
         elif matches[0].group(0).replace("\r\n", "\n") != normalized_block:
@@ -130,7 +125,7 @@ def self_test() -> int:
         assert not install_or_refresh(skill), "second apply must be a no-op"
         text = skill.read_text(encoding="utf-8")
         assert text.count(MARKER) == 1 and text.index(MARKER) < text.index("# Demo")
-        stale = text.replace("Every generated file has exactly one home.", "Old wording.")
+        stale = text.replace("Files: audit outputs go under", "Old wording for")
         skill.write_text(stale, encoding="utf-8")
         assert any("stale" in e for e in verify(root))
         assert install_or_refresh(skill) and not verify(root)
