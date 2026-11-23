@@ -16,6 +16,10 @@ Inputs (any subset; absent inputs simply leave their blocks out):
                 "dimensions": [{"key", "label", "passed", "total"}]}
   --sampling   JSON written by aiso-brand-mentions-lite ai_answer_sampling:
                {"query_matrix": [...], "dimensions": [...], "competitors": [...]}
+  --scope-gate scope_gate.py output (or a JSON holding it as top-level "scope_gate"). When
+               scorable is false the card carries no count and no level: dimensions,
+               platforms, competitors and the query matrix are dropped and key_risk states
+               the gate reason (LITE-015, after rainmojo-so RSO-036).
 
 Usage:
   python build_summary.py --agent a.json --page p.json --robots r.json \
@@ -65,8 +69,38 @@ def dim(key, label, passed, total, tooltip=None):
     return d
 
 
+def load_scope_gate(data):
+    """The scope_gate block from a JSON that holds it, or scope_gate.py output itself."""
+    if not isinstance(data, dict):
+        return None
+    gate = data.get("scope_gate", data if "scorable" in data else None)
+    return gate if isinstance(gate, dict) else None
+
+
+def withhold_grades(summary, gate, L):
+    """Drop every count- and level-bearing block and state the gate reason (scorable false)."""
+    reasons = [r for r in (gate.get("reasons") or []) if r] or ["scope gate: site cannot be graded"]
+    for key in ("dimensions", "platforms", "competitors", "query_matrix"):
+        summary.pop(key, None)
+    title = L.get("scope_gate_title", "Not graded")
+    summary["key_risk"] = {"severity": "critical",
+                           "title": "%s: %s" % (title, ", ".join(r.split(":")[0] for r in reasons)),
+                           "body": "; ".join(reasons)[:320]}
+    if not summary.get("summary"):
+        summary["summary"] = "%s: %s." % (title, "; ".join(reasons))
+    handoff = summary.get("handoff") or {}
+    if handoff.get("tier2_label") == L["tier2_default"]:
+        handoff["tier2_label"] = L.get("tier2_scope_gate", L["tier2_default"])
+    domain = (summary.get("headline") or {}).get("subtitle") or ""
+    summary["next_steps"] = [{"label": L.get("rerun_after_fix", "Re-run the audit after the fix"),
+                              "prompt": ("/rainmojo-so-lite:so-audit-lite %s" % domain).strip()}]
+    cnv = summary["transparency"]["could_not_verify"]
+    summary["transparency"]["could_not_verify"] = (["scope gate: %s" % r for r in reasons] + cnv)[:8]
+    return summary
+
+
 def build(agent=None, page=None, robots=None, checklist=None, sampling=None, client="", domain="", lang="en",
-          skill="so-audit-lite", tier2="", tier2_label=None, summary_text="", run_id=None):
+          skill="so-audit-lite", tier2="", tier2_label=None, summary_text="", run_id=None, scope_gate=None):
     sampling = sampling or {}
     checklist = checklist or {}
     L = _load(os.path.join(ROOT, "templates", "widget", "labels.json"))[lang]
@@ -155,6 +189,9 @@ def build(agent=None, page=None, robots=None, checklist=None, sampling=None, cli
     for k in ("dimensions", "platforms", "actions"):
         if not summary[k]:
             del summary[k]
+    gate = load_scope_gate(scope_gate)
+    if gate is not None and gate.get("scorable") is False:
+        withhold_grades(summary, gate, L)
     return summary
 
 
@@ -195,6 +232,7 @@ def self_test():
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Build a Tier 1 summary.json from lite measurement JSON (counts, no score).")
     ap.add_argument("--agent"); ap.add_argument("--page"); ap.add_argument("--robots"); ap.add_argument("--checklist"); ap.add_argument("--sampling")
+    ap.add_argument("--scope-gate", dest="scope_gate", help="scope_gate.py output; scorable false drops every count and level")
     ap.add_argument("--client"); ap.add_argument("--domain")
     ap.add_argument("--lang", default="en", choices=["en", "th"]); ap.add_argument("--skill", default="so-audit-lite")
     ap.add_argument("--tier2", default=""); ap.add_argument("--tier2-label", dest="tier2_label")
@@ -209,7 +247,8 @@ def main(argv=None):
         ap.error("--client and --domain are required")
     s = build(agent=_load(args.agent), page=_load(args.page), robots=_load(args.robots), checklist=_load(args.checklist),
               sampling=_load(args.sampling), client=args.client, domain=args.domain, lang=args.lang, skill=args.skill,
-              tier2=args.tier2, tier2_label=args.tier2_label, summary_text=args.summary, run_id=args.run_id)
+              tier2=args.tier2, tier2_label=args.tier2_label, summary_text=args.summary, run_id=args.run_id,
+              scope_gate=_load(args.scope_gate))
     text = json.dumps(s, ensure_ascii=False, indent=2) + "\n"
     if args.out:
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)

@@ -100,6 +100,9 @@
     "band_weak": "Not ready",
     "band_cnv": "could not verify",
     "tier2_default": "Open the full 19-tab audit report",
+    "tier2_scope_gate": "Open the note on why this site was not graded",
+    "rerun_after_fix": "Re-run the audit after the fix",
+    "scope_gate_title": "Not graded",
     "cnv_prefix": "could not verify",
     "crawler_evidence": "crawler evidence",
     "dims": {
@@ -214,6 +217,9 @@
     "band_weak": "ยังไม่พร้อม",
     "band_cnv": "ตรวจสอบไม่ได้",
     "tier2_default": "เปิดรายงานฉบับเต็ม 19 แท็บ",
+    "tier2_scope_gate": "เปิดบันทึกเหตุผลที่ยังไม่ให้ระดับเว็บนี้",
+    "rerun_after_fix": "ตรวจเว็บใหม่หลังแก้แล้ว",
+    "scope_gate_title": "ยังไม่ให้ระดับ",
     "cnv_prefix": "ตรวจสอบไม่ได้",
     "crawler_evidence": "หลักฐาน crawler",
     "dims": {
