@@ -1,0 +1,9 @@
+# กินด้วย
+
+> สูตรอาหารไทยที่ทดลองทำจริง
+
+## สูตร
+
+- [ข้าวซอยไก่](https://kinduay-food.test/recipes/khao-soi/)
+- [ต้มยำกุ้ง](https://kinduay-food.test/recipes/tom-yum/)
+- [ผัดไทย](https://kinduay-food.test/recipes/pad-thai/)

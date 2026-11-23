@@ -1,0 +1,8 @@
+# KraftBag Store
+
+> Handmade canvas bags sewn in Bangkok.
+
+## Products
+
+- [Canvas tote](https://kraftbag-store.test/bags/tote-canvas/): 16 oz canvas tote, 690 THB
+- [Roll-top backpack](https://kraftbag-store.test/bags/backpack-roll/): 20 L backpack, 1,890 THB

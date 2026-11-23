@@ -1,0 +1,27 @@
+{
+  "id": "case-01-roastery",
+  "kind": "positive",
+  "domain": "northwind-roastery.test",
+  "summary": "Small five-page coffee shop site with a handful of planted defects across robots, sitemap, indexing, on-page and schema. No analytics, Search Console, Business Profile, backlink or PageSpeed data exists.",
+  "expected_facts": [
+    {"id": "F1", "fact": "robots.txt blocks GPTBot from the whole site (User-agent: GPTBot, Disallow: /)."},
+    {"id": "F2", "fact": "robots.txt blocks CCBot from the whole site."},
+    {"id": "F3", "fact": "ClaudeBot, PerplexityBot and Google-Extended have no group of their own, so the * group applies and they may crawl everything except /cart/."},
+    {"id": "F4", "fact": "There is no llms.txt: /llms.txt returns 404."},
+    {"id": "F5", "fact": "sitemap.xml lists 6 URLs and one of them, /wholesale/, returns 404. The shop page also links to /wholesale/."},
+    {"id": "F6", "fact": "/contact/ carries meta robots noindex while it is listed in sitemap.xml, a conflicting signal."},
+    {"id": "F7", "fact": "/shop/ has no meta description, a generic 4-character title \"Shop\", and two H1 elements."},
+    {"id": "F8", "fact": "The three product images on /shop/ have no alt attribute."},
+    {"id": "F9", "fact": "Structured data: the home page has Organization JSON-LD and /blog/brew-guide/ has Article JSON-LD with an author; /shop/ has no Product markup and no page has LocalBusiness markup even though the address, phone and opening hours are published."},
+    {"id": "F10", "fact": "The contact form inputs have no label elements (placeholder text only), which hurts AI agent and accessibility readiness."}
+  ],
+  "unavailable_data": [
+    "Google Analytics 4 traffic, sessions or conversions",
+    "Google Search Console clicks, impressions, positions or indexed-page counts",
+    "Google Business Profile data or reviews",
+    "backlink counts, referring domains, Domain Rating or Authority scores",
+    "Core Web Vitals or PageSpeed field and lab numbers (LCP, INP, CLS, performance score)",
+    "keyword search volumes or current rankings",
+    "AI answer-engine citation counts or brand-mention counts gathered from live AI platforms"
+  ]
+}

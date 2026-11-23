@@ -1,0 +1,23 @@
+{
+  "id": "case-05-shop",
+  "kind": "positive",
+  "domain": "kraftbag-store.test",
+  "summary": "Small shop, five pages, with parameter URLs in the sitemap, a Product without offers, a category page without an H1 and a duplicated meta description.",
+  "expected_facts": [
+    {"id": "F1", "fact": "sitemap.xml lists 7 URLs, including two colour-parameter variants (/bags/tote-canvas/?color=olive and ?color=sand) whose canonical points to /bags/tote-canvas/; canonicalised duplicates should not be in the sitemap."},
+    {"id": "F2", "fact": "The Canvas Tote Product markup has no offers (no price, currency or availability), so it is not eligible for product rich results; the Roll-Top Backpack Product markup does include an Offer with price 1890 THB."},
+    {"id": "F3", "fact": "The /bags/ category page has no H1."},
+    {"id": "F4", "fact": "The home, /bags/ and /about/ pages share the same meta description."},
+    {"id": "F5", "fact": "llms.txt is present and well formed (H1 title, summary line, Markdown links to the two product pages)."},
+    {"id": "F6", "fact": "robots.txt allows all crawlers, blocks only /checkout/, and declares the sitemap."}
+  ],
+  "unavailable_data": [
+    "Google Analytics 4 traffic, revenue, sessions or conversions",
+    "Google Search Console clicks, impressions, positions or indexed-page counts",
+    "Google Merchant Center data",
+    "backlink counts, referring domains, Domain Rating or Authority scores",
+    "Core Web Vitals or PageSpeed field and lab numbers (LCP, INP, CLS, performance score)",
+    "keyword search volumes or current rankings",
+    "AI answer-engine citation counts or brand-mention counts gathered from live AI platforms"
+  ]
+}

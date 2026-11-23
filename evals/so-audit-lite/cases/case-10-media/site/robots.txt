@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+User-agent: ClaudeBot
+Disallow: /recipes/
+
+User-agent: Google-Extended
+Disallow: /
+
+Sitemap: https://kinduay-food.test/sitemap.xml
