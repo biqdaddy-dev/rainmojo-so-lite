@@ -19,6 +19,7 @@ Standard version 1.1.0. Generated from `scripts/agentlint.py` by `agentlint.py r
 - Scripts
 - Safety
 - Testing
+- Context
 - Rule history
 - Sources
 
@@ -67,6 +68,7 @@ Standard version 1.1.0. Generated from `scripts/agentlint.py` by `agentlint.py r
 | AG-FIELDS | Agent frontmatter uses known camelCase fields only; plugin agents do not set `hooks`, `mcpServers`, `permissionMode` or `initialPrompt` (hosts ignore them). | check | error | warn | no | SA |
 | AG-MODEL | `model` is `inherit`, `haiku`, `sonnet`, `opus`, `fable` or a full `claude-...` model ID. | check | error | warn | no | SA |
 | AG-BODY | Agent prompt body is at most 30,000 characters. | check | error | warn | no | XH |
+| AG-TOOLS | An agent with a `tools` list is not told to do what those tools cannot: run work in parallel through subagents without `Agent`, invoke a skill without `Skill`, run commands without `Bash`, or use a named tool it lacks. | check | warn | warn | no | SA |
 
 ## Plugin
 
@@ -130,7 +132,17 @@ Standard version 1.1.0. Generated from `scripts/agentlint.py` by `agentlint.py r
 
 | ID | Rule | Kind | Level | CI | Fixable | Source |
 |---|---|---|---|---|---|---|
-| RV-EVALS | Each skill has at least three eval cases, run with the same pass bar on every model and host it ships to. | review | - | - | no | BP |
+| RV-EVALS | Each skill has at least three eval cases under `evals/<skill>/` in its plugin (a case is a folder holding `case.json`, `case.yaml` or `prompt.md`; checked by `check --evals`, since built packages carry no evals), run with the same pass bar on every model and host it ships to. | check | warn | warn | no | BP |
+| RV-UNUSED | Find skills nobody invokes with Claude Code's `/skill-doctor` (never-invoked skills ranked by context cost) and turn them off or remove them; do not guess from the source. | review | - | - | no | CS |
+
+## Context
+
+| ID | Rule | Kind | Level | CI | Fixable | Source |
+|---|---|---|---|---|---|---|
+| CX-LISTING | The skill listing (each skill's name plus `description` and `when_to_use`, capped at 1,536 characters an entry) fits Claude Code's listing budget of 1% of the context window: about 8,000 characters at 200k tokens (`check --context-tokens` to change). Past it, Claude Code drops descriptions starting with the least-invoked skills. | check | warn | warn | no | CS |
+| CX-SESSION | What loads every session (skill listing, agent descriptions, and the text `SessionStart` hooks print) stays within 2% of the context window, about 16,000 characters at 200k tokens; `agentlint.py context` prints the breakdown. | check | warn | warn | no | HK |
+| CX-REPEAT | No block of paragraphs (300 characters or more) repeats word for word in 3 or more skill, agent or command files; keep one copy and link to it. | check | warn | warn | no | BP |
+| CX-COUNT | One plugin ships at most 50 skills, commands and agents together: the model picks less reliably past about 30 to 50 entries. | check | warn | warn | no | PO |
 
 ## Rule history
 
@@ -138,6 +150,13 @@ A rule added after a mistake carries the date and the reason. Older rules get th
 
 - SK-WHEN-NOT: 2026-10-31, owner decision: when-not text only on colliding pairs such as `seo-audit` and `so-audit`, not on every skill, because descriptions load every session and the Daddy Dock catalog shows 600 characters
 - IF-LINES: 2026-10-31, owner decision: instruction files load in full every session; oversize ones are split into `.claude/rules/`
+- RV-EVALS: 2026-11-01, AF-1 of the agent-alignment blueprint (PS-148): evals come before any change to a skill, and the review rule was never checked
+- RV-UNUSED: 2026-11-05, PO-2 of the agent-alignment blueprint (DP-023): usage lives in the host, so agentlint points at `/skill-doctor` instead of estimating it
+- CX-LISTING: 2026-11-05, PO-2 of DP-023: rainmojo-so's 79 descriptions total 20,370 characters, so most of its skills list without the words that trigger them
+- CX-SESSION: 2026-11-05, PO-2 of DP-023: plugins were measured by file size only, never by what every session pays for
+- CX-REPEAT: 2026-11-05, PO-2 of DP-023: three blocks repeated in 78 rainmojo-so SKILL.md files were 22% of all its skill text
+- CX-COUNT: 2026-11-05, PO-2 of DP-023: the blueprint's 30-50 range for tool selection; rainmojo-so ships 79 skills and 20 agents
+- AG-TOOLS: 2026-11-05, PO-2 of DP-023: rainmojo-so `agents/aiso-audit.md` says "run in parallel" with no Agent tool, so the model ignores it or pretends
 
 ## Sources
 

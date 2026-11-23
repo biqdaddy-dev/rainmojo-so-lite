@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://baan-rimnam-hotel.test/sitemap_index.xml

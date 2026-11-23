@@ -4,10 +4,31 @@
 
 ### สิ่งที่ผู้ใช้จะเห็น
 
-- รุ่นนี้ไม่มีอะไรเปลี่ยนในการใช้งาน เป็นงานจัดระเบียบภายในเท่านั้น
+- ผู้ใช้ Antigravity เห็นเลขรุ่นของปลั๊กอินตรงกับรุ่นจริงแล้ว
 
 ### Under the hood
 
+- Outcome eval for `so-audit-lite` (LITE-007, blueprint DP-023 section 9): 10 synthetic `.test` sites, the same
+  snapshots as rainmojo-so, graded by a lite rubric (facts 40, honest coverage 15, no invented numbers 15,
+  actionable 10, carried through 20) through an in-app harness, `evals/so-audit-lite/inapp.py`. Baseline on
+  2.8.3: 10 cases x 3 runs, mean 97.68 (`evals/so-audit-lite/baseline.json`). Every structural change is
+  measured against it.
+- One version source (LITE-008): `.claude-plugin/plugin.json`. `tooling/version_gate.py` fails CI when any other
+  manifest, the marketplace entry, a skill or agent frontmatter, README.md or the newest CHANGELOG section disagrees.
+  The root Antigravity `plugin.json` read 2.2.0 since 2.3.0 and now reads 2.8.3; README points to this file instead
+  of naming a version.
+- No instruction to run work in parallel that an agent cannot carry out (LITE-012, blueprint RS-5): the
+  `parallel_processes` keys leave `seo-content-creation-lite` and `seo-schema-lite` agent.json, and
+  `content-production-lite` says image generation and drafting are independent steps done one after the other. The
+  vendored agentlint moves from plugin-optimizer v1.4.0 to v1.6.0, whose AG-TOOLS rule flags such instructions in
+  agents; it reports 0 errors and 10 warnings on this tree (repeated blocks and context size, for LITE-010 and
+  LITE-011).
+- One place for the routing and presentation rules (LITE-010, after rainmojo-so RSO-015, blueprint RS-4). Each of the
+  60 skill and agent files carried both rules in full, about 2 KB each; they now carry a 5-line and a 3-line pointer
+  to `skills/rainmojo-so-lite/reference/shared-rules.md`, which holds the full text once. The two instruction gates
+  enforce the short blocks and flag any long block left over. `platforms/` was rebuilt with agentpack 1.6.0.
+  About 78 KB less in `skills/` and `agents/`, 70 KB less in `platforms/`. Outcome eval before and after on the same 10 x 3
+  harness: mean 97.68 to 98.00, no criterion moved by more than half a point (`docs/operations/lite-010-eval.md`).
 - `sitemap-architecture-lite/SKILL.md` goes from 497 to 268 lines (LITE-011, after rainmojo-so RSO-021, blueprint
   RS-10). Three sections used only sometimes move word for word to `references/`: `human-readable-view.md` (styled
   XML, XSLT removal, HTML sitemap page), `video-entries.md` and `porting-checklist.md`, each with a review_by line;
