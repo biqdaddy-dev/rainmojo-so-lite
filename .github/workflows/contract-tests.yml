@@ -27,6 +27,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: One version source (LITE-008)
+        run: |
+          python -I tooling/version_gate.py
+          python -I tooling/version_gate_test.py
+      - name: Session context ceiling (LITE-014)
+        run: python -I tooling/context_budget.py
       - name: Scripts work under python -I (LITE-009)
         run: python -I skills/rainmojo-so-lite/scripts/isolated_mode_test.py
       - name: Install the test dependency
