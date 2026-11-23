@@ -19,5 +19,6 @@
 | LITE-011 | skills | ส่วนยาวที่ใช้บางครั้งของ `sitemap-architecture-lite` (หน้าตาที่คนอ่านได้, รายการวิดีโอ, checklist ตอนย้ายระบบ) ย้ายไป `references/` ตามแบบ rainmojo-so RSO-021: 497 เหลือ 268 บรรทัด (blueprint RS-10) | 2026-11-12 | 2026-11-12 | 2 | 1 | 120k | biqdaddy-dev/rainmojo-so-lite#19 |
 | LITE-012 | skills | ตัดคำสั่ง "ทำพร้อมกัน" ที่ agent ทำไม่ได้จริง: คีย์ `parallel_processes` ใน agent.json 2 ไฟล์ และบรรทัดใน `content-production-lite` แล้วอัป agentlint ที่ vendor มาเป็น v1.6.0 ที่มีกฎ AG-TOOLS (blueprint RS-5) | 2026-11-12 | 2026-11-12 | 2 | 1 | 150k | biqdaddy-dev/rainmojo-so-lite#17 |
 | LITE-013 | content production | ไฟล์ตั้งต้นของลูกค้า `judgement.md`, `CONTEXT.md`, `corrections.md` ในแม่แบบ demo-client, `validate` เตือนเมื่อขาด `adopt` เติมให้ และขั้นร่างเกณฑ์ใน `new-client-lite` (blueprint RS-8) | 2026-11-13 | 2026-11-13 | 4 | 2.5 | 300k | biqdaddy-dev/rainmojo-so-lite#20 |
+| LITE-014 | ci | วัดข้อความที่ปลั๊กอินโหลดทุก session และตั้งเพดานใน CI (`tooling/context_budget.py`, ลดได้อย่างเดียว) ตัดรายละเอียดกลไกออกจาก description ที่ยาวที่สุด 4 ตัว 19,048 เหลือ 18,772 ตัวอักษร ส่วนที่เหลือรอ invocation test ซึ่งต้องใช้ CLI (blueprint C11, AF-5) | 2026-11-13 | 2026-11-13 | 2 | 1.5 | 150k | biqdaddy-dev/rainmojo-so-lite#21 |
 
 งานเก่าของปลั๊กอินนี้ใช้รหัส `DP-` และอยู่ใน PR เดิม, CHANGELOG และ git log ตามเดิม

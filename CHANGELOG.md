@@ -42,6 +42,11 @@
   and `adopt` copies any that are missing. `new-client-lite` drafts the rules from 20 to 30 reviewer comments and
   keeps only the rows the user confirms. A fresh agent given only the three files picked right in 5 of 5
   situations (pass mark 4); the record is `docs/operations/lite-013-decision-test.md`.
+- Session context is measured and capped (LITE-014, blueprint C11): `tooling/context_budget.py` counts the
+  characters every session loads from lite (skill listing plus agent descriptions, no SessionStart hook) and fails
+  CI when the total grows past `tooling/context-budget.json`. Four of the longest descriptions lose their mechanism
+  detail, keeping every "use when" and "not for" cue: 19,048 to 18,772 characters. Getting under agentlint's
+  16,000 needs the invocation test, which needs a logged-in CLI.
 
 ## 2.8.3 (2026-11-05)
 
