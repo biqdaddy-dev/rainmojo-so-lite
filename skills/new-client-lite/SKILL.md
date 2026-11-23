@@ -5,38 +5,16 @@ argument-hint: "[domain-or-brand-name]"
 allowed-tools: Read Write Bash Glob
 ---
 <!-- RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1 -->
-## Client workspace routing (mandatory for file changes)
-
-Every generated file has exactly one home. Audit, keyword and comparison
-outputs live under `work/{domain}/` created by `new-workspace-lite`
-(`00-baseline/` first run, `01-current/` later runs, `02-fixes/`, `03-content/`,
-`04-reports/`, `uploads/` read-only for user files); never invent another
-top-level folder there. Content production and WordPress publishing use the
-client workspace `clients/<client>/` created by `new-client-lite`: read
-`workspace-routing.json` first, resolve every artifact with
-`{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/client_workspace.py route`, use the
-most precise registered route, edit root files only when their exact filename is
-in `root_policy.allowed_files`, treat `uploads/` as read-only, and when no route
-fits use `create-work` then `route-work`; never construct a `work/<name>/...`
-path by hand inside a client workspace. Never write generated files to the
-plugin tree or the caller's working directory. Append one line to the
-workspace's `CHANGELOG.md` or `log.md` after every write. Run
-`client_workspace.py validate` before handing a client workspace over. Direct
-CMS/API operations retain their own safety and verification gates.
+Files: audit outputs go under `work/{domain}/` from `new-workspace-lite`; content and WordPress
+work go under `clients/<client>/`, each path resolved with
+`{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/client_workspace.py route`. Never write to the
+plugin tree or loose in the working directory; log every write in the workspace `CHANGELOG.md`.
+Full rule: `{PLUGIN_ROOT}/skills/rainmojo-so-lite/reference/shared-rules.md`.
 
 <!-- RAINMOJO_PRESENTATION_LAYER_V1 -->
-## Presentation (Two-Tier, 7 modes)
-
-Answer in the response mode that matches the request
-(`{PLUGIN_ROOT}/skills/rainmojo-so-lite/_base/presentation-scaffold.md`): quick fact,
-how-to, comparison, troubleshoot, audit, deployable, always closing with next
-steps. A run that writes a deliverable ends with a Tier 1 card built from
-`summary.json` (`templates/widget/summary.schema.json`) and rendered with
-`{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/present.py --target auto`, then hands
-off to the Tier 2 file, which stays complete and unchanged. Lite cards carry
-counts of checks passed, never a weighted score. Every card value is copied
-from the deliverable; unmeasured values show as could not verify. No emoji on
-any surface; the glyph allowlist applies to chat and Markdown only.
+Presentation: answer in the mode the request needs and close a deliverable run with the Tier 1
+card from `present.py`: counts of checks passed, never a weighted score, no emoji. Full rule:
+`{PLUGIN_ROOT}/skills/rainmojo-so-lite/reference/shared-rules.md`.
 
 
 # New Client Setup
@@ -165,6 +143,19 @@ the demo fields rather than sitting beside them. Those two files are the brand s
 other skill reads. A later skill that finds them missing may ask the same five questions as a
 fallback scoped to its own run, but it must not write either file. Leave an unanswered question
 recorded as open in brand-guidelines.md rather than filling it with a guess.
+
+### Decision rules and shared terms (LITE-013)
+
+The workspace starts with `judgement.md`, `CONTEXT.md` and an empty `corrections.md`. Their demo rows
+are lite defaults, not this client's rules:
+
+1. Ask for 20 to 30 comments a reviewer of this client has made on past work (edits, rejections,
+   "write it this way"). With none, keep the defaults and record that the rules are unconfirmed.
+2. Draft one `judgement.md` row per repeated choice in those comments: the two paths, the one
+   chosen, because, and the exception. Keep it under 30 lines, most important first.
+3. Draft `CONTEXT.md` rows for every word the comments use in a way a stranger could misread.
+4. Read every drafted row back to the user and keep only the ones they confirm; date and name the
+   owner of each confirmed term. Never invent a rule the comments do not show.
 
 - Replace the remaining demo fields in site-config.md, plus any brand-guidelines.md or
   client-profile.md field the interview above did not cover.

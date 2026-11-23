@@ -20,6 +20,9 @@ from typing import Any
 
 RAINMOJO_ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_ROOT = RAINMOJO_ROOT / "clients" / "demo-client"
+# Starter files every client gets (LITE-013, blueprint RS-8): decision rules, shared terms and
+# the corrections log. validate only warns when one is missing, so older workspaces still pass.
+STARTER_FILES = ("judgement.md", "CONTEXT.md", "corrections.md")
 ROUTING_FILE = "workspace-routing.json"
 REGISTRY_VERSION = "1.0.0"
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -461,7 +464,8 @@ def validate_workspace(client_value: str | Path) -> dict[str, Any]:
         return {"client": str(client), "passed": False, "errors": errors}
 
     root_policy = routing["root_policy"]
-    allowed_files = set(root_policy["allowed_files"])
+    # Starter files are allowed even where an older routing file does not list them yet.
+    allowed_files = set(root_policy["allowed_files"]) | set(STARTER_FILES)
     allowed_directories = set(root_policy["allowed_directories"])
     for item in client.iterdir():
         if item.is_file() and item.name not in allowed_files:
@@ -491,6 +495,8 @@ def validate_workspace(client_value: str | Path) -> dict[str, Any]:
         except WorkspaceError as exc:
             errors.append(str(exc))
 
+    warnings = [f"Missing starter file {name}; run adopt to add it from the template"
+                for name in STARTER_FILES if not (client / name).is_file()]
     for instruction in ("AGENTS.md", "CLAUDE.md"):
         path = client / instruction
         if not path.is_file():
@@ -619,7 +625,7 @@ def validate_workspace(client_value: str | Path) -> dict[str, Any]:
     except WorkspaceError as exc:
         errors.append(str(exc))
 
-    return {"client": str(client), "passed": not errors, "errors": errors}
+    return {"client": str(client), "passed": not errors, "errors": errors, "warnings": warnings}
 
 
 def find_route(routing: dict[str, Any], output_type: str) -> dict[str, Any]:
@@ -924,6 +930,15 @@ def adopt_workspace(client_value: str | Path) -> dict[str, Any]:
             stream.write(note)
         instruction_status[filename] = "appended-routing-note"
 
+    starter_status: dict[str, str] = {}
+    for filename in STARTER_FILES:
+        destination = client / filename
+        if destination.exists():
+            starter_status[filename] = "preserved-existing"
+        else:
+            shutil.copy2(TEMPLATE_ROOT / filename, destination)
+            starter_status[filename] = "created-from-template"
+
     validation = validate_workspace(client)
     return {
         "client": str(client),
@@ -931,6 +946,7 @@ def adopt_workspace(client_value: str | Path) -> dict[str, Any]:
         "routing_preserved": not routing_created,
         "ensured": ensure_result["ensured"],
         "instruction_files": instruction_status,
+        "starter_files": starter_status,
         "destructive_changes": False,
         "passed": validation["passed"],
         "remaining_issues": validation["errors"],

@@ -25,31 +25,23 @@ MODES_PATH = CUSTOM_ROOT / "reference" / "frameworks" / "presentation-modes.json
 ROUTING_MARKER = "RAINMOJO_CLIENT_WORKSPACE_ROUTING_V1"
 MARKER = "RAINMOJO_PRESENTATION_LAYER_V1"
 BLOCK = f"""<!-- {MARKER} -->
-## Presentation (Two-Tier, 7 modes)
-
-Answer in the response mode that matches the request
-(`{{PLUGIN_ROOT}}/skills/rainmojo-so-lite/_base/presentation-scaffold.md`): quick fact,
-how-to, comparison, troubleshoot, audit, deployable, always closing with next
-steps. A run that writes a deliverable ends with a Tier 1 card built from
-`summary.json` (`templates/widget/summary.schema.json`) and rendered with
-`{{PLUGIN_ROOT}}/skills/rainmojo-so-lite/scripts/present.py --target auto`, then hands
-off to the Tier 2 file, which stays complete and unchanged. Lite cards carry
-counts of checks passed, never a weighted score. Every card value is copied
-from the deliverable; unmeasured values show as could not verify. No emoji on
-any surface; the glyph allowlist applies to chat and Markdown only.
+Presentation: answer in the mode the request needs and close a deliverable run with the Tier 1
+card from `present.py`: counts of checks passed, never a weighted score, no emoji. Full rule:
+`{{PLUGIN_ROOT}}/skills/rainmojo-so-lite/reference/shared-rules.md`.
 
 """
 
-BLOCK_RE = re.compile(
+# The short block (LITE-010, after rainmojo-so RSO-015): the marker, a few non-empty lines, one
+# blank line. The full rule text lives once in skills/rainmojo-so-lite/reference/shared-rules.md.
+BLOCK_RE = re.compile(rf"<!-- {MARKER} -->\r?\n(?:[^\r\n]+\r?\n)+\r?\n")
+# The long block every file carried up to 2.8.3; --apply replaces it with BLOCK.
+LEGACY_BLOCK_RE = re.compile(
     rf"<!-- {MARKER} -->\r?\n"
     r"## Presentation \(Two-Tier, 7 modes\)\r?\n"
     r".*?applies to chat and Markdown only\.\r?\n\r?\n",
     re.DOTALL,
 )
-ROUTING_END_RE = re.compile(
-    rf"<!-- {ROUTING_MARKER} -->\r?\n.*?and verification gates\.\r?\n\r?\n",
-    re.DOTALL,
-)
+ROUTING_END_RE = re.compile(rf"<!-- {ROUTING_MARKER} -->\r?\n(?:[^\r\n]+\r?\n)+\r?\n")
 
 
 def targets(root: Path | None = None) -> list[Path]:
@@ -102,7 +94,9 @@ def install_or_refresh(path: Path) -> bool:
     block = BLOCK.replace("\n", newline.decode("ascii")).encode("utf-8")
     decoded = payload.decode("utf-8")
     if MARKER in decoded:
-        updated, count = BLOCK_RE.subn(block.decode("utf-8"), decoded)
+        updated, count = (LEGACY_BLOCK_RE.subn(block.decode("utf-8"), decoded)
+                          if LEGACY_BLOCK_RE.search(decoded)
+                          else BLOCK_RE.subn(block.decode("utf-8"), decoded))
         if count != 1:
             raise RuntimeError(f"Cannot refresh exactly one presentation block: {path}")
         updated_bytes = bom + updated.encode("utf-8")
@@ -138,6 +132,8 @@ def verify(root: Path | None = None, check_assets: bool = True) -> list[str]:
         rel = path.relative_to(root).as_posix()
         text = path.read_text(encoding="utf-8-sig")
         matches = list(BLOCK_RE.finditer(text))
+        if LEGACY_BLOCK_RE.search(text):
+            errors.append(f"{rel}: long presentation block left; run --apply")
         if len(matches) != 1:
             errors.append(f"{rel}: presentation block count={len(matches)}")
         elif matches[0].group(0).replace("\r\n", "\n") != normalized_block:

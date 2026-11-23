@@ -1,0 +1,23 @@
+{
+  "id": "case-03-spa",
+  "kind": "positive",
+  "domain": "ledgerly-app.test",
+  "summary": "Client-side rendered SaaS: every page's HTML is an empty root div plus a script bundle, so crawlers that do not run JavaScript see no content.",
+  "expected_facts": [
+    {"id": "F1", "fact": "The pages are client-side rendered: the served HTML has an empty <div id=\"root\"> and a script; the visible headings and copy exist only inside /static/js/main.4f2a9c.js."},
+    {"id": "F2", "fact": "AI crawlers that do not execute JavaScript (GPTBot, ClaudeBot, PerplexityBot) therefore receive no readable content, so citability and content quality cannot be credited from the HTML."},
+    {"id": "F3", "fact": "All four pages share the same title \"Ledgerly\" and the same meta description."},
+    {"id": "F4", "fact": "No page has an H1 in the served HTML and no page has any structured data."},
+    {"id": "F5", "fact": "The recommended fix is server-side rendering, static pre-rendering or dynamic rendering so the HTML carries the content."},
+    {"id": "F6", "fact": "There is no llms.txt (404). robots.txt allows all crawlers and the sitemap lists 4 URLs."}
+  ],
+  "unavailable_data": [
+    "Google Analytics 4 traffic, sessions or conversions",
+    "Google Search Console clicks, impressions, positions or indexed-page counts",
+    "backlink counts, referring domains, Domain Rating or Authority scores",
+    "Core Web Vitals or PageSpeed field and lab numbers (LCP, INP, CLS, performance score)",
+    "keyword search volumes or current rankings",
+    "AI answer-engine citation counts or brand-mention counts gathered from live AI platforms",
+    "a content, E-E-A-T or citability score presented as measured from page text, since the served HTML has none"
+  ]
+}
