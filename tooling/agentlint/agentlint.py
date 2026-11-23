@@ -126,7 +126,21 @@ RULES = [
     Rule("RV-HOOKS", "Safety", "review", False, "A rule that must hold every time is enforced by a hook for every host the plugin ships to, not by skill text alone.", "CS"),
     Rule("RV-SIDE-EFFECTS", "Safety", "review", False, "Skills with side effects (deploy, send, publish, delete) set `disable-model-invocation: true`.", "CS"),
     Rule("RV-TOOLS", "Safety", "review", False, "Grant agents only the tools they need; `allowed-tools` pre-approves, it never restricts.", "SA"),
-    Rule("RV-EVALS", "Testing", "review", False, "Each skill has at least three eval cases, run with the same pass bar on every model and host it ships to.", "BP"),
+    Rule("RV-EVALS", "Testing", "check", False, "Each skill has at least three eval cases under `evals/<skill>/` in its plugin (a case is a folder holding `case.json`, `case.yaml` or `prompt.md`; checked by `check --evals`, since built packages carry no evals), run with the same pass bar on every model and host it ships to.", "BP", "warn",
+         "2026-11-01, AF-1 of the agent-alignment blueprint (PS-148): evals come before any change to a skill, and the review rule was never checked"),
+    Rule("RV-UNUSED", "Testing", "review", False, "Find skills nobody invokes with Claude Code's `/skill-doctor` (never-invoked skills ranked by context cost) and turn them off or remove them; do not guess from the source.", "CS", "warn",
+         "2026-11-05, PO-2 of the agent-alignment blueprint (DP-023): usage lives in the host, so agentlint points at `/skill-doctor` instead of estimating it"),
+    # Context loaded every session. The whole scan counts as one install: plugins installed together share one host.
+    Rule("CX-LISTING", "Context", "check", False, "The skill listing (each skill's name plus `description` and `when_to_use`, capped at 1,536 characters an entry) fits Claude Code's listing budget of 1% of the context window: about 8,000 characters at 200k tokens (`check --context-tokens` to change). Past it, Claude Code drops descriptions starting with the least-invoked skills.", "CS", "warn",
+         "2026-11-05, PO-2 of DP-023: rainmojo-so's 79 descriptions total 20,370 characters, so most of its skills list without the words that trigger them"),
+    Rule("CX-SESSION", "Context", "check", False, "What loads every session (skill listing, agent descriptions, and the text `SessionStart` hooks print) stays within 2% of the context window, about 16,000 characters at 200k tokens; `agentlint.py context` prints the breakdown.", "HK", "warn",
+         "2026-11-05, PO-2 of DP-023: plugins were measured by file size only, never by what every session pays for"),
+    Rule("CX-REPEAT", "Context", "check", False, "No block of paragraphs (300 characters or more) repeats word for word in 3 or more skill, agent or command files; keep one copy and link to it.", "BP", "warn",
+         "2026-11-05, PO-2 of DP-023: three blocks repeated in 78 rainmojo-so SKILL.md files were 22% of all its skill text"),
+    Rule("CX-COUNT", "Context", "check", False, "One plugin ships at most 50 skills, commands and agents together: the model picks less reliably past about 30 to 50 entries.", "PO", "warn",
+         "2026-11-05, PO-2 of DP-023: the blueprint's 30-50 range for tool selection; rainmojo-so ships 79 skills and 20 agents"),
+    Rule("AG-TOOLS", "Agent", "check", False, "An agent with a `tools` list is not told to do what those tools cannot: run work in parallel through subagents without `Agent`, invoke a skill without `Skill`, run commands without `Bash`, or use a named tool it lacks.", "SA", "warn",
+         "2026-11-05, PO-2 of DP-023: rainmojo-so `agents/aiso-audit.md` says \"run in parallel\" with no Agent tool, so the model ignores it or pretends"),
 ]
 RULE_BY_ID = {r.id: r for r in RULES}
 #: `check --ci` fails only on these; every other finding is a warning there (owner decision 2026-10-31).
@@ -464,6 +478,10 @@ class Finding:
 class Context:
     root: Path
     profile: str = "portable"
+    #: RV-EVALS runs only when asked (`check --evals`): evals live in a source repo, never in a built package.
+    evals: bool = False
+    #: Context window in tokens for CX-LISTING and CX-SESSION (`check --context-tokens`).
+    context_tokens: int = 200_000
     ignore: list[str] = field(default_factory=list)
     findings: list[Finding] = field(default_factory=list)
 
@@ -938,8 +956,38 @@ def check_plugin(ctx: Context, root: Path, skills: dict[str, Path], agents: dict
     # Skills and commands share the `/plugin:name` namespace; agents live in their own.
     for n in sorted(set(skills) & set(commands)):
         ctx.add("PL-NAMES", root, f"`{n}` is both a skill and a command, so `/{n}` is ambiguous")
+    if ctx.evals:
+        check_evals(ctx, root, skills)
     if daddydock is not None:
         check_daddydock(ctx, root, daddydock, skills, agents)
+
+
+#: A folder under `evals/<skill>/` is one case when it holds one of these (our runners use
+#: case.json; `claude plugin eval` uses case.yaml or prompt.md).
+EVAL_CASE_FILES = ("case.json", "case.yaml", "prompt.md")
+EVALS_MIN_CASES = 3
+
+
+def count_eval_cases(skill_evals: Path) -> int:
+    return sum(1 for p in skill_evals.rglob("*")
+               if p.is_dir() and not SKIP_DIRS.intersection(p.parts)
+               and any((p / f).is_file() for f in EVAL_CASE_FILES))
+
+
+def check_evals(ctx: Context, root: Path, skills: dict[str, Path]):
+    if not skills:
+        return
+    evals = root / "evals"
+    if not evals.is_dir():
+        # One finding per plugin, not one per skill, so a plugin with no evals yet stays readable.
+        ctx.add("RV-EVALS", root, f"no `evals/` folder: 0 eval cases for {len(skills)} skill(s); "
+                f"add at least {EVALS_MIN_CASES} cases per skill under `evals/<skill>/`")
+        return
+    for name in sorted(skills):
+        n = count_eval_cases(evals / name) if (evals / name).is_dir() else 0
+        if n < EVALS_MIN_CASES:
+            ctx.add("RV-EVALS", skills[name], f"skill `{name}` has {n} eval case(s) under `evals/{name}/` "
+                    f"(at least {EVALS_MIN_CASES})")
 
 
 def check_daddydock(ctx: Context, root: Path, dd: dict, skills: dict[str, Path], agents: dict[str, Path]):
@@ -1060,10 +1108,198 @@ def check_instruction_file(ctx: Context, path: Path):
 
 
 # ---------------------------------------------------------------------------
+# Context loaded every session (CX-*) and agent tool contradictions (AG-TOOLS)
+# ---------------------------------------------------------------------------
+CHARS_PER_TOKEN = 4  # the usual English estimate; Thai runs nearer 1-2 characters a token, so Thai text is undercounted
+LISTING_SHARE = 0.01  # Claude Code skills doc: "The budget scales at 1% of the model's context window"
+LISTING_ENTRY_MAX = 1536  # same doc: each entry's description plus when_to_use is capped at 1,536 characters
+SESSION_SHARE = 0.02  # the listing's 1% plus as much again for agent descriptions and SessionStart text
+REPEAT_MIN_FILES = 3
+REPEAT_MIN_PARAGRAPH = 80  # shorter paragraphs (headings, one-line notes) repeat by nature
+REPEAT_MIN_BLOCK = 300
+MAX_ENTRIES = 50  # upper end of the 30-50 range where tool choice starts to degrade
+
+
+def listing_entry(name: str, doc: "Doc") -> int:
+    """Characters one skill or command adds to the skill listing."""
+    text = " ".join(doc.get(k).strip() for k in ("description", "when_to_use") if isinstance(doc.get(k), str))
+    return len(name) + 4 + min(len(text), LISTING_ENTRY_MAX)
+
+
+def listing_items(files: list) -> dict:
+    """name -> (file, characters, listed). A skill with `disable-model-invocation: true` stays out
+    of the model's listing; copies of one name (mirrors, vendored plugins) count once."""
+    out = {}
+    for name, p in sorted(files, key=lambda t: str(t[1])):
+        if name in out:
+            continue
+        doc = load_doc(p)
+        if not doc.fm_ok:
+            continue
+        out[name] = (p, listing_entry(name, doc), doc.get("disable-model-invocation") is not True)
+    return out
+
+
+SESSION_CAT_RE = re.compile(r"""^\s*(?:cat|type|Get-Content)\s+["']?\$\{?CLAUDE_PLUGIN_ROOT\}?[\\/]([^"'\s]+)["']?\s*$""")
+SESSION_ECHO_RE = re.compile(r"""^\s*echo\s+(['"])(.*)\1\s*$""", re.S)
+
+
+def session_start_text(root: Path) -> tuple:
+    """(characters, commands not measured) that a plugin's SessionStart hooks print. agentlint never
+    runs a hook: a command that only prints a file of the plugin (`cat`, `type`, `Get-Content`)
+    counts that file, an `echo` counts its literal, anything else is reported as not measured."""
+    f = root / "hooks" / "hooks.json"
+    data = read_json(f)[0] if f.is_file() else None
+    if not isinstance(data, dict) or not isinstance(data.get("hooks"), dict):
+        return 0, 0
+    chars = unmeasured = 0
+    for group in data["hooks"].get("SessionStart") or []:
+        for h in (group.get("hooks") or []) if isinstance(group, dict) else []:
+            cmd = h.get("command") if isinstance(h, dict) else None
+            if not isinstance(cmd, str):
+                continue
+            m, e = SESSION_CAT_RE.match(cmd), SESSION_ECHO_RE.match(cmd)
+            if m and (root / m.group(1)).is_file():
+                chars += len((root / m.group(1)).read_text(encoding="utf-8", errors="replace"))
+            elif e:
+                chars += len(e.group(2))
+            else:
+                unmeasured += 1
+    return chars, unmeasured
+
+
+def context_report(ctx: "Context", skills: list, agents: list, plugin_roots: list) -> dict:
+    items = listing_items(skills)
+    listed = {n: c for n, (_p, c, shown) in items.items() if shown}
+    agent_chars = {}
+    for name, p in sorted(agents, key=lambda t: str(t[1])):
+        doc = load_doc(p)
+        if doc.fm_ok and name not in agent_chars and isinstance(doc.get("description"), str):
+            agent_chars[name] = len(name) + 4 + len(doc.get("description").strip())
+    start = [session_start_text(r) for r in plugin_roots]
+    return {
+        "context_tokens": ctx.context_tokens,
+        "listing_budget": int(ctx.context_tokens * LISTING_SHARE * CHARS_PER_TOKEN),
+        "session_limit": int(ctx.context_tokens * SESSION_SHARE * CHARS_PER_TOKEN),
+        "listing": sum(listed.values()), "listing_entries": listed,
+        "agents": sum(agent_chars.values()), "agent_entries": agent_chars,
+        "session_start": sum(c for c, _u in start), "session_start_unmeasured": sum(u for _c, u in start),
+        "entries": {"skills": len(listed), "agents": len(agent_chars)},
+    }
+
+
+def check_context(ctx: "Context", rep: dict):
+    if rep["listing"] > rep["listing_budget"]:
+        top = sorted(rep["listing_entries"].items(), key=lambda kv: -kv[1])[:5]
+        ctx.add("CX-LISTING", ctx.root, f"the skill listing is {rep['listing']:,} characters for {len(rep['listing_entries'])} skill(s), "
+                f"over the {rep['listing_budget']:,}-character budget (1% of {rep['context_tokens']:,} tokens); Claude Code drops the "
+                "descriptions of the least-invoked skills first. Shorten descriptions or list low-priority skills name-only. Longest: "
+                + ", ".join(f"`{n}` {c:,}" for n, c in top))
+    total = rep["listing"] + rep["agents"] + rep["session_start"]
+    if total > rep["session_limit"]:
+        note = f"; {rep['session_start_unmeasured']} SessionStart command(s) not measured" if rep["session_start_unmeasured"] else ""
+        ctx.add("CX-SESSION", ctx.root, f"every session loads about {total:,} characters (~{total // CHARS_PER_TOKEN:,} tokens): skill listing "
+                f"{rep['listing']:,}, agent descriptions {rep['agents']:,}, SessionStart output {rep['session_start']:,}{note}; "
+                f"limit {rep['session_limit']:,} (2% of the context window). `agentlint.py context` prints the breakdown")
+
+
+def paragraphs(text: str) -> list:
+    text = text.replace("\r\n", "\n")
+    body = text[body_offset(text):] if text.startswith("---") else text
+    out = []
+    for block in re.split(r"\n\s*\n", body):
+        norm = re.sub(r"\s+", " ", block).strip()
+        if len(norm) >= REPEAT_MIN_PARAGRAPH:
+            out.append(norm)
+    return out
+
+
+def check_repeats(ctx: "Context", files: list):
+    """CX-REPEAT. Paragraphs are grouped by the exact set of files they appear in, so one block of
+    many paragraphs pasted into 78 files is one finding, not one per paragraph."""
+    where: dict = {}
+    for f in sorted(set(files)):
+        try:
+            text = f.read_text(encoding="utf-8-sig", errors="replace")
+        except OSError:
+            continue
+        for para in set(paragraphs(text)):
+            where.setdefault(para, set()).add(f)
+    groups: dict = {}
+    for para, fs in where.items():
+        if len(fs) >= REPEAT_MIN_FILES:
+            groups.setdefault(frozenset(fs), []).append(para)
+    for fs, paras in groups.items():
+        size = sum(len(x) for x in paras)
+        if size < REPEAT_MIN_BLOCK:
+            continue
+        ordered = sorted(fs)
+        names = ", ".join(f"`{p.relative_to(ctx.root).as_posix()}`" for p in ordered[:3])
+        more = f" and {len(ordered) - 3} more" if len(ordered) > 3 else ""
+        start = max(paras, key=len)[:60]
+        ctx.add("CX-REPEAT", ordered[0], f"{size:,} characters in {len(paras)} paragraph(s) repeat word for word in {len(ordered)} files "
+                f"({names}{more}), {size * (len(ordered) - 1):,} characters beyond one copy; keep one copy and link to it. "
+                f"Starts: \"{start}...\"")
+
+
+#: Instruction -> the tool it needs. "Read the three files in parallel" is parallel tool calls, which
+#: every agent may make, so parallel work counts only when it is about agents, phases, skills or steps.
+AGENT_TOOL_NEEDS = [
+    ("Agent", re.compile(r"\b(?:spawn|launch|dispatch|delegate to|hand off to)\b[^.\n]{0,60}?\b(?:sub-?agents?|agents?)\b"
+                         r"|\bparallel (?:sub-?agents?|agents|tasks)\b"
+                         r"|\b(?:phases?|agents|sub-?agents?|skills|audits|steps)\b[^.\n]{0,60}?\bin parallel\b"
+                         r"|\(run in parallel\b|(?-i:\b(?:Task|Agent) tool\b)", re.I)),
+    ("Skill", re.compile(r"(?-i:\bSkill tool\b)|\b(?:invoke|call|run|use|load)s? the [`'\"]?[\w:-]+[`'\"]? skill\b", re.I)),
+    ("Bash", re.compile(r"```(?:bash|sh|shell|powershell|ps1)\b|(?-i:\bBash tool\b)"
+                        r"|\brun `(?:python|python3|node|npm|npx|bash|sh|pip|git|curl)\b", re.I)),
+    ("WebFetch", re.compile(r"\bWebFetch\b")),
+    ("WebSearch", re.compile(r"\bWebSearch\b")),
+]
+TOOL_ALIASES = {"Task": "Agent"}
+
+
+def tool_names(value) -> set:
+    items = value if isinstance(value, list) else re.split(r"[,\s]+", str(value))
+    out = set()
+    for x in items:
+        base = re.sub(r"\(.*\)$", "", str(x).strip())
+        if base:
+            out.add(TOOL_ALIASES.get(base, base))
+    return out
+
+
+def check_agent_tools(ctx: "Context", path: Path):
+    doc = load_doc(path)
+    if not doc.fm_ok or doc.get("tools") is None:
+        return  # no `tools` list: the agent inherits every tool
+    granted = tool_names(doc.get("tools")) - (tool_names(doc.get("disallowedTools")) if doc.get("disallowedTools") else set())
+    for tool, pattern in AGENT_TOOL_NEEDS:
+        if tool in granted:
+            continue
+        m = pattern.search(doc.body)
+        if not m:
+            continue
+        line = doc.body_start + doc.body[:m.start()].count("\n") + 1
+        hint = " (a subagent cannot start subagents either, so write the steps in sequence)" if tool == "Agent" else ""
+        ctx.add("AG-TOOLS", path, f"line {line} asks for \"{m.group(0).strip()}\", which needs `{tool}`, but `tools` does not "
+                f"grant it; grant `{tool}` or rewrite the instruction{hint}")
+
+
+def check_count(ctx: "Context", root: Path, skills: dict, agents: dict):
+    commands = sorted((root / "commands").glob("*.md")) if (root / "commands").is_dir() else []
+    n = len(skills) + len(agents) + len(commands)
+    if n > MAX_ENTRIES:
+        ctx.add("CX-COUNT", root, f"{len(skills)} skill(s), {len(commands)} command(s) and {len(agents)} agent(s) = {n}, over {MAX_ENTRIES}; "
+                "the model picks less reliably past about 30 to 50 entries. Split the plugin or merge entries once an eval baseline exists")
+
+
+# ---------------------------------------------------------------------------
 # Driver
 # ---------------------------------------------------------------------------
-def run_checks(root: Path, profile: str = "portable") -> Context:
-    ctx = Context(root.resolve(), profile)
+def run_checks(root: Path, profile: str = "portable", evals: bool = False, context_tokens: int = 200_000,
+               report: dict | None = None) -> Context:
+    """Run every check. When `report` is a dict, it receives the per-session context breakdown."""
+    ctx = Context(root.resolve(), profile, evals, context_tokens)
     ctx.ignore = load_ignore(ctx.root)
     skill_entries: list[tuple[Path, Path]] = []
     agent_files: list[Path] = []
@@ -1110,6 +1346,24 @@ def run_checks(root: Path, profile: str = "portable") -> Context:
             per_plugin_agents.setdefault(r, {})[name] = f
     for r in plugin_roots:
         check_plugin(ctx, r, per_plugin_skills.get(r, {}), per_plugin_agents.get(r, {}), daddydock_for(r))
+        check_count(ctx, r, per_plugin_skills.get(r, {}), per_plugin_agents.get(r, {}))
+    for f in agent_files:
+        check_agent_tools(ctx, f)
+    commands = [d / f for d, files in walk(ctx) if d.name == "commands" and any(is_inside(d, r) for r in plugin_roots)
+                for f in files if f.endswith(".md") and f.lower() != "readme.md"]
+    agent_names = []
+    for f in agent_files:
+        doc = load_doc(f)
+        n = doc.get("name") if doc.fm_ok else None
+        agent_names.append((n if isinstance(n, str) and n else f.stem, f))
+    rep = context_report(ctx, [(d.name, e) for d, e in skill_entries] + [(c.stem, c) for c in commands], agent_names,
+                         [r for r in plugin_roots if not any(r != o and is_inside(r, o) for o in plugin_roots)])
+    if report is not None:
+        report.update(rep)
+    check_context(ctx, rep)
+    bundled = [e for _d, e in skill_entries] + agent_files + commands
+    bundled += [p for d in skill_dirs for p in d.rglob("*.md") if p.is_file() and not SKIP_DIRS.intersection(p.parts) and not ignored(ctx, p)]
+    check_repeats(ctx, bundled)
     # Skills compete with skills and agents with agents, across the whole scan: plugins installed together share one host.
     # Copies of one name (templates, per-host mirrors, vendored plugins) are one skill, compared once from its first path.
     for kind, files in (("skills", [e for _d, e in skill_entries]), ("agents", agent_files)):
@@ -1430,6 +1684,14 @@ def main(argv=None) -> int:
     c.add_argument("--json", action="store_true")
     c.add_argument("--profile", choices=["portable", "claude-ai"], default="portable")
     c.add_argument("--ci", action="store_true", help=f"fail only on {', '.join(CI_FAIL)}; warn on the rest")
+    c.add_argument("--evals", action="store_true",
+                   help="also count eval cases per skill (RV-EVALS); for source repos, not built packages")
+    c.add_argument("--context-tokens", type=int, default=200_000,
+                   help="context window in tokens for CX-LISTING and CX-SESSION (default 200000; 1000000 for 1M models)")
+    x = sub.add_parser("context", help="what loads every session: skill listing, agent descriptions, SessionStart output")
+    x.add_argument("path", type=Path)
+    x.add_argument("--context-tokens", type=int, default=200_000)
+    x.add_argument("--json", action="store_true")
     f = sub.add_parser("fix", help="repair mechanical problems (dry run unless --apply)")
     f.add_argument("path", type=Path)
     f.add_argument("--apply", action="store_true")
@@ -1449,13 +1711,33 @@ def main(argv=None) -> int:
                 print(f"{x.id:16} {x.kind:6} {'fix' if x.fixable else '   '}  {x.title}")
         return 0
 
+    if args.cmd == "context":
+        if not args.path.exists():
+            print(f"agentlint: {args.path} does not exist", file=sys.stderr)
+            return 2
+        rep: dict = {}
+        run_checks(args.path, context_tokens=args.context_tokens, report=rep)
+        if args.json:
+            print(json.dumps(rep, ensure_ascii=False, indent=1))
+            return 0
+        total = rep["listing"] + rep["agents"] + rep["session_start"]
+        print(f"Context window {rep['context_tokens']:,} tokens; characters, at about {CHARS_PER_TOKEN} a token:\n")
+        print(f"  skill listing      {rep['listing']:>8,}  ({rep['entries']['skills']} skills and commands; budget {rep['listing_budget']:,})")
+        print(f"  agent descriptions {rep['agents']:>8,}  ({rep['entries']['agents']} agents)")
+        unm = f"; {rep['session_start_unmeasured']} command(s) not measured" if rep["session_start_unmeasured"] else ""
+        print(f"  SessionStart text  {rep['session_start']:>8,}{unm}")
+        print(f"  total              {total:>8,}  (limit {rep['session_limit']:,})\n")
+        for n, c in sorted(rep["listing_entries"].items(), key=lambda kv: -kv[1])[:10]:
+            print(f"  {c:>6,}  {n}")
+        return 0
+
     if args.cmd == "check":
         all_findings = []
         for p in args.path:
             if not p.exists():
                 print(f"agentlint: {p} does not exist", file=sys.stderr)
                 return 2
-            ctx = run_checks(p, args.profile)
+            ctx = run_checks(p, args.profile, args.evals, args.context_tokens)
             all_findings += [(p, x) for x in ctx.findings]
         levels = [(p, x, level(x.rule, args.ci)) for p, x in all_findings]
         errors = sum(1 for *_, lv in levels if lv == "error")

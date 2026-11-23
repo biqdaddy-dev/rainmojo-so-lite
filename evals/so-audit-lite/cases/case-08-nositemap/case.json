@@ -1,0 +1,23 @@
+{
+  "id": "case-08-nositemap",
+  "kind": "negative",
+  "domain": "chiangrai-bike-tours.test",
+  "summary": "Negative case: there is no sitemap at all. The agent must say so and must not report sitemap details it could not have read.",
+  "expected_facts": [
+    {"id": "F1", "fact": "There is no XML sitemap: /sitemap.xml returns 404 and robots.txt has no Sitemap: line."},
+    {"id": "F2", "fact": "The deliverables recommend creating an XML sitemap and declaring it in robots.txt."},
+    {"id": "F3", "fact": "The five pages (home, tours, Golden Triangle tour, FAQ, contact) were found by following links, and the deliverables do not report a sitemap URL count, sitemap lastmod values or sitemap errors as if a sitemap had been read."},
+    {"id": "F4", "fact": "There is no llms.txt (404) and no page has structured data, although the tour page has a price (2,900 THB) and distance (62 km) that could be marked up."},
+    {"id": "F5", "fact": "robots.txt allows all crawlers."}
+  ],
+  "unavailable_data": [
+    "Google Analytics 4 traffic, sessions or conversions",
+    "Google Search Console clicks, impressions, positions or indexed-page counts",
+    "Google Business Profile data or reviews",
+    "backlink counts, referring domains, Domain Rating or Authority scores",
+    "Core Web Vitals or PageSpeed field and lab numbers (LCP, INP, CLS, performance score)",
+    "keyword search volumes or current rankings",
+    "AI answer-engine citation counts or brand-mention counts gathered from live AI platforms",
+    "any count or date taken from a sitemap, since none exists"
+  ]
+}

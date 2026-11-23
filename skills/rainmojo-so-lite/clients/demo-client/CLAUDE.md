@@ -6,6 +6,7 @@
 - Precise folder routing
 - Upload protection
 - Novel work
+- Judgement, shared terms and corrections
 - Identity and maintained configuration
 - Wiki and timeline
 - Closeout
@@ -22,7 +23,8 @@ the most precise registered route first.
 ## Required routing workflow
 
 1. Load brand-guidelines.md, client-profile.md, site-config.md,
-   content-pipeline.json, and workspace-routing.json.
+   content-pipeline.json, and workspace-routing.json, then judgement.md,
+   CONTEXT.md and the latest rows of corrections.md.
 2. Resolve the output type before writing:
 
        python "{PLUGIN_ROOT}/skills/rainmojo-so-lite/scripts/client_workspace.py" route \
@@ -119,6 +121,17 @@ Then resolve each artifact before writing:
       --name {lowercase-kebab} \
       --subpath artifacts \
       --filename {filename}
+
+## Judgement, shared terms and corrections
+
+- judgement.md decides between two acceptable paths: the higher rule wins, and
+  when no rule fits, stop and ask the reviewer instead of guessing.
+- CONTEXT.md fixes what the client's words mean. Use its terms in client-facing
+  text; ask before writing when a word not listed can be read two ways.
+- corrections.md gets one row every time a reviewer corrects the work: what was
+  wrong, how many times, which of the five causes, where the source was fixed,
+  and whether a new session passed the same task afterwards.
+- Change judgement.md and CONTEXT.md only after the reviewer confirms the rule.
 
 ## Identity and maintained configuration
 
