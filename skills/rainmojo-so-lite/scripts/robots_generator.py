@@ -18,6 +18,9 @@ import json
 import re
 from urllib.parse import urlparse
 
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _isolated_mode  # noqa: E402,F401  python -I leaves out user site-packages (LITE-009)
 try:
     import requests
 except ImportError:

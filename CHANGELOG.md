@@ -6,6 +6,7 @@
 
 - ผู้ใช้ Antigravity เห็นเลขรุ่นของปลั๊กอินตรงกับรุ่นจริงแล้ว
 - ลูกค้าใหม่ได้ไฟล์เกณฑ์ตัดสินใจ คำศัพท์กลาง และบันทึกจุดที่ถูกแก้ ตั้งแต่วันแรก
+- ตรวจเว็บได้ครบทุกขั้น ไม่ข้ามขั้นเพราะเครื่องหาโปรแกรมเสริมไม่เจออีกแล้ว
 
 ### Under the hood
 
@@ -47,6 +48,13 @@
   CI when the total grows past `tooling/context-budget.json`. Four of the longest descriptions lose their mechanism
   detail, keeping every "use when" and "not for" cue: 19,048 to 18,772 characters. Getting under agentlint's
   16,000 needs the invocation test, which needs a logged-in CLI.
+- Scripts work under `python -I` (LITE-009, port of rainmojo-so RSO-012). `-I` hides the user site-packages, where
+  `pip install --user` puts `requests`, `beautifulsoup4`, `lxml` and Pillow, and the script's own folder; 6 of the 9
+  agent-run scripts stopped with "Missing dependency" or "No module named client_workspace". Each now imports
+  `_isolated_mode.py` first, which adds back the user site and nothing else (the current directory stays off the
+  path). `isolated_mode_test.py` checks the import order and the behaviour, and runs in CI. Outcome eval before and after on
+  the same 10 x 3 harness: runs that lost points on carrying the audit through went from 3 to 0, positive cases
+  98.44 to 100 (`docs/operations/lite-009-eval.md`).
 
 ## 2.8.3 (2026-11-05)
 
