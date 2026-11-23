@@ -17,6 +17,12 @@
   manifest, the marketplace entry, a skill or agent frontmatter, README.md or the newest CHANGELOG section disagrees.
   The root Antigravity `plugin.json` read 2.2.0 since 2.3.0 and now reads 2.8.3; README points to this file instead
   of naming a version.
+- No instruction to run work in parallel that an agent cannot carry out (LITE-012, blueprint RS-5): the
+  `parallel_processes` keys leave `seo-content-creation-lite` and `seo-schema-lite` agent.json, and
+  `content-production-lite` says image generation and drafting are independent steps done one after the other. The
+  vendored agentlint moves from plugin-optimizer v1.4.0 to v1.6.0, whose AG-TOOLS rule flags such instructions in
+  agents; it reports 0 errors and 10 warnings on this tree (repeated blocks and context size, for LITE-010 and
+  LITE-011).
 
 ## 2.8.3 (2026-11-05)
 
