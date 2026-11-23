@@ -143,6 +143,19 @@ other skill reads. A later skill that finds them missing may ask the same five q
 fallback scoped to its own run, but it must not write either file. Leave an unanswered question
 recorded as open in brand-guidelines.md rather than filling it with a guess.
 
+### Decision rules and shared terms (LITE-013)
+
+The workspace starts with `judgement.md`, `CONTEXT.md` and an empty `corrections.md`. Their demo rows
+are lite defaults, not this client's rules:
+
+1. Ask for 20 to 30 comments a reviewer of this client has made on past work (edits, rejections,
+   "write it this way"). With none, keep the defaults and record that the rules are unconfirmed.
+2. Draft one `judgement.md` row per repeated choice in those comments: the two paths, the one
+   chosen, because, and the exception. Keep it under 30 lines, most important first.
+3. Draft `CONTEXT.md` rows for every word the comments use in a way a stranger could misread.
+4. Read every drafted row back to the user and keep only the ones they confirm; date and name the
+   owner of each confirmed term. Never invent a rule the comments do not show.
+
 - Replace the remaining demo fields in site-config.md, plus any brand-guidelines.md or
   client-profile.md field the interview above did not cover.
 - Configure content-pipeline.json for this site. Production remains fail closed

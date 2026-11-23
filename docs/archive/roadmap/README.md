@@ -18,5 +18,6 @@
 | LITE-010 | skills | ข้อความซ้ำ 2 ชุด (routing และ presentation) ใน 60 ไฟล์เหลือบล็อกสั้นที่ชี้ไป `reference/shared-rules.md` ไฟล์เดียว แก้ gate 2 ตัวให้คุมบล็อกสั้น แล้วสร้าง `platforms/` ใหม่ด้วย agentpack (blueprint RS-4) ต้องวัด eval ก่อน/หลังด้วย LITE-007 | 2026-11-12 | 2026-11-13 | 4 | 3 | 11.2M | biqdaddy-dev/rainmojo-so-lite#18 |
 | LITE-011 | skills | ส่วนยาวที่ใช้บางครั้งของ `sitemap-architecture-lite` (หน้าตาที่คนอ่านได้, รายการวิดีโอ, checklist ตอนย้ายระบบ) ย้ายไป `references/` ตามแบบ rainmojo-so RSO-021: 497 เหลือ 268 บรรทัด (blueprint RS-10) | 2026-11-12 | 2026-11-12 | 2 | 1 | 120k | biqdaddy-dev/rainmojo-so-lite#19 |
 | LITE-012 | skills | ตัดคำสั่ง "ทำพร้อมกัน" ที่ agent ทำไม่ได้จริง: คีย์ `parallel_processes` ใน agent.json 2 ไฟล์ และบรรทัดใน `content-production-lite` แล้วอัป agentlint ที่ vendor มาเป็น v1.6.0 ที่มีกฎ AG-TOOLS (blueprint RS-5) | 2026-11-12 | 2026-11-12 | 2 | 1 | 150k | biqdaddy-dev/rainmojo-so-lite#17 |
+| LITE-013 | content production | ไฟล์ตั้งต้นของลูกค้า `judgement.md`, `CONTEXT.md`, `corrections.md` ในแม่แบบ demo-client, `validate` เตือนเมื่อขาด `adopt` เติมให้ และขั้นร่างเกณฑ์ใน `new-client-lite` (blueprint RS-8) | 2026-11-13 | 2026-11-13 | 4 | 2.5 | 300k | biqdaddy-dev/rainmojo-so-lite#20 |
 
 งานเก่าของปลั๊กอินนี้ใช้รหัส `DP-` และอยู่ใน PR เดิม, CHANGELOG และ git log ตามเดิม
