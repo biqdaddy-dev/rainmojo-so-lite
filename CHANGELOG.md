@@ -29,6 +29,10 @@
   enforce the short blocks and flag any long block left over. `platforms/` was rebuilt with agentpack 1.6.0.
   About 78 KB less in `skills/` and `agents/`, 70 KB less in `platforms/`. Outcome eval before and after on the same 10 x 3
   harness: mean 97.68 to 98.00, no criterion moved by more than half a point (`docs/operations/lite-010-eval.md`).
+- `sitemap-architecture-lite/SKILL.md` goes from 497 to 268 lines (LITE-011, after rainmojo-so RSO-021, blueprint
+  RS-10). Three sections used only sometimes move word for word to `references/`: `human-readable-view.md` (styled
+  XML, XSLT removal, HTML sitemap page), `video-entries.md` and `porting-checklist.md`, each with a review_by line;
+  SKILL.md says when to read each one.
 
 ## 2.8.3 (2026-11-05)
 
